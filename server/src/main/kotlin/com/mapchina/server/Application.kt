@@ -1,6 +1,10 @@
 package com.mapchina.server
 
+import com.mapchina.server.auth.JwtConfig
+import com.mapchina.server.auth.configureSecurity
 import com.mapchina.server.database.configureDatabase
+import com.mapchina.server.routes.authRoutes
+import com.mapchina.server.routes.dataRoutes
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -29,18 +33,23 @@ fun Application.module() {
 
     install(StatusPages) {
         exception<Throwable> { call, cause ->
-            call.respondText(text = "500: ${cause.localizedMessage}", status = HttpStatusCode.InternalServerError)
+            call.respondText(text = """{"code":"INTERNAL_ERROR","message":"${cause.localizedMessage}"}""", status = HttpStatusCode.InternalServerError)
         }
     }
 
     configureDatabase()
-    configureRouting()
+
+    val jwtProvider = JwtConfig.configure(this)
+    configureSecurity(jwtProvider)
+    configureRouting(jwtProvider)
 }
 
-fun Application.configureRouting() {
+fun Application.configureRouting(jwtProvider: com.mapchina.server.auth.JwtProvider) {
     routing {
         get("/health") {
             call.respondText("OK")
         }
+        authRoutes(jwtProvider)
+        dataRoutes(jwtProvider)
     }
 }
