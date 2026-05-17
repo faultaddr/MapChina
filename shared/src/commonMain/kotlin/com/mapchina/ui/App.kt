@@ -21,16 +21,20 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mapchina.ui.navigation.AppNavHost
+import com.mapchina.ui.navigation.MapScreen
+import com.mapchina.ui.navigation.AttractionsScreen
+import com.mapchina.ui.navigation.StatsScreen
+import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.Screen
 import com.mapchina.ui.theme.MapChinaTheme
 
 data class BottomNavItem(val screen: Screen, val label: String, val icon: ImageVector)
 
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Map, "足迹地图", Icons.Default.LocationOn),
-    BottomNavItem(Screen.Attractions, "景点", Icons.Default.Attractions),
-    BottomNavItem(Screen.Stats, "统计", Icons.Default.BarChart),
-    BottomNavItem(Screen.Profile, "我的", Icons.Default.Person),
+    BottomNavItem(MapScreen, "足迹地图", Icons.Default.LocationOn),
+    BottomNavItem(AttractionsScreen, "景点", Icons.Default.Attractions),
+    BottomNavItem(StatsScreen, "统计", Icons.Default.BarChart),
+    BottomNavItem(ProfileScreen, "我的", Icons.Default.Person),
 )
 
 @Composable
@@ -54,7 +58,7 @@ fun MapChinaApp() {
                                 label = { Text(item.label) },
                                 selected = currentDestination?.hierarchy?.any { it.hasRoute(item.screen::class) } == true,
                                 onClick = {
-                                    navController.navigate(item.screen.route) {
+                                    navController.navigate(item.screen) {
                                         popUpTo(navController.graph.findStartDestination().id) {
                                             saveState = true
                                         }

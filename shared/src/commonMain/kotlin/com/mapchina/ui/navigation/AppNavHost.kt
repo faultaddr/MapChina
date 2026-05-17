@@ -9,42 +9,42 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.mapchina.ui.map.MapScreen
-import com.mapchina.ui.attraction.AttractionsScreen
-import com.mapchina.ui.stats.StatsScreen
-import com.mapchina.ui.profile.ProfileScreen
+import com.mapchina.ui.map.MapScreen as MapScreenComposable
+import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
+import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
+import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
 
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Map.route,
+        startDestination = MapScreen,
         modifier = modifier
     ) {
-        composable(Screen.Map.route) {
-            MapScreen(navController = navController)
+        composable<MapScreen> {
+            MapScreenComposable(navController = navController)
         }
-        composable(Screen.Attractions.route) {
-            AttractionsScreen(navController = navController)
+        composable<AttractionsScreen> {
+            AttractionsScreenComposable(navController = navController)
         }
-        composable(Screen.Stats.route) {
-            StatsScreen()
+        composable<StatsScreen> {
+            StatsScreenComposable()
         }
-        composable(Screen.Profile.route) {
-            ProfileScreen()
+        composable<ProfileScreen> {
+            ProfileScreenComposable()
         }
-        composable(Screen.Login.route) {
+        composable<LoginScreen> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("登录页（待实现）")
             }
         }
-        composable(Screen.RegionDetail.route) { backStackEntry ->
+        composable<RegionDetailScreen> { backStackEntry ->
             val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("区域详情: $regionId")
             }
         }
-        composable(Screen.AttractionDetail.route) { backStackEntry ->
+        composable<AttractionDetailScreen> { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("景点详情: $attractionId")

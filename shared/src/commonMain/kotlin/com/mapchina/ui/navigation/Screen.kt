@@ -1,15 +1,13 @@
 package com.mapchina.ui.navigation
 
-sealed class Screen(val route: String) {
-    data object Map : Screen("map")
-    data object Attractions : Screen("attractions")
-    data object Stats : Screen("stats")
-    data object Profile : Screen("profile")
-    data object Login : Screen("login")
-    data object RegionDetail : Screen("region/{regionId}") {
-        fun createRoute(regionId: String) = "region/$regionId"
-    }
-    data object AttractionDetail : Screen("attraction/{attractionId}") {
-        fun createRoute(attractionId: String) = "attraction/$attractionId"
-    }
-}
+import kotlinx.serialization.Serializable
+
+@Serializable sealed class Screen
+
+@Serializable data object MapScreen : Screen()
+@Serializable data object AttractionsScreen : Screen()
+@Serializable data object StatsScreen : Screen()
+@Serializable data object ProfileScreen : Screen()
+@Serializable data object LoginScreen : Screen()
+@Serializable data class RegionDetailScreen(val regionId: String) : Screen()
+@Serializable data class AttractionDetailScreen(val attractionId: String) : Screen()
