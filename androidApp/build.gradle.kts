@@ -25,4 +25,5 @@ android {
 dependencies {
     implementation(project(":shared"))
     implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("io.insert-koin:koin-android:4.0.4")
 }

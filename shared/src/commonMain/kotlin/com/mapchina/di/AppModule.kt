@@ -32,13 +32,10 @@ val appModule = module {
 
 expect val platformModule: Module
 
-fun initKoin() {
-    org.koin.core.context.startKoin {
-        modules(appModule, platformModule)
-    }
-
-    val regionRepo = org.koin.core.context.GlobalContext.get().get<RegionRepository>()
-    val attractionRepo = org.koin.core.context.GlobalContext.get().get<AttractionRepository>()
+fun seedData() {
+    val koin = org.koin.core.context.GlobalContext.get()
+    val regionRepo = koin.get<RegionRepository>()
+    val attractionRepo = koin.get<AttractionRepository>()
     DataSeeder.seedRegions(regionRepo)
     DataSeeder.seedAttractions(attractionRepo)
 }
