@@ -116,6 +116,33 @@ V1 覆盖约 1000+ 个 5A/4A 景点。
 
 升级操作不可降级（深度 > 短玩 > 路过）。
 
+### Footprint 与 AttractionVisit 的关系
+
+标记 AttractionVisit 时，必须自动 upsert 对应区域的 Footprint：
+- 景点所属的区级 Footprint 自动设置为不低于 AttractionVisit 的级别
+- 区级 Footprint 变更时，其父级市、省 Footprint 自动设为"至少路过"
+- 例如：用户标记九寨沟为"深度"，则九寨沟所在的阿坝州 Footprint 自动升级为"深度"，四川省 Footprint 自动设为"路过"（如果尚未标记）
+
+## 数据合规
+
+### 地图合规
+
+- 使用 GCJ-02 坐标系（国测局坐标），符合《测绘法》要求
+- 所有地图底图使用具备审图号的合规地图服务
+- 区域边界数据来源：民政部行政区划数据 + 开放街景（OSM）补充，确认授权许可
+
+### GeoJSON 数据策略
+
+采用分层精度策略控制包体积：
+
+| 层级 | 精度 | 预估大小 | 加载方式 |
+|------|------|----------|----------|
+| 省级 | 高度简化 | ~2 MB | 预置打包 |
+| 市级 | 中等简化 | ~15 MB | 预置打包 |
+| 区级 | 完整精度 | ~80 MB | 按省按需下载 |
+
+目标安装包大小 < 50 MB（含省级 + 市级边界 + 景点数据），区级数据首次进入该省时下载并缓存本地。
+
 ## UI 导航结构
 
 ### 底部 Tab 导航（4 个主 Tab）
@@ -149,14 +176,43 @@ V1 覆盖约 1000+ 个 5A/4A 景点。
 - 左上角显示覆盖率统计（8/34 省 · 23/333 市）
 - 全局概览一目了然
 
+### 地图组件接口
+
+```kotlin
+interface MapController {
+    fun addOverlay(region: Region, style: OverlayStyle)
+    fun removeOverlay(regionId: String)
+    fun addMarker(attraction: Attraction, visited: Boolean)
+    fun removeMarker(attractionId: String)
+    fun setCamera(region: Region, animated: Boolean)
+    fun setOnRegionTapListener(listener: (Region) -> Unit)
+    fun setOnMarkerTapListener(listener: (Attraction) -> Unit)
+    fun setZoomLevel(level: MapZoomLevel)
+    fun getZoomLevel(): MapZoomLevel
+}
+
+enum class MapZoomLevel { NATIONAL, PROVINCIAL, CITY, DISTRICT }
+```
+
+共享代码通过 `MapController` 接口操作地图，各平台 Actual 实现负责 SDK 对接。手势缩放和点击事件由共享代码处理层级逻辑，平台代码仅负责渲染和原始事件上报。
+
 ### 交互流程
 
 1. **双视图切换** — 右上角切换按钮
-2. **点击区域** — 弹出底部 Sheet，显示区域名称、足迹状态、景点数量
+2. **点击区域** — 弹出底部 Sheet，显示区域名称、足迹状态、景点数量，点击后钻入该区域
 3. **标记足迹** — 在底部 Sheet 中选择级别（路过/短玩/深度），GPS 辅助确认位置
-4. **双指缩放** — 缩放触发层级切换（全国→省→市→区），地图自动聚焦
-5. **景点锚点** — 缩放到城市级别后出现
+4. **层级切换** — 点击区域触发钻入（全国→省→市→区），面包屑导航 + 返回按钮回到上级；双指缩放在当前层级内自由缩放，超过阈值时提示"点击进入 XX 视图"
+5. **景点锚点** — 进入城市级别后自动显示
 6. **长按锚点** — 弹出景点详情卡片，可标记已访问
+
+### 层级缩放阈值
+
+| 层级 | 缩放范围 | 触发行为 |
+|------|----------|----------|
+| 全国 | zoom < 6 | 显示省级色块/覆盖 |
+| 省份 | zoom 6-9 | 点击省份钻入，显示市级 |
+| 城市 | zoom 9-12 | 点击城市钻入，显示区级 + 景点锚点 |
+| 区县 | zoom 12+ | 显示景点锚点详情 |
 
 ## 技术选型
 
@@ -177,8 +233,104 @@ V1 覆盖约 1000+ 个 5A/4A 景点。
 
 1. **本地写入优先** — 所有操作先写入本地数据库
 2. **后台推送云端** — 联网后异步同步到 Ktor 后端
-3. **冲突合并** — 足迹以 last-write-wins 为主，升级操作不可降级
+3. **冲突合并** — 同一区域的足迹冲突时，始终保留更高级别（深度 > 短玩 > 路过），不考虑时间戳；其他数据（用户信息等）采用 last-write-wins
 4. **拉取远端更新** — 同步其他设备的变更
+
+### 离线行为
+
+- 所有本地数据完全可用，无需网络即可浏览和标记
+- 同步队列持久化，跨 App 重启保留，采用指数退避重试
+- 首次启动需网络完成注册/登录
+- 同步状态 UI 指示（顶部同步图标：已同步 / 同步中 / 离线）
+- 同步失败时显示 SnackBar 提示，可手动重试
+
+## 认证方案
+
+### V1 认证方式
+
+- **手机号 + 短信验证码**（面向中国市场）
+- 备选：邮箱 + 密码
+
+### JWT 生命周期
+
+| Token | TTL | 存储 |
+|-------|-----|------|
+| Access Token | 30 分钟 | 内存 |
+| Refresh Token | 30 天 | iOS Keychain / Android EncryptedSharedPreferences |
+
+Refresh Token 轮换策略：每次刷新时颁发新 Refresh Token，旧 Token 失效。
+
+## GPS 辅助标注
+
+- 打开标记 Sheet 时，如果 GPS 可用，高亮用户当前所在区域并显示"标记当前位置"快捷操作
+- GPS 为可选辅助，用户可随时手动选择任意区域
+- 首次使用 GPS 时请求定位权限，拒绝后不影响手动标注
+- 定位权限使用说明：用于辅助标记您当前所在的城市/区域
+
+## 色块视图点击检测
+
+3400+ 个区级多边形需要高效点击检测：
+- 使用 R-tree 空间索引加速 point-in-polygon 查询
+- 第一阶段用边界框快速筛选候选区域，第二阶段精确多边形验证
+- 索引数据随 GeoJSON 预置构建，无需运行时计算
+
+## 无障碍
+
+- 足迹分级除颜色外，增加纹理/图案区分（斜线、点阵、网格）
+- 色块区域提供语义化标签供屏幕阅读器朗读
+- 地图导航提供语音播报当前区域信息
+
+## 错误处理与加载状态
+
+| 场景 | 处理方式 |
+|------|----------|
+| GeoJSON 加载失败 | 全屏错误页 + 重试按钮 |
+| 网络请求失败 | SnackBar 提示 + 自动重试 |
+| 同步冲突 | 静默合并（高级别优先），不阻塞用户 |
+| GPS 不可用 | 隐藏"标记当前位置"，仅显示手动选择 |
+| 空状态 | 引导提示（如"还没有足迹，点击地图开始标记"） |
+| 数据加载中 | 骨架屏 / 加载指示器 |
+
+## API 端点
+
+### 认证
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/auth/send-code` | POST | 发送短信验证码 |
+| `/auth/login` | POST | 验证码登录，返回 JWT |
+| `/auth/refresh` | POST | 刷新 Access Token |
+
+### 数据
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/regions?parentId={id}&level={level}` | GET | 查询区域列表（分页） |
+| `/regions/{id}/boundary` | GET | 获取区域 GeoJSON 边界 |
+| `/regions/{id}/attractions` | GET | 获取区域下景点列表（分页） |
+| `/attractions/{id}` | GET | 景点详情 |
+
+### 足迹
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/footprints` | POST | 创建/更新足迹记录 |
+| `/footprints?regionId={id}` | GET | 查询足迹 |
+| `/attraction-visits` | POST | 创建/更新景点访问记录 |
+| `/attraction-visits?attractionId={id}` | GET | 查询景点访问 |
+
+### 同步
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/sync/delta?since={timestamp}` | GET | 增量同步，获取指定时间后的变更 |
+| `/sync/push` | POST | 批量推送本地变更 |
+
+### 通用
+
+- 分页：`?page=1&size=20`，响应包含 `total`、`hasMore`
+- 错误响应：`{ "code": "ERROR_CODE", "message": "描述" }`
+- 频率限制：认证接口 10 次/分钟，数据接口 100 次/分钟
 
 ## 商业模式
 
