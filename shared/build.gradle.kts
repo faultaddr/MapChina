@@ -32,6 +32,7 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
             implementation("io.insert-koin:koin-core:4.0.4")
+            implementation("io.insert-koin:koin-compose:4.0.4")
             implementation("app.cash.sqldelight:runtime:2.0.2")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
         }

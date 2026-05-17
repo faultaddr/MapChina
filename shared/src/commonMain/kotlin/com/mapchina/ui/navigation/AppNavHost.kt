@@ -13,6 +13,7 @@ import com.mapchina.ui.map.MapScreen as MapScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
 import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
+import org.koin.compose.koinInject
 
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
@@ -22,16 +23,16 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         modifier = modifier
     ) {
         composable<MapScreen> {
-            MapScreenComposable(navController = navController)
+            MapScreenComposable(navController = navController, viewModel = koinInject())
         }
         composable<AttractionsScreen> {
-            AttractionsScreenComposable(navController = navController)
+            AttractionsScreenComposable(navController = navController, viewModel = koinInject())
         }
         composable<StatsScreen> {
-            StatsScreenComposable()
+            StatsScreenComposable(viewModel = koinInject())
         }
         composable<ProfileScreen> {
-            ProfileScreenComposable()
+            ProfileScreenComposable(viewModel = koinInject())
         }
         composable<LoginScreen> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
