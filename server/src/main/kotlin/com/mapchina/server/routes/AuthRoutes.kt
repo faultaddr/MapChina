@@ -1,6 +1,7 @@
 package com.mapchina.server.routes
 
 import com.mapchina.server.auth.JwtProvider
+import com.mapchina.server.auth.blacklistToken
 import com.mapchina.server.database.AttractionVisits
 import com.mapchina.server.database.Footprints
 import com.mapchina.server.database.RefreshTokenBlacklist
@@ -12,7 +13,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
 @Serializable
@@ -50,7 +51,7 @@ fun Route.authRoutes(jwtProvider: JwtProvider) {
             }
 
             val existingUser = dbQuery {
-                Users.select { Users.phone eq request.phone }.singleOrNull()
+                Users.selectAll().where { Users.phone eq request.phone }.singleOrNull()
             }
 
             val userId = if (existingUser != null) {
@@ -88,7 +89,7 @@ fun Route.authRoutes(jwtProvider: JwtProvider) {
                 }
 
                 val isBlacklisted = dbQuery {
-                    RefreshTokenBlacklist.select { RefreshTokenBlacklist.token eq request.refreshToken }.singleOrNull()
+                    RefreshTokenBlacklist.selectAll().where { RefreshTokenBlacklist.token eq request.refreshToken }.singleOrNull()
                 }
 
                 if (isBlacklisted != null) {
@@ -97,12 +98,7 @@ fun Route.authRoutes(jwtProvider: JwtProvider) {
                 }
 
                 // 将旧 refresh token 加入黑名单
-                dbQuery {
-                    RefreshTokenBlacklist.insert {
-                        it[token] = request.refreshToken
-                        it[expiresAt] = decoded.expiresAt.time
-                    }
-                }
+                blacklistToken(request.refreshToken)
 
                 val newAccessToken = jwtProvider.createAccessToken(userId)
                 val newRefreshToken = jwtProvider.createRefreshToken(userId)

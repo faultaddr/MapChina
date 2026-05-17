@@ -19,8 +19,8 @@ class TablesTest {
                 generateSequence { if (rs.next()) rs.getString(1) else null }.toList()
             }
         }
-        assertTrue(tables.containsAll(listOf(
+        assertTrue(tables?.containsAll(listOf(
             "REGIONS", "ATTRACTIONS", "USERS", "FOOTPRINTS", "ATTRACTION_VISITS", "REFRESH_TOKEN_BLACKLIST"
-        )))
+        )) == true)
     }
 }

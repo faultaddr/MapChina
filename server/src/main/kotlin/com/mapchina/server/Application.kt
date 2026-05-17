@@ -2,6 +2,9 @@ package com.mapchina.server
 
 import com.mapchina.server.auth.JwtConfig
 import com.mapchina.server.auth.configureSecurity
+import com.mapchina.server.auth.installRateLimiting
+import com.mapchina.server.auth.logoutRoutes
+import com.mapchina.server.auth.startBlacklistCleanup
 import com.mapchina.server.database.configureDatabase
 import com.mapchina.server.routes.authRoutes
 import com.mapchina.server.routes.dataRoutes
@@ -37,11 +40,15 @@ fun Application.module() {
         }
     }
 
+    installRateLimiting()
+
     configureDatabase()
 
     val jwtProvider = JwtConfig.configure(this)
     configureSecurity(jwtProvider)
     configureRouting(jwtProvider)
+
+    startBlacklistCleanup()
 }
 
 fun Application.configureRouting(jwtProvider: com.mapchina.server.auth.JwtProvider) {
@@ -50,6 +57,7 @@ fun Application.configureRouting(jwtProvider: com.mapchina.server.auth.JwtProvid
             call.respondText("OK")
         }
         authRoutes(jwtProvider)
+        logoutRoutes()
         dataRoutes(jwtProvider)
     }
 }

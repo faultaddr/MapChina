@@ -11,8 +11,8 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 
@@ -56,12 +56,11 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                 val size = call.parameters["size"]?.toIntOrNull() ?: 20
 
                 val regions = dbQuery {
-                    val query = if (parentId != null) {
-                        Regions.select { Regions.parentId eq parentId }
+                    val query = Regions.selectAll()
+                    if (parentId != null) {
+                        query.where { Regions.parentId eq parentId }
                     } else if (level != null) {
-                        Regions.select { Regions.level eq level }
-                    } else {
-                        Regions.selectAll()
+                        query.where { Regions.level eq level }
                     }
                     query.orderBy(Regions.name, SortOrder.ASC)
                         .limit(size, offset = ((page - 1) * size).toLong())
@@ -75,7 +74,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                     """{"code":"MISSING_ID","message":"区域ID不能为空"}""", status = HttpStatusCode.BadRequest
                 )
                 val region = dbQuery {
-                    Regions.select { Regions.id eq id }.singleOrNull()?.toRegionResponse()
+                    Regions.selectAll().where { Regions.id eq id }.singleOrNull()?.toRegionResponse()
                 }
                 if (region != null) call.respond(region)
                 else call.respondText("""{"code":"NOT_FOUND","message":"区域不存在"}""", status = HttpStatusCode.NotFound)
@@ -86,7 +85,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                     """{"code":"MISSING_ID","message":"区域ID不能为空"}""", status = HttpStatusCode.BadRequest
                 )
                 val boundary = dbQuery {
-                    Regions.select { Regions.id eq id }.singleOrNull()?.get(Regions.boundaryJson)
+                    Regions.selectAll().where { Regions.id eq id }.singleOrNull()?.get(Regions.boundaryJson)
                 }
                 if (boundary != null) call.respondText(boundary, ContentType.Application.Json)
                 else call.respondText("""{"code":"NOT_FOUND","message":"边界数据不存在"}""", status = HttpStatusCode.NotFound)
@@ -97,7 +96,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                     """{"code":"MISSING_ID","message":"区域ID不能为空"}""", status = HttpStatusCode.BadRequest
                 )
                 val attractions = dbQuery {
-                    Attractions.select { Attractions.regionId eq id }
+                    Attractions.selectAll().where { Attractions.regionId eq id }
                         .orderBy(Attractions.name, SortOrder.ASC)
                         .map { it.toAttractionResponse() }
                 }
@@ -111,7 +110,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                     """{"code":"MISSING_ID","message":"景点ID不能为空"}""", status = HttpStatusCode.BadRequest
                 )
                 val attraction = dbQuery {
-                    Attractions.select { Attractions.id eq id }.singleOrNull()?.toAttractionResponse()
+                    Attractions.selectAll().where { Attractions.id eq id }.singleOrNull()?.toAttractionResponse()
                 }
                 if (attraction != null) call.respond(attraction)
                 else call.respondText("""{"code":"NOT_FOUND","message":"景点不存在"}""", status = HttpStatusCode.NotFound)
@@ -125,7 +124,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                 val newLevel = request.level
 
                 dbQuery {
-                    val existing = Footprints.select {
+                    val existing = Footprints.selectAll().where {
                         (Footprints.userId eq userId) and (Footprints.regionId eq request.regionId)
                     }.singleOrNull()
 
@@ -158,9 +157,9 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
 
                 val footprints = dbQuery {
                     val query = if (regionId != null) {
-                        Footprints.select { (Footprints.userId eq userId) and (Footprints.regionId eq regionId) }
+                        Footprints.selectAll().where { (Footprints.userId eq userId) and (Footprints.regionId eq regionId) }
                     } else {
-                        Footprints.select { Footprints.userId eq userId }
+                        Footprints.selectAll().where { Footprints.userId eq userId }
                     }
                     query.map { mapOf("userId" to it[Footprints.userId], "regionId" to it[Footprints.regionId], "level" to it[Footprints.level], "timestamp" to it[Footprints.timestamp].toString()) }
                 }
@@ -182,7 +181,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                         it[note] = request.note
                     }
 
-                    val existing = Footprints.select {
+                    val existing = Footprints.selectAll().where {
                         (Footprints.userId eq userId) and (Footprints.regionId eq request.regionId)
                     }.singleOrNull()
 
@@ -215,11 +214,11 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
                 val since = call.parameters["since"]?.toLongOrNull() ?: 0L
 
                 val footprints = dbQuery {
-                    Footprints.select { (Footprints.userId eq userId) and (Footprints.timestamp greater since) }
+                    Footprints.selectAll().where { (Footprints.userId eq userId) and (Footprints.timestamp greater since) }
                         .map { mapOf("userId" to it[Footprints.userId], "regionId" to it[Footprints.regionId], "level" to it[Footprints.level], "timestamp" to it[Footprints.timestamp].toString()) }
                 }
                 val visits = dbQuery {
-                    AttractionVisits.select { (AttractionVisits.userId eq userId) and (AttractionVisits.timestamp greater since) }
+                    AttractionVisits.selectAll().where { (AttractionVisits.userId eq userId) and (AttractionVisits.timestamp greater since) }
                         .map { mapOf("userId" to it[AttractionVisits.userId], "attractionId" to it[AttractionVisits.attractionId], "level" to it[AttractionVisits.level], "timestamp" to it[AttractionVisits.timestamp].toString(), "note" to it[AttractionVisits.note]) }
                 }
                 call.respond(SyncDeltaResponse(footprints, visits, System.currentTimeMillis()))
@@ -231,7 +230,7 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
 
                 dbQuery {
                     request.footprints.forEach { item ->
-                        val existing = Footprints.select {
+                        val existing = Footprints.selectAll().where {
                             (Footprints.userId eq userId) and (Footprints.regionId eq item.regionId)
                         }.singleOrNull()
 

@@ -28,7 +28,7 @@ object JwtConfig {
 
 class JwtProvider(
     private val secret: String,
-    private val issuer: String,
+    val issuer: String,
     private val audience: String,
     private val accessTokenTtlMs: Long,
     private val refreshTokenTtlMs: Long,
