@@ -1,6 +1,7 @@
 package com.mapchina.data.repository
 
 import com.mapchina.data.local.MapChinaDatabase
+import com.mapchina.domain.model.AttractionVisit
 import com.mapchina.domain.model.Footprint
 import com.mapchina.domain.model.FootprintLevel
 import kotlinx.datetime.Clock
@@ -55,6 +56,15 @@ class FootprintRepository(private val database: MapChinaDatabase) {
     fun getFootprintsByUser(userId: String): List<Footprint> {
         return database.footprintQueries.selectByUserId(userId).executeAsList().map {
             Footprint(it.user_id, it.region_id, FootprintLevel.valueOf(it.level), Instant.fromEpochMilliseconds(it.timestamp))
+        }
+    }
+
+    fun getAttractionVisit(userId: String, attractionId: String): AttractionVisit? {
+        val row = database.attractionVisitQueries
+            .selectByUserAndAttraction(userId, attractionId)
+            .executeAsOneOrNull()
+        return row?.let {
+            AttractionVisit(it.user_id, it.attraction_id, FootprintLevel.valueOf(it.level), Instant.fromEpochMilliseconds(it.timestamp))
         }
     }
 
