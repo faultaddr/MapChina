@@ -1,6 +1,6 @@
 package com.mapchina.data.repository
 
-import com.mapchina.data.local.InMemoryDatabaseDriverFactory
+import com.mapchina.data.local.TestDatabaseDriverFactory
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.FootprintLevel
 import kotlin.test.BeforeTest
@@ -16,7 +16,7 @@ class FootprintRepositoryTest {
 
     @BeforeTest
     fun setup() {
-        database = MapChinaDatabase(InMemoryDatabaseDriverFactory().createDriver())
+        database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         repository = FootprintRepository(database)
     }
 

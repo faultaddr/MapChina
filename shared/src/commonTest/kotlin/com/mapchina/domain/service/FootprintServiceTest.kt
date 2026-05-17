@@ -1,6 +1,6 @@
 package com.mapchina.domain.service
 
-import com.mapchina.data.local.InMemoryDatabaseDriverFactory
+import com.mapchina.data.local.TestDatabaseDriverFactory
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.data.repository.RegionRepository
@@ -21,7 +21,7 @@ class FootprintServiceTest {
 
     @BeforeTest
     fun setup() {
-        val database = MapChinaDatabase(InMemoryDatabaseDriverFactory().createDriver())
+        val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
         service = FootprintService(footprintRepo, regionRepo)

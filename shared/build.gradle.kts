@@ -39,15 +39,6 @@ kotlin {
             implementation(kotlin("test"))
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
-        androidInstrumentedTest.dependencies {
-            implementation("app.cash.sqldelight:android-driver:2.0.2")
-        }
-        val androidUnitTest by getting {
-            dependencies {
-                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
-                implementation("app.cash.sqldelight:jdbc-driver:2.0.2")
-            }
-        }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
             implementation("app.cash.sqldelight:android-driver:2.0.2")
@@ -64,6 +55,15 @@ android {
     namespace = "com.mapchina.shared"
     compileSdk = 35
     defaultConfig { minSdk = 26 }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+dependencies {
+    "androidUnitTestImplementation"("app.cash.sqldelight:sqlite-driver:2.0.2")
+    "androidUnitTestImplementation"("app.cash.sqldelight:jdbc-driver:2.0.2")
 }
 
 sqldelight {

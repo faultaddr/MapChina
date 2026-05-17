@@ -1,7 +1,7 @@
 package com.mapchina.di
 
 import app.cash.sqldelight.db.SqlDriver
-import com.mapchina.data.local.InMemoryDatabaseDriverFactory
+import com.mapchina.data.local.TestDatabaseDriverFactory
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
@@ -18,7 +18,7 @@ import kotlin.test.assertNotNull
 class AppModuleTest {
 
     private val testPlatformModule = module {
-        single<SqlDriver> { InMemoryDatabaseDriverFactory().createDriver() }
+        single<SqlDriver> { TestDatabaseDriverFactory().createDriver() }
     }
 
     @BeforeTest
