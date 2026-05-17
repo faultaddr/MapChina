@@ -1,0 +1,22 @@
+CREATE TABLE attraction (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    region_id TEXT NOT NULL,
+    level TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    description TEXT
+);
+
+selectById:
+SELECT * FROM attraction WHERE id = ?;
+
+selectByRegionId:
+SELECT * FROM attraction WHERE region_id = ? ORDER BY name;
+
+searchByName:
+SELECT * FROM attraction WHERE name LIKE ? ORDER BY name;
+
+insertAttraction:
+INSERT OR REPLACE INTO attraction(id, name, region_id, level, latitude, longitude, description)
+VALUES (?, ?, ?, ?, ?, ?, ?);

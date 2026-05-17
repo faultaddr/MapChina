@@ -1,0 +1,28 @@
+CREATE TABLE region (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    level TEXT NOT NULL,
+    parent_id TEXT,
+    boundary_json TEXT
+);
+
+selectById:
+SELECT * FROM region WHERE id = ?;
+
+selectByParentId:
+SELECT * FROM region WHERE parent_id = ? ORDER BY name;
+
+selectByLevel:
+SELECT * FROM region WHERE level = ? ORDER BY name;
+
+selectByParentIdRecursive:
+SELECT * FROM region WHERE parent_id IN (
+    SELECT id FROM region WHERE parent_id = ?
+);
+
+insertRegion:
+INSERT OR REPLACE INTO region(id, name, level, parent_id, boundary_json)
+VALUES (?, ?, ?, ?, ?);
+
+updateBoundary:
+UPDATE region SET boundary_json = ? WHERE id = ?;

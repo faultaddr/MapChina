@@ -1,0 +1,21 @@
+CREATE TABLE attraction_visit (
+    user_id TEXT NOT NULL,
+    attraction_id TEXT NOT NULL,
+    level TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    note TEXT,
+    PRIMARY KEY(user_id, attraction_id)
+);
+
+selectByUserId:
+SELECT * FROM attraction_visit WHERE user_id = ?;
+
+selectByUserAndAttraction:
+SELECT * FROM attraction_visit WHERE user_id = ? AND attraction_id = ?;
+
+upsertVisit:
+INSERT OR REPLACE INTO attraction_visit(user_id, attraction_id, level, timestamp, note)
+VALUES (?, ?, ?, ?, ?);
+
+countByUser:
+SELECT COUNT(*) as count FROM attraction_visit WHERE user_id = ?;

@@ -1,0 +1,17 @@
+CREATE TABLE user (
+    id TEXT NOT NULL PRIMARY KEY,
+    phone TEXT NOT NULL UNIQUE,
+    nickname TEXT NOT NULL,
+    avatar TEXT,
+    created_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM user WHERE id = ?;
+
+selectByPhone:
+SELECT * FROM user WHERE phone = ?;
+
+insertUser:
+INSERT OR REPLACE INTO user(id, phone, nickname, avatar, created_at)
+VALUES (?, ?, ?, ?, ?);
