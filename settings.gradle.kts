@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MapChina"
 include(":shared")
+include(":server")
