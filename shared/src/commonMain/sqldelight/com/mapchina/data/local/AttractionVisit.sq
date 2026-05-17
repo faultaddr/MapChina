@@ -18,4 +18,4 @@ INSERT OR REPLACE INTO attraction_visit(user_id, attraction_id, level, timestamp
 VALUES (?, ?, ?, ?, ?);
 
 countByUser:
-SELECT COUNT(*) as count FROM attraction_visit WHERE user_id = ?;
+SELECT COUNT(*) AS total FROM attraction_visit WHERE user_id = ?;

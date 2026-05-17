@@ -60,6 +60,6 @@ class FootprintRepository(private val database: MapChinaDatabase) {
 
     fun getFootprintCountsByLevel(userId: String): Map<FootprintLevel, Int> {
         val rows = database.footprintQueries.countByUserAndLevel(userId).executeAsList()
-        return rows.associate { FootprintLevel.valueOf(it.level) to it.count.toInt() }
+        return rows.associate { FootprintLevel.valueOf(it.level) to it.total.toInt() }
     }
 }

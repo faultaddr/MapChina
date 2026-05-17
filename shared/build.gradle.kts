@@ -23,6 +23,9 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.components.resources)
+            implementation(compose.materialIconsExtended)
+            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
+            implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.8.0-alpha10")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
             implementation("io.ktor:ktor-client-core:3.1.3")
@@ -35,8 +38,15 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
-            implementation("app.cash.sqldelight:jdbc-driver:2.0.2")
+        }
+        androidInstrumentedTest.dependencies {
+            implementation("app.cash.sqldelight:android-driver:2.0.2")
+        }
+        val androidUnitTest by getting {
+            dependencies {
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
+                implementation("app.cash.sqldelight:jdbc-driver:2.0.2")
+            }
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")

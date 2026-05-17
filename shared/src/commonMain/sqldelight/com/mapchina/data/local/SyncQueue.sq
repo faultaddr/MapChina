@@ -22,4 +22,4 @@ incrementRetry:
 UPDATE sync_queue SET retry_count = retry_count + 1 WHERE id = ?;
 
 countPending:
-SELECT COUNT(*) as count FROM sync_queue;
+SELECT COUNT(*) AS total FROM sync_queue;

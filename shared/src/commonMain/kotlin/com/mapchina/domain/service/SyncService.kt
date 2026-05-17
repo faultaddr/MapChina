@@ -6,7 +6,7 @@ import com.mapchina.data.model.FootprintLevel
 object SyncService {
 
     fun resolveFootprintConflict(local: FootprintDto, remote: FootprintDto): FootprintDto {
-        val resolvedLevel = FootprintLevel.resolveConflict(local.level, remote.level)
+        val resolvedLevel = if (local.level.ordinal >= remote.level.ordinal) local.level else remote.level
         val latestTimestamp = maxOf(local.timestamp, remote.timestamp)
         return FootprintDto(
             userId = local.userId,

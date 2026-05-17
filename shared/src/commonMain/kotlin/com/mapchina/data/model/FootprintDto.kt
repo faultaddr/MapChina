@@ -11,9 +11,6 @@ data class FootprintDto(
 )
 
 @Serializable
-enum class FootprintLevel : Comparable<FootprintLevel> {
-    PASS_BY, SHORT_VISIT, DEEP;
-
-    override fun compareTo(other: FootprintLevel): Int =
-        ordinal.compareTo(other.ordinal)
+enum class FootprintLevel {
+    PASS_BY, SHORT_VISIT, DEEP
 }
