@@ -11,12 +11,21 @@ CREATE TABLE attraction (
 selectById:
 SELECT * FROM attraction WHERE id = ?;
 
+selectAll:
+SELECT * FROM attraction ORDER BY name;
+
 selectByRegionId:
 SELECT * FROM attraction WHERE region_id = ? ORDER BY name;
+
+selectByRegionPrefix:
+SELECT * FROM attraction WHERE region_id LIKE ? ORDER BY name;
+
+countAll:
+SELECT COUNT(*) AS total FROM attraction;
 
 searchByName:
 SELECT * FROM attraction WHERE name LIKE ? ORDER BY name;
 
 insertAttraction:
-INSERT OR REPLACE INTO attraction(id, name, region_id, level, latitude, longitude, description)
+INSERT OR IGNORE INTO attraction(id, name, region_id, level, latitude, longitude, description)
 VALUES (?, ?, ?, ?, ?, ?, ?);

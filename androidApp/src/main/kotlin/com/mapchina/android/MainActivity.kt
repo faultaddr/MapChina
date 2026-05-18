@@ -4,12 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.mapchina.data.remote.BoundaryLoader
+import com.mapchina.data.repository.AttractionRepository
+import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
 import com.mapchina.di.platformModule
 import com.mapchina.di.seedData
+import com.mapchina.di.seedDataAsync
 import com.mapchina.ui.MapChinaApp
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.mp.KoinPlatform
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,7 +24,19 @@ class MainActivity : ComponentActivity() {
             androidContext(this@MainActivity)
             modules(appModule, platformModule)
         }
-        seedData()
+        val koin = KoinPlatform.getKoin()
+        val regionRepo = koin.get<RegionRepository>()
+        val attractionRepo = koin.get<AttractionRepository>()
+        val boundaryLoader = koin.get<BoundaryLoader>()
+
+        // 同步插入省份和城市
+        seedData(regionRepo, attractionRepo, boundaryLoader)
+
+        // 后台加载边界和景点数据
+        thread(name = "data-seed") {
+            seedDataAsync(regionRepo, attractionRepo, boundaryLoader)
+        }
+
         enableEdgeToEdge()
         setContent {
             MapChinaApp()

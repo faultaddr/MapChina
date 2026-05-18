@@ -1,6 +1,8 @@
 package com.mapchina.di
 
 import com.mapchina.data.local.MapChinaDatabase
+import com.mapchina.data.remote.AttractionDetailProvider
+import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.data.remote.DataSeeder
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
@@ -24,18 +26,22 @@ val appModule = module {
     single { AttractionService(get()) }
     single { AuthService() }
 
-    factory { MapViewModel(get(), get(), get()) }
-    factory { AttractionViewModel(get(), get(), get()) }
-    factory { StatsViewModel(get()) }
+    factory { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>()) }
+    factory { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>()) }
+    factory { StatsViewModel(get(), get(), get()) }
     factory { ProfileViewModel(get()) }
 }
 
 expect val platformModule: Module
 
-fun seedData() {
-    val koin = org.koin.core.context.GlobalContext.get()
-    val regionRepo = koin.get<RegionRepository>()
-    val attractionRepo = koin.get<AttractionRepository>()
-    DataSeeder.seedRegions(regionRepo)
-    DataSeeder.seedAttractions(attractionRepo)
+fun seedData(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
+    // 同步插入省份和城市（快速，必须先完成）
+    DataSeeder.seedRegions(regionRepo, boundaryLoader)
+    // 景点数据在后台加载
+    DataSeeder.seedAttractions(attractionRepo, boundaryLoader)
+}
+
+fun seedDataAsync(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
+    // 边界数据在后台加载（耗时的文件 I/O）
+    DataSeeder.seedBoundaries(regionRepo, boundaryLoader)
 }

@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.mapchina.ui.attraction.AttractionDetailScreen
+import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.map.MapScreen as MapScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
 import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
@@ -47,9 +50,17 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable<AttractionDetailScreen> { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("景点详情: $attractionId")
-            }
+            val viewModel: AttractionViewModel = koinInject()
+            val attraction = remember(attractionId) { viewModel.getAttractionById(attractionId) }
+            val detail = remember(attractionId) { viewModel.getAttractionDetail(attractionId) }
+            AttractionDetailScreen(
+                navController = navController,
+                attraction = attraction,
+                detail = detail,
+                onMarkVisit = { level ->
+                    attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
+                }
+            )
         }
     }
 }

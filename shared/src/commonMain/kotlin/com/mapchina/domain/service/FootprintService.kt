@@ -36,20 +36,23 @@ class FootprintService(
         return FootprintResult(isSuccess = true, footprint = footprint)
     }
 
+    fun removeAttractionVisit(userId: String, attractionId: String) {
+        footprintRepository.removeAttractionVisit(userId, attractionId)
+    }
+
     fun getCoverageStats(userId: String): CoverageStats {
         val footprints = footprintRepository.getFootprintsByUser(userId)
-        val allProvinces = regionRepository.getRegionsByLevel(RegionLevel.PROVINCE)
-        val allCities = regionRepository.getRegionsByLevel(RegionLevel.CITY)
-        val allDistricts = regionRepository.getRegionsByLevel(RegionLevel.DISTRICT)
-
         val visitedRegionIds = footprints.map { it.regionId }.toSet()
 
-        val visitedProvinces = allProvinces.count { it.id in visitedRegionIds }
-        val visitedCities = allCities.count { it.id in visitedRegionIds }
-        val visitedDistricts = allDistricts.count { it.id in visitedRegionIds }
+        // 按区域 ID 模式分类：xx0000=省，xxyy00(非xx0000)=市，其他=区县
+        val visitedProvinces = visitedRegionIds.count { it.endsWith("0000") }
+        val visitedCities = visitedRegionIds.count { it.endsWith("00") && !it.endsWith("0000") }
+        val visitedDistricts = visitedRegionIds.count { !it.endsWith("00") }
 
-        val counts = footprintRepository.getFootprintCountsByLevel(userId)
-        val visitedAttractions = counts.values.sum()
+        val allProvinces = regionRepository.getRegionsByLevel(RegionLevel.PROVINCE)
+        val allCities = regionRepository.getRegionsByLevel(RegionLevel.CITY)
+
+        val visitedAttractions = footprintRepository.getAttractionVisitCount(userId)
 
         return CoverageStats(
             visitedProvinces = visitedProvinces,
@@ -57,13 +60,19 @@ class FootprintService(
             visitedCities = visitedCities,
             totalCities = allCities.size,
             visitedDistricts = visitedDistricts,
-            totalDistricts = allDistricts.size,
+            totalDistricts = TOTAL_DISTRICTS,
             visitedAttractions = visitedAttractions,
             totalAttractions = 0
         )
     }
 
+    companion object {
+        private const val TOTAL_DISTRICTS = 2844
+    }
+
     fun getFootprintsForUser(userId: String) = footprintRepository.getFootprintsByUser(userId)
 
     fun getFootprint(userId: String, regionId: String) = footprintRepository.getFootprint(userId, regionId)
+
+    fun getRegionRepository() = regionRepository
 }

@@ -1,18 +1,22 @@
 package com.mapchina.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.mapchina.data.repository.AttractionRepository
+import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
 import com.mapchina.di.platformModule
 import com.mapchina.di.seedData
 import com.mapchina.ui.MapChinaApp
 import org.koin.core.context.startKoin
+import org.koin.mp.KoinPlatform
 import platform.UIKit.UIViewController
 
 fun MainViewController(): UIViewController {
     startKoin {
         modules(appModule, platformModule)
     }
-    seedData()
+    val koin = KoinPlatform.getKoin()
+    seedData(koin.get<RegionRepository>(), koin.get<AttractionRepository>())
     return ComposeUIViewController {
         MapChinaApp()
     }

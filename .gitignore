@@ -6,3 +6,6 @@ local.properties
 *.iml
 .kotlin/
 .superpowers/
+androidApp/release/
+/com/
+scripts/output/

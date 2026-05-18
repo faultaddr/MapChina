@@ -68,6 +68,20 @@ class FootprintRepository(private val database: MapChinaDatabase) {
         }
     }
 
+    fun removeAttractionVisit(userId: String, attractionId: String) {
+        database.attractionVisitQueries.deleteByUserAndAttraction(userId, attractionId)
+    }
+
+    fun getAttractionVisitCount(userId: String): Int {
+        return database.attractionVisitQueries.countByUser(userId).executeAsOne().toInt()
+    }
+
+    fun getAttractionVisitsByUser(userId: String): List<AttractionVisit> {
+        return database.attractionVisitQueries.selectVisitsByUser(userId).executeAsList().map {
+            AttractionVisit(it.user_id, it.attraction_id, FootprintLevel.valueOf(it.level), Instant.fromEpochMilliseconds(it.timestamp))
+        }
+    }
+
     fun getFootprintCountsByLevel(userId: String): Map<FootprintLevel, Int> {
         val rows = database.footprintQueries.countByUserAndLevel(userId).executeAsList()
         return rows.associate { FootprintLevel.valueOf(it.level) to it.total.toInt() }

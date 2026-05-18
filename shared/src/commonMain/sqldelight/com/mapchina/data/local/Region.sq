@@ -21,8 +21,11 @@ SELECT * FROM region WHERE parent_id IN (
 );
 
 insertRegion:
-INSERT OR REPLACE INTO region(id, name, level, parent_id, boundary_json)
+INSERT OR IGNORE INTO region(id, name, level, parent_id, boundary_json)
 VALUES (?, ?, ?, ?, ?);
 
 updateBoundary:
 UPDATE region SET boundary_json = ? WHERE id = ?;
+
+deleteByLevel:
+DELETE FROM region WHERE level = ?;

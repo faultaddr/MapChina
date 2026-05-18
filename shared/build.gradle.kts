@@ -35,6 +35,8 @@ kotlin {
             implementation("io.insert-koin:koin-compose:4.0.4")
             implementation("app.cash.sqldelight:runtime:2.0.2")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+            implementation("io.coil-kt.coil3:coil-network-ktor3:3.1.0")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -44,6 +46,7 @@ kotlin {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
             implementation("app.cash.sqldelight:android-driver:2.0.2")
             implementation("io.insert-koin:koin-android:4.0.4")
+            implementation("com.amap.api:3dmap:10.0.600")
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:3.1.3")

@@ -1,5 +1,7 @@
 package com.mapchina.ui.attraction
 
+import com.mapchina.data.remote.AttractionDetail
+import com.mapchina.data.remote.AttractionDetailProvider
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.domain.model.Attraction
@@ -17,6 +19,7 @@ data class AttractionUi(
     val latitude: Double,
     val longitude: Double,
     val description: String?,
+    val imageUrl: String?,
     val visitLevel: FootprintLevel?
 )
 
@@ -24,6 +27,7 @@ class AttractionViewModel(
     private val attractionRepository: AttractionRepository,
     private val footprintService: FootprintService,
     private val footprintRepository: FootprintRepository,
+    private val detailProvider: AttractionDetailProvider?,
     private val userId: String = ""
 ) {
     private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
@@ -54,6 +58,17 @@ class AttractionViewModel(
         _selectedAttraction.value = _attractions.value.find { it.id == attractionId }
     }
 
+    fun getAttractionDetail(attractionId: String): AttractionDetail? {
+        return detailProvider?.getAttractionDetail(attractionId)
+    }
+
+    fun getAttractionById(attractionId: String): AttractionUi? {
+        val existing = _attractions.value.find { it.id == attractionId }
+        if (existing != null) return existing
+        val domain = attractionRepository.getAttraction(attractionId) ?: return null
+        return domain.toUi()
+    }
+
     fun clearSelection() {
         _selectedAttraction.value = null
     }
@@ -72,6 +87,7 @@ class AttractionViewModel(
 
     private fun Attraction.toUi(): AttractionUi {
         val visit = footprintRepository.getAttractionVisit(userId, id)
+        val detail = detailProvider?.getAttractionDetail(id)
         return AttractionUi(
             id = id,
             name = name,
@@ -80,6 +96,7 @@ class AttractionViewModel(
             latitude = latitude,
             longitude = longitude,
             description = description,
+            imageUrl = detail?.imageUrls?.firstOrNull(),
             visitLevel = visit?.level
         )
     }

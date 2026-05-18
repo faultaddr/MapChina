@@ -3,6 +3,12 @@ package com.mapchina.data.repository
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 
 class RegionRepository(private val database: MapChinaDatabase) {
 
@@ -35,5 +41,38 @@ class RegionRepository(private val database: MapChinaDatabase) {
 
     fun updateBoundary(regionId: String, boundaryJson: String) {
         database.regionQueries.updateBoundary(boundaryJson, regionId)
+    }
+
+    fun deleteAllCities() {
+        database.regionQueries.deleteByLevel(RegionLevel.CITY.name)
+    }
+
+    fun deleteAllNonProvinces() {
+        database.regionQueries.deleteByLevel(RegionLevel.CITY.name)
+        database.regionQueries.deleteByLevel(RegionLevel.DISTRICT.name)
+    }
+
+    fun getRegionCenter(regionId: String): Pair<Double, Double>? {
+        val boundary = getRegionBoundary(regionId) ?: return null
+        return parseBoundaryCenter(boundary)
+    }
+
+    private fun parseBoundaryCenter(boundary: String): Pair<Double, Double>? {
+        return try {
+            val array = Json.decodeFromString<JsonArray>(boundary)
+            if (array.isEmpty()) return null
+            var sumLat = 0.0
+            var sumLng = 0.0
+            var count = 0
+            for (item in array) {
+                val coord = item.jsonArray
+                sumLng += coord[0].jsonPrimitive.double
+                sumLat += coord[1].jsonPrimitive.double
+                count++
+            }
+            if (count == 0) null else Pair(sumLat / count, sumLng / count)
+        } catch (_: Exception) {
+            null
+        }
     }
 }

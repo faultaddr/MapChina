@@ -18,7 +18,8 @@ data class RegionFootprintUi(
     val name: String,
     val footprintLevel: FootprintLevel?,
     val normalizedPath: List<Offset>,
-    val bounds: RegionBounds
+    val bounds: RegionBounds,
+    val childCoverageRate: Float = 0f
 )
 
 data class RegionBounds(

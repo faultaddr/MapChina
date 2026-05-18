@@ -19,3 +19,9 @@ VALUES (?, ?, ?, ?, ?);
 
 countByUser:
 SELECT COUNT(*) AS total FROM attraction_visit WHERE user_id = ?;
+
+selectVisitsByUser:
+SELECT * FROM attraction_visit WHERE user_id = ? ORDER BY timestamp DESC;
+
+deleteByUserAndAttraction:
+DELETE FROM attraction_visit WHERE user_id = ? AND attraction_id = ?;

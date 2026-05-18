@@ -23,8 +23,21 @@ class AttractionRepository(private val database: MapChinaDatabase) {
         return database.attractionQueries.selectByRegionId(regionId).executeAsList().map { rowToAttraction(it) }
     }
 
+    fun getAttractionsByRegionPrefix(prefix: String): List<Attraction> {
+        return database.attractionQueries.selectByRegionPrefix(prefix).executeAsList().map { rowToAttraction(it) }
+    }
+
     fun searchAttractions(query: String): List<Attraction> {
+        if (query.isBlank()) return emptyList()
         return database.attractionQueries.searchByName("%$query%").executeAsList().map { rowToAttraction(it) }
+    }
+
+    fun getAttractionCount(): Int {
+        return database.attractionQueries.countAll().executeAsOne().toInt()
+    }
+
+    fun getAllAttractions(): List<Attraction> {
+        return database.attractionQueries.selectAll().executeAsList().map { rowToAttraction(it) }
     }
 
     private fun rowToAttraction(row: com.mapchina.data.local.Attraction): Attraction =
