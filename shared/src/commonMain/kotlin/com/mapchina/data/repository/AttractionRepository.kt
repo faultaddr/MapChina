@@ -14,6 +14,18 @@ class AttractionRepository(private val database: MapChinaDatabase) {
         )
     }
 
+    fun insertAttractionsInTransaction(attractions: List<Attraction>) {
+        database.attractionQueries.transaction {
+            for (attraction in attractions) {
+                database.attractionQueries.insertAttraction(
+                    attraction.id, attraction.name, attraction.regionId,
+                    attraction.level.name, attraction.latitude, attraction.longitude,
+                    attraction.description
+                )
+            }
+        }
+    }
+
     fun getAttraction(id: String): Attraction? {
         val row = database.attractionQueries.selectById(id).executeAsOneOrNull() ?: return null
         return rowToAttraction(row)

@@ -15,6 +15,12 @@ SELECT * FROM region WHERE parent_id = ? ORDER BY name;
 selectByLevel:
 SELECT * FROM region WHERE level = ? ORDER BY name;
 
+selectBoundariesByParentId:
+SELECT id, boundary_json FROM region WHERE parent_id = ? AND boundary_json IS NOT NULL;
+
+selectBoundariesByLevel:
+SELECT id, boundary_json FROM region WHERE level = ? AND boundary_json IS NOT NULL;
+
 selectByParentIdRecursive:
 SELECT * FROM region WHERE parent_id IN (
     SELECT id FROM region WHERE parent_id = ?

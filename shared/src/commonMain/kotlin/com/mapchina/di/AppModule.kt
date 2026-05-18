@@ -34,14 +34,8 @@ val appModule = module {
 
 expect val platformModule: Module
 
-fun seedData(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
-    // 同步插入省份和城市（快速，必须先完成）
-    DataSeeder.seedRegions(regionRepo, boundaryLoader)
-    // 景点数据在后台加载
-    DataSeeder.seedAttractions(attractionRepo, boundaryLoader)
-}
-
 fun seedDataAsync(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
-    // 边界数据在后台加载（耗时的文件 I/O）
+    DataSeeder.seedRegions(regionRepo, boundaryLoader)
+    DataSeeder.seedAttractions(attractionRepo, boundaryLoader)
     DataSeeder.seedBoundaries(regionRepo, boundaryLoader)
 }

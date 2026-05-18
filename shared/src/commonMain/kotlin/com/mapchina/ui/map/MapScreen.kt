@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +73,14 @@ fun MapScreen(
     val regions by viewModel.regions.collectAsState()
     val selectedRegion by viewModel.selectedRegion.collectAsState()
     val attractions by viewModel.attractions.collectAsState()
+
+    // seed 异步加载后刷新数据
+    LaunchedEffect(regions) {
+        if (regions.isEmpty()) {
+            kotlinx.coroutines.delay(500)
+            viewModel.reloadData()
+        }
+    }
 
     var showFootprintSheet by remember { mutableStateOf(false) }
     var attractionsPanelExpanded by remember { mutableStateOf(true) }

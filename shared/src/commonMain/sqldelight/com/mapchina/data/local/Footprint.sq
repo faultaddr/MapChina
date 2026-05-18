@@ -12,6 +12,9 @@ SELECT * FROM footprint WHERE user_id = ?;
 selectByUserAndRegion:
 SELECT * FROM footprint WHERE user_id = ? AND region_id = ?;
 
+selectAllByUser:
+SELECT region_id, level FROM footprint WHERE user_id = ?;
+
 countByUserAndLevel:
 SELECT level, COUNT(*) AS total FROM footprint WHERE user_id = ? GROUP BY level;
 

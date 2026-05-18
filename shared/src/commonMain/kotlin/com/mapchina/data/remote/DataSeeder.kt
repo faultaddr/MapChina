@@ -62,7 +62,7 @@ object DataSeeder {
                 Region("820000", "澳门特别行政区", RegionLevel.PROVINCE, null)
             )
 
-            provinces.forEach { regionRepo.insertRegion(it) }
+            regionRepo.insertRegionsInTransaction(provinces)
 
             // 全国所有地级市（含直辖市下辖区）
             val cities = listOf(
@@ -517,31 +517,36 @@ object DataSeeder {
                 Region("659010", "胡杨河市", RegionLevel.CITY, "650000"),
             )
 
-            cities.forEach { regionRepo.insertRegion(it) }
+            regionRepo.insertRegionsInTransaction(cities)
     }
 
     fun seedBoundaries(regionRepo: RegionRepository, boundaryLoader: BoundaryLoader? = null) {
         if (boundaryLoader != null) {
             val availableRegions = boundaryLoader.getAvailableRegionIds()
-            availableRegions.forEach { regionId ->
+            val batch = mutableListOf<Pair<String, String>>()
+            for (regionId in availableRegions) {
                 val boundary = boundaryLoader.loadBoundary(regionId)
                 if (boundary != null) {
-                    regionRepo.updateBoundary(regionId, boundary)
+                    batch.add(regionId to boundary)
+                    if (batch.size >= 50) {
+                        regionRepo.updateBoundariesInTransaction(batch.toList())
+                        batch.clear()
+                    }
                 }
             }
-        } else {
-            // 使用备用边界数据
-            fallbackBoundaries.forEach { (regionId, boundary) ->
-                regionRepo.updateBoundary(regionId, boundary)
+            if (batch.isNotEmpty()) {
+                regionRepo.updateBoundariesInTransaction(batch)
             }
+        } else {
+            regionRepo.updateBoundariesInTransaction(fallbackBoundaries.entries.map { it.key to it.value })
         }
     }
 
     fun seedAttractions(attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
         val seeds = boundaryLoader?.loadAttractionSeeds()
         if (seeds != null) {
-            for (seed in seeds) {
-                attractionRepo.insertAttraction(Attraction(
+            val attractions = seeds.map { seed ->
+                Attraction(
                     id = seed.id,
                     name = seed.name,
                     regionId = seed.regionId,
@@ -549,8 +554,9 @@ object DataSeeder {
                     latitude = seed.latitude,
                     longitude = seed.longitude,
                     description = seed.description
-                ))
+                )
             }
+            attractionRepo.insertAttractionsInTransaction(attractions)
         } else {
             val attractions = listOf(
                 Attraction("attr001", "故宫博物院", "110101", AttractionLevel.A5, 39.9163, 116.3972, "中国明清两代的皇家宫殿"),
@@ -564,7 +570,7 @@ object DataSeeder {
                 Attraction("attr009", "张家界", "430800", AttractionLevel.A5, 29.3249, 110.4343, "世界自然遗产"),
                 Attraction("attr010", "黄山", "341000", AttractionLevel.A5, 30.1375, 118.1694, "中国十大名山之一")
             )
-            attractions.forEach { attractionRepo.insertAttraction(it) }
+            attractionRepo.insertAttractionsInTransaction(attractions)
         }
     }
 }

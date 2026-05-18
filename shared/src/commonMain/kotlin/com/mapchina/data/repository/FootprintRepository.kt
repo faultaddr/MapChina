@@ -53,6 +53,11 @@ class FootprintRepository(private val database: MapChinaDatabase) {
         }
     }
 
+    fun getAllFootprintRegionIds(userId: String): Set<String> {
+        return database.footprintQueries.selectAllByUser(userId).executeAsList()
+            .map { it.region_id }.toSet()
+    }
+
     fun getFootprintsByUser(userId: String): List<Footprint> {
         return database.footprintQueries.selectByUserId(userId).executeAsList().map {
             Footprint(it.user_id, it.region_id, FootprintLevel.valueOf(it.level), Instant.fromEpochMilliseconds(it.timestamp))

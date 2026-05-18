@@ -5,7 +5,7 @@ import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
 import com.mapchina.di.platformModule
-import com.mapchina.di.seedData
+import com.mapchina.di.seedDataAsync
 import com.mapchina.ui.MapChinaApp
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform
@@ -16,7 +16,7 @@ fun MainViewController(): UIViewController {
         modules(appModule, platformModule)
     }
     val koin = KoinPlatform.getKoin()
-    seedData(koin.get<RegionRepository>(), koin.get<AttractionRepository>())
+    seedDataAsync(koin.get<RegionRepository>(), koin.get<AttractionRepository>())
     return ComposeUIViewController {
         MapChinaApp()
     }

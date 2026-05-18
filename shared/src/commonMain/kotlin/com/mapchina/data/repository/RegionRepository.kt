@@ -6,7 +6,6 @@ import com.mapchina.domain.model.RegionLevel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.double
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -16,6 +15,16 @@ class RegionRepository(private val database: MapChinaDatabase) {
         database.regionQueries.insertRegion(
             region.id, region.name, region.level.name, region.parentId, null
         )
+    }
+
+    fun insertRegionsInTransaction(regions: List<Region>) {
+        database.regionQueries.transaction {
+            for (region in regions) {
+                database.regionQueries.insertRegion(
+                    region.id, region.name, region.level.name, region.parentId, null
+                )
+            }
+        }
     }
 
     fun getRegion(id: String): Region? {
@@ -39,8 +48,26 @@ class RegionRepository(private val database: MapChinaDatabase) {
         return database.regionQueries.selectById(regionId).executeAsOneOrNull()?.boundary_json
     }
 
+    fun getBoundariesByParentId(parentId: String): Map<String, String> {
+        return database.regionQueries.selectBoundariesByParentId(parentId).executeAsList()
+            .associate { it.id to it.boundary_json }
+    }
+
+    fun getBoundariesByLevel(level: RegionLevel): Map<String, String> {
+        return database.regionQueries.selectBoundariesByLevel(level.name).executeAsList()
+            .associate { it.id to it.boundary_json }
+    }
+
     fun updateBoundary(regionId: String, boundaryJson: String) {
         database.regionQueries.updateBoundary(boundaryJson, regionId)
+    }
+
+    fun updateBoundariesInTransaction(updates: List<Pair<String, String>>) {
+        database.regionQueries.transaction {
+            for ((regionId, boundaryJson) in updates) {
+                database.regionQueries.updateBoundary(boundaryJson, regionId)
+            }
+        }
     }
 
     fun deleteAllCities() {
