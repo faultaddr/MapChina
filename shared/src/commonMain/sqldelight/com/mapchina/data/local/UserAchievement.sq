@@ -1,0 +1,29 @@
+CREATE TABLE user_achievement (
+    user_id TEXT NOT NULL,
+    achievement_id TEXT NOT NULL,
+    progress_value INTEGER NOT NULL DEFAULT 0,
+    progress_target INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'locked',
+    unlock_time INTEGER,
+    PRIMARY KEY(user_id, achievement_id)
+);
+
+selectByUser:
+SELECT * FROM user_achievement WHERE user_id = ? ORDER BY unlock_time DESC;
+
+selectByUserAndAchievement:
+SELECT * FROM user_achievement WHERE user_id = ? AND achievement_id = ?;
+
+selectUnlockedByUser:
+SELECT * FROM user_achievement WHERE user_id = ? AND status = 'unlocked' ORDER BY unlock_time DESC;
+
+countUnlockedByUser:
+SELECT COUNT(*) AS total FROM user_achievement WHERE user_id = ? AND status = 'unlocked';
+
+upsertProgress:
+INSERT OR REPLACE INTO user_achievement(user_id, achievement_id, progress_value, progress_target, status, unlock_time)
+VALUES (?, ?, ?, ?, ?, ?);
+
+initAchievement:
+INSERT OR IGNORE INTO user_achievement(user_id, achievement_id, progress_value, progress_target, status, unlock_time)
+VALUES (?, ?, 0, ?, 'locked', NULL);

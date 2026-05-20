@@ -4,12 +4,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.mapchina.ui.achievement.AchievementScreen
+import com.mapchina.ui.achievement.AchievementViewModel
+import com.mapchina.ui.achievement.BadgeDetailScreen
+import com.mapchina.ui.achievement.BadgeWallScreen
 import com.mapchina.ui.attraction.AttractionDetailScreen
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.map.MapScreen as MapScreenComposable
@@ -33,6 +39,27 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable<StatsScreen> {
             StatsScreenComposable(viewModel = koinInject())
+        }
+        composable<AchievementScreen> {
+            val vm: AchievementViewModel = koinInject()
+            AchievementScreen(
+                viewModel = vm,
+                onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) }
+            )
+        }
+        composable<BadgeWallScreen> {
+            val vm: AchievementViewModel = koinInject()
+            BadgeWallScreen(
+                viewModel = vm,
+                onBadgeClick = { id -> navController.navigate(BadgeDetailScreen(id)) }
+            )
+        }
+        composable<BadgeDetailScreen> { backStackEntry ->
+            val vm: AchievementViewModel = koinInject()
+            val ui by vm.ui.collectAsState()
+            val achievementId = backStackEntry.arguments?.getString("achievementId") ?: ""
+            val item = ui.allAchievements.find { it.definition.id == achievementId }
+            BadgeDetailScreen(item = item)
         }
         composable<ProfileScreen> {
             ProfileScreenComposable(viewModel = koinInject())

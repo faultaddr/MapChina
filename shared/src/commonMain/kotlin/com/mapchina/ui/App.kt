@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Attractions
@@ -31,7 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mapchina.ui.navigation.AppNavHost
 import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.navigation.AttractionsScreen
-import com.mapchina.ui.navigation.StatsScreen
+import com.mapchina.ui.navigation.AchievementScreen
 import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.Screen
 import com.mapchina.ui.theme.MapChinaColors
@@ -42,7 +42,7 @@ data class BottomNavItem(val screen: Screen, val label: String, val icon: ImageV
 val bottomNavItems = listOf(
     BottomNavItem(MapScreen, "足迹地图", Icons.Default.LocationOn),
     BottomNavItem(AttractionsScreen, "景点", Icons.Default.Attractions),
-    BottomNavItem(StatsScreen, "统计", Icons.Default.BarChart),
+    BottomNavItem(AchievementScreen, "成就", Icons.Default.EmojiEvents),
     BottomNavItem(ProfileScreen, "我的", Icons.Default.Person),
 )
 
@@ -58,14 +58,12 @@ fun MapChinaApp() {
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            // 内容区域占满剩余空间
             androidx.compose.foundation.layout.Box(
                 modifier = Modifier.weight(1f)
             ) {
                 AppNavHost(navController = navController)
             }
 
-            // 底部导航栏 + 透明沉浸式
             if (showBottomBar) {
                 ImmersiveBottomBar(currentDestination, navController)
             }
@@ -122,7 +120,6 @@ private fun ImmersiveBottomBar(
                     )
                 }
             }
-            // 系统导航栏区域延伸
             Spacer(
                 modifier = Modifier
                     .windowInsetsPadding(WindowInsets.navigationBars)

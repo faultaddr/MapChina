@@ -1,0 +1,16 @@
+CREATE TABLE user_score (
+    user_id TEXT NOT NULL PRIMARY KEY,
+    current_score INTEGER NOT NULL DEFAULT 0,
+    current_level INTEGER NOT NULL DEFAULT 1,
+    updated_at INTEGER NOT NULL
+);
+
+selectByUser:
+SELECT * FROM user_score WHERE user_id = ?;
+
+upsertScore:
+INSERT OR REPLACE INTO user_score(user_id, current_score, current_level, updated_at)
+VALUES (?, ?, ?, ?);
+
+addScore:
+UPDATE user_score SET current_score = current_score + ?, updated_at = ? WHERE user_id = ?;
