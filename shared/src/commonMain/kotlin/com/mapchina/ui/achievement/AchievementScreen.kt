@@ -41,6 +41,8 @@ import com.mapchina.ui.theme.MapChinaColors
 fun AchievementScreen(
     viewModel: AchievementViewModel? = null,
     onNavigateToBadgeWall: (() -> Unit)? = null,
+    onNavigateToProvinceConquest: (() -> Unit)? = null,
+    onNavigateToAtlas: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val ui by (viewModel?.ui?.collectAsState() ?: remember { androidx.compose.runtime.mutableStateOf(AchievementUi()) })
@@ -70,6 +72,78 @@ fun AchievementScreen(
             if (ui.recentUnlocked.isNotEmpty()) item { RecentUnlockedSection(ui.recentUnlocked) }
             if (ui.regionAchievements.isNotEmpty()) item { AchievementSection("地区征服", ui.regionAchievements) }
             if (ui.scenicAchievements.isNotEmpty()) item { AchievementSection("景点收集", ui.scenicAchievements) }
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToProvinceConquest?.invoke() },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFF6B6B).copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFFF6B6B))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("省份征服", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("征服每个省份，点亮你的中国版图", color = Color.Gray, fontSize = 13.sp)
+                        }
+                        Text("→", color = Color.Gray, fontSize = 18.sp)
+                    }
+                }
+            }
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToAtlas?.invoke() },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFCE93D8).copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFCE93D8))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("主题图鉴", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("按主题收集中国之美", color = Color.Gray, fontSize = 13.sp)
+                        }
+                        Text("→", color = Color.Gray, fontSize = 18.sp)
+                    }
+                }
+            }
             item {
                 Row(
                     modifier = Modifier

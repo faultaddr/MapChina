@@ -2,6 +2,7 @@ package com.mapchina.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
 import com.mapchina.data.repository.AchievementRepository
+import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
@@ -17,7 +18,7 @@ fun MainViewController(): UIViewController {
         modules(appModule, platformModule)
     }
     val koin = KoinPlatform.getKoin()
-    seedDataAsync(koin.get<RegionRepository>(), koin.get<AttractionRepository>(), achievementRepo = koin.get<AchievementRepository>())
+    seedDataAsync(koin.get<RegionRepository>(), koin.get<AttractionRepository>(), achievementRepo = koin.get<AchievementRepository>(), atlasRepo = koin.get<AtlasRepository>())
     return ComposeUIViewController {
         MapChinaApp()
     }

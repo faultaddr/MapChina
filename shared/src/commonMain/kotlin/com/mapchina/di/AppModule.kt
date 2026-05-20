@@ -11,11 +11,16 @@ import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.data.repository.AchievementRepository
+import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.service.AchievementService
 import com.mapchina.domain.service.AchievementSeeder
+import com.mapchina.domain.service.AtlasSeeder
+import com.mapchina.domain.service.AtlasService
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.achievement.AchievementViewModel
+import com.mapchina.ui.achievement.AtlasViewModel
+import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.stats.StatsViewModel
@@ -32,23 +37,30 @@ val appModule = module {
     single { AuthService() }
 
     single { AchievementRepository(get()) }
+    single { AtlasRepository(get()) }
     single { UserScoreRepository(get()) }
-    single { AchievementService(get(), get(), get(), get()) }
+    single { AchievementService(get(), get(), get(), get(), get(), get()) }
+    single { AtlasService(get(), get()) }
 
     factory { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>()) }
     factory { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>()) }
     factory { StatsViewModel(get(), get(), get()) }
     factory { ProfileViewModel(get(), get()) }
     factory { AchievementViewModel(get(), get(), get()) }
+    factory { ProvinceConquestViewModel(get(), get()) }
+    factory { AtlasViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module
 
-fun seedDataAsync(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null, achievementRepo: AchievementRepository? = null) {
+fun seedDataAsync(regionRepo: RegionRepository, attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null, achievementRepo: AchievementRepository? = null, atlasRepo: AtlasRepository? = null) {
     DataSeeder.seedRegions(regionRepo, boundaryLoader)
     DataSeeder.seedAttractions(attractionRepo, boundaryLoader)
     DataSeeder.seedBoundaries(regionRepo, boundaryLoader)
     if (achievementRepo != null) {
         AchievementSeeder.seedAchievements(achievementRepo)
+    }
+    if (atlasRepo != null) {
+        AtlasSeeder.seedAtlas(atlasRepo)
     }
 }

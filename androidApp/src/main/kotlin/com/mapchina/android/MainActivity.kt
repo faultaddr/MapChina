@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.data.repository.AchievementRepository
+import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
@@ -37,7 +38,8 @@ class MainActivity : ComponentActivity() {
             val attractionRepo = koin.get<AttractionRepository>()
             val boundaryLoader = koin.get<BoundaryLoader>()
             val achievementRepo = koin.get<AchievementRepository>()
-            seedDataAsync(regionRepo, attractionRepo, boundaryLoader, achievementRepo)
+            val atlasRepo = koin.get<AtlasRepository>()
+            seedDataAsync(regionRepo, attractionRepo, boundaryLoader, achievementRepo, atlasRepo)
         }
     }
 }

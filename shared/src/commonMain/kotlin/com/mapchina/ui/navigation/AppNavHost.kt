@@ -14,8 +14,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.mapchina.ui.achievement.AchievementScreen
 import com.mapchina.ui.achievement.AchievementViewModel
+import com.mapchina.ui.achievement.AtlasScreen as AtlasScreenComposable
+import com.mapchina.ui.achievement.AtlasDetailScreen as AtlasDetailScreenComposable
+import com.mapchina.ui.achievement.AtlasViewModel
 import com.mapchina.ui.achievement.BadgeDetailScreen
 import com.mapchina.ui.achievement.BadgeWallScreen
+import com.mapchina.ui.achievement.ProvinceConquestScreen as ProvinceConquestScreenComposable
+import com.mapchina.ui.achievement.ProvinceDetailScreen as ProvinceDetailScreenComposable
+import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.attraction.AttractionDetailScreen
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.map.MapScreen as MapScreenComposable
@@ -44,7 +50,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val vm: AchievementViewModel = koinInject()
             AchievementScreen(
                 viewModel = vm,
-                onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) }
+                onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
+                onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
+                onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) }
             )
         }
         composable<BadgeWallScreen> {
@@ -74,6 +82,36 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("区域详情: $regionId")
             }
+        }
+        composable<ProvinceConquestScreen> {
+            val vm: ProvinceConquestViewModel = koinInject()
+            ProvinceConquestScreenComposable(
+                viewModel = vm,
+                onProvinceClick = { code -> navController.navigate(ProvinceDetailScreen(code)) }
+            )
+        }
+        composable<ProvinceDetailScreen> { backStackEntry ->
+            val vm: ProvinceConquestViewModel = koinInject()
+            val provinceCode = backStackEntry.arguments?.getString("provinceCode") ?: ""
+            ProvinceDetailScreenComposable(
+                viewModel = vm,
+                provinceCode = provinceCode
+            )
+        }
+        composable<com.mapchina.ui.navigation.AtlasScreen> {
+            val vm: AtlasViewModel = koinInject()
+            AtlasScreenComposable(
+                viewModel = vm,
+                onAtlasClick = { atlasId -> navController.navigate(com.mapchina.ui.navigation.AtlasDetailScreen(atlasId)) }
+            )
+        }
+        composable<com.mapchina.ui.navigation.AtlasDetailScreen> { backStackEntry ->
+            val vm: AtlasViewModel = koinInject()
+            val atlasId = backStackEntry.arguments?.getString("atlasId") ?: ""
+            AtlasDetailScreenComposable(
+                viewModel = vm,
+                atlasId = atlasId
+            )
         }
         composable<AttractionDetailScreen> { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
