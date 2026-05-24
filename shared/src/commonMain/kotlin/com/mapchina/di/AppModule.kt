@@ -46,7 +46,7 @@ val appModule = module {
     factory { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>()) }
     factory { StatsViewModel(get(), get(), get()) }
     factory { ProfileViewModel(get(), get()) }
-    factory { AchievementViewModel(get(), get(), get()) }
+    factory { AchievementViewModel(get(), get()) }
     factory { ProvinceConquestViewModel(get(), get()) }
     factory { AtlasViewModel(get(), get(), get()) }
 }
