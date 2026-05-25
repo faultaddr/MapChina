@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.mapchina.ui.animation.LocalAnimationScale
 
 private val LightColorScheme = lightColorScheme(
     primary = MapChinaColors.Primary,
@@ -28,8 +30,10 @@ fun MapChinaTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+    CompositionLocalProvider(LocalAnimationScale provides 1f) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content
+        )
+    }
 }
