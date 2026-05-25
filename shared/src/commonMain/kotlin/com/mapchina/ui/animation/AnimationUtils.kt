@@ -56,7 +56,7 @@ fun Modifier.cardPress(
         if (isPressed) {
             scale.animateTo(
                 AnimationSpecs.Scale.cardPress,
-                animationSpec = tween(AnimationSpecs.Duration.buttonPress)
+                animationSpec = tween((AnimationSpecs.Duration.buttonPress * animationScale).toInt())
             )
         } else {
             scale.animateTo(1f, animationSpec = AnimationSpecs.springGentle)

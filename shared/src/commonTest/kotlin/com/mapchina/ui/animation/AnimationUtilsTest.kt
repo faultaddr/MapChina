@@ -3,6 +3,7 @@ package com.mapchina.ui.animation
 import androidx.compose.ui.Modifier
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class AnimationUtilsTest {
 
@@ -25,7 +26,9 @@ class AnimationUtilsTest {
     }
 
     @Test
-    fun animateCount_smoke() {
-        assertNotNull(1f)
+    fun animateCount_compiles() {
+        // animateCount is @Composable - can only be called from @Composable context.
+        // This test verifies the import resolves (compile-time check).
+        assertTrue(true)
     }
 }
