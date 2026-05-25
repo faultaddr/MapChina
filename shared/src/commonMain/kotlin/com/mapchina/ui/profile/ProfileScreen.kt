@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mapchina.ui.animation.pressScale
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -148,13 +149,13 @@ fun ProfileScreen(
                 Button(
                     onClick = { viewModel?.logout() },
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Error),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().pressScale()
                 ) { Text("退出登录") }
             } else {
                 Button(
                     onClick = { onNavigateToLogin?.invoke() },
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().pressScale()
                 ) { Text("登录") }
             }
         }

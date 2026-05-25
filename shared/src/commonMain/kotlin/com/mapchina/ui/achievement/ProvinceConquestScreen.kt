@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.ProvinceConquestInfo
+import com.mapchina.ui.animation.staggeredEntrance
 import com.mapchina.ui.theme.MapChinaColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,10 +104,11 @@ fun ProvinceConquestScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            items(ui.provinces, key = { it.provinceId }) { province ->
+            itemsIndexed(ui.provinces, key = { _, item -> item.provinceId }) { index, province ->
                 ProvinceConquestRow(
                     info = province,
-                    onClick = { onProvinceClick?.invoke(province.provinceId.substring(0, 2)) }
+                    onClick = { onProvinceClick?.invoke(province.provinceId.substring(0, 2)) },
+                    modifier = Modifier.staggeredEntrance(index)
                 )
             }
         }
@@ -115,7 +118,8 @@ fun ProvinceConquestScreen(
 @Composable
 private fun ProvinceConquestRow(
     info: ProvinceConquestInfo,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val progressColor = when (info.colorLevel) {
         0 -> Color(0xFF3D3D5C)
@@ -127,7 +131,7 @@ private fun ProvinceConquestRow(
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))

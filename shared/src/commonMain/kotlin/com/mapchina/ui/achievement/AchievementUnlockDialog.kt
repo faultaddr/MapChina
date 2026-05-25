@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.UserAchievement
 import com.mapchina.domain.service.AchievementUnlockResult
+import com.mapchina.ui.animation.pressScale
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -84,13 +85,13 @@ fun AchievementUnlockDialog(
                 ) {
                     Button(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).pressScale(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3D3D5C))
                     ) { Text("继续探索") }
                     if (onShare != null) {
                         Button(
                             onClick = onShare,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).pressScale(),
                             colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                         ) { Text("分享") }
                     }
@@ -197,7 +198,7 @@ fun LevelUpDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().pressScale(),
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                 ) { Text("继续探索") }
             }

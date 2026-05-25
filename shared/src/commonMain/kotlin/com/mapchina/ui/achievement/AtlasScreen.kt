@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AtlasProgress
+import com.mapchina.ui.animation.staggeredEntrance
 import com.mapchina.ui.theme.MapChinaColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,15 +91,15 @@ fun AtlasScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(ui.atlasProgress, key = { it.atlasId }) { atlas ->
-                AtlasCard(atlas = atlas, onClick = { onAtlasClick?.invoke(atlas.atlasId) })
+            itemsIndexed(ui.atlasProgress, key = { _, item -> item.atlasId }) { index, atlas ->
+                AtlasCard(atlas = atlas, onClick = { onAtlasClick?.invoke(atlas.atlasId) }, modifier = Modifier.staggeredEntrance(index))
             }
         }
     }
 }
 
 @Composable
-private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
+private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val progressColor = when {
         atlas.completionPercent >= 100 -> Color(0xFFFFD700)
         atlas.completionPercent >= 50 -> Color(0xFFFF6B6B)
@@ -106,7 +108,7 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))

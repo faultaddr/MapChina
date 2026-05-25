@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
+import com.mapchina.ui.animation.staggeredEntrance
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -67,15 +68,16 @@ fun AchievementScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { LevelCard(ui) }
-            if (ui.nextTarget != null) item { NextTargetCard(ui.nextTarget!!) }
-            if (ui.recentUnlocked.isNotEmpty()) item { RecentUnlockedSection(ui.recentUnlocked) }
-            if (ui.regionAchievements.isNotEmpty()) item { AchievementSection("地区征服", ui.regionAchievements) }
-            if (ui.scenicAchievements.isNotEmpty()) item { AchievementSection("景点收集", ui.scenicAchievements) }
+            item { LevelCard(ui, modifier = Modifier.staggeredEntrance(0)) }
+            if (ui.nextTarget != null) item { NextTargetCard(ui.nextTarget!!, modifier = Modifier.staggeredEntrance(1)) }
+            if (ui.recentUnlocked.isNotEmpty()) item { RecentUnlockedSection(ui.recentUnlocked, startIndex = 2) }
+            if (ui.regionAchievements.isNotEmpty()) item { AchievementSection("地区征服", ui.regionAchievements, startIndex = 2 + (if (ui.recentUnlocked.isNotEmpty()) ui.recentUnlocked.size else 0)) }
+            if (ui.scenicAchievements.isNotEmpty()) item { AchievementSection("景点收集", ui.scenicAchievements, startIndex = 2 + (if (ui.recentUnlocked.isNotEmpty()) ui.recentUnlocked.size else 0) + ui.regionAchievements.size) }
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .staggeredEntrance(7)
                         .clickable { onNavigateToProvinceConquest?.invoke() },
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
                 ) {
@@ -112,6 +114,7 @@ fun AchievementScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .staggeredEntrance(8)
                         .clickable { onNavigateToAtlas?.invoke() },
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
                 ) {
@@ -148,6 +151,7 @@ fun AchievementScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .staggeredEntrance(9)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFF2D2D44))
                         .clickable { onNavigateToBadgeWall?.invoke() }
@@ -162,10 +166,10 @@ fun AchievementScreen(
 }
 
 @Composable
-private fun LevelCard(ui: AchievementUi) {
+private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
     val level = ui.levelInfo
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -226,9 +230,9 @@ private fun LevelCard(ui: AchievementUi) {
 }
 
 @Composable
-private fun NextTargetCard(target: AchievementWithProgress) {
+private fun NextTargetCard(target: AchievementWithProgress, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -256,27 +260,27 @@ private fun NextTargetCard(target: AchievementWithProgress) {
 }
 
 @Composable
-private fun RecentUnlockedSection(recent: List<AchievementWithProgress>) {
+private fun RecentUnlockedSection(recent: List<AchievementWithProgress>, startIndex: Int = 0) {
     Column {
         Text("最近获得", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
-        recent.forEach { item ->
-            AchievementRow(item)
+        recent.forEachIndexed { i, item ->
+            AchievementRow(item, modifier = Modifier.staggeredEntrance(startIndex + i))
         }
     }
 }
 
 @Composable
-private fun AchievementSection(title: String, achievements: List<AchievementWithProgress>) {
+private fun AchievementSection(title: String, achievements: List<AchievementWithProgress>, startIndex: Int = 0) {
     Column {
         Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
-        achievements.forEach { item -> AchievementRow(item) }
+        achievements.forEachIndexed { i, item -> AchievementRow(item, modifier = Modifier.staggeredEntrance(startIndex + i)) }
     }
 }
 
 @Composable
-private fun AchievementRow(item: AchievementWithProgress) {
+private fun AchievementRow(item: AchievementWithProgress, modifier: Modifier = Modifier) {
     val rarityColor = when (item.definition.rarity) {
         AchievementRarity.COMMON -> Color(0xFF90CAF9)
         AchievementRarity.RARE -> Color(0xFF69F0AE)
@@ -286,7 +290,7 @@ private fun AchievementRow(item: AchievementWithProgress) {
     val bgColor = if (item.isUnlocked) Color(0xFF2D2D44) else Color(0xFF1F1F33)
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor)
