@@ -1,6 +1,5 @@
 package com.mapchina.ui.animation
 
-import androidx.compose.animation.core.Spring
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,9 +7,10 @@ import kotlin.test.assertTrue
 class AnimationSpecsTest {
 
     @Test
-    fun springGentle_hasCorrectDamping() {
+    fun springGentle_hasCorrectParams() {
         val spec = AnimationSpecs.springGentle
         assertEquals(0.7f, spec.dampingRatio, 0.01f)
+        assertEquals(150f, spec.stiffness, 0.1f)
     }
 
     @Test
