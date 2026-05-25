@@ -15,11 +15,16 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,9 +95,17 @@ private fun ImmersiveBottomBar(
                     val selected = currentDestination?.hierarchy?.any { it.hasRoute(item.screen::class) } == true
                     NavigationBarItem(
                         icon = {
+                            val scale = remember { Animatable(1f) }
+                            LaunchedEffect(selected) {
+                                if (selected) {
+                                    scale.animateTo(1.3f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                                    scale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 200f))
+                                }
+                            }
                             Icon(
                                 item.icon,
                                 contentDescription = item.label,
+                                modifier = Modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value },
                                 tint = if (selected) MapChinaColors.Primary else Color.Gray
                             )
                         },
