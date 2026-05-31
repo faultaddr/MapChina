@@ -1,7 +1,7 @@
 package com.mapchina.ui.common
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,8 +33,8 @@ fun ErrorView(
     val translationY = remember { Animatable(4f) }
 
     LaunchedEffect(Unit) {
-        alpha.animateTo(1f, animationSpec = tween(400))
-        translationY.animateTo(0f, animationSpec = tween(400))
+        alpha.animateTo(1f, animationSpec = AnimationSpecs.tweenSlowEase)
+        translationY.animateTo(0f, animationSpec = AnimationSpecs.tweenSlowEase)
     }
 
     Column(

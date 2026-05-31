@@ -1,9 +1,8 @@
 package com.mapchina.ui.achievement
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearOutSlowInEasing
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +43,7 @@ import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.UserAchievement
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.animation.pressScale
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.delay
 
@@ -63,21 +63,21 @@ fun AchievementUnlockDialog(
     LaunchedEffect(Unit) {
         // Phase 1: 遮罩淡入 (0-200ms)
         phase = 1
-        overlayAlpha.animateTo(0.7f, tween(200))
+        overlayAlpha.animateTo(0.7f, tween(AnimationSpecs.Duration.unlockOverlay))
 
         // Phase 2: 光晕爆发 (200-500ms)
         phase = 2
         burstScale.snapTo(0f)
-        burstScale.animateTo(3f, tween(300, easing = LinearOutSlowInEasing))
+        burstScale.animateTo(AnimationSpecs.Scale.burstExpand, tween(AnimationSpecs.Duration.unlockBurst, easing = AnimationSpecs.easingDecelerate))
 
         // Phase 3: 卡片弹出 (500-800ms)
         phase = 3
-        cardScale.animateTo(1.05f, spring(dampingRatio = 0.6f, stiffness = 200f))
-        cardScale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 300f))
+        cardScale.animateTo(AnimationSpecs.Scale.unlockOverShoot, AnimationSpecs.springUnlockBounce)
+        cardScale.animateTo(1f, AnimationSpecs.springUnlockSettle)
 
         // Phase 4: 内容渐显 (800-1200ms)
         phase = 4
-        contentAlpha.animateTo(1f, tween(400))
+        contentAlpha.animateTo(1f, tween(AnimationSpecs.Duration.unlockContent))
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -153,15 +153,19 @@ fun AchievementUnlockDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        val dismissSource = remember { MutableInteractionSource() }
                         Button(
                             onClick = onDismiss,
-                            modifier = Modifier.weight(1f).pressScale(),
+                            interactionSource = dismissSource,
+                            modifier = Modifier.weight(1f).pressScale(dismissSource),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3D3D5C))
                         ) { Text("继续探索") }
                         if (onShare != null) {
+                            val shareSource = remember { MutableInteractionSource() }
                             Button(
                                 onClick = onShare,
-                                modifier = Modifier.weight(1f).pressScale(),
+                                interactionSource = shareSource,
+                                modifier = Modifier.weight(1f).pressScale(shareSource),
                                 colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                             ) { Text("分享") }
                         }
@@ -242,11 +246,11 @@ fun LevelUpDialog(
     val levelBounce = remember { Animatable(0.5f) }
 
     LaunchedEffect(Unit) {
-        cardScale.animateTo(1.05f, spring(dampingRatio = 0.6f, stiffness = 200f))
-        cardScale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 300f))
-        levelBounce.animateTo(1.2f, spring(dampingRatio = 0.4f, stiffness = 300f))
-        levelBounce.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 200f))
-        contentAlpha.animateTo(1f, tween(400))
+        cardScale.animateTo(AnimationSpecs.Scale.unlockOverShoot, AnimationSpecs.springUnlockBounce)
+        cardScale.animateTo(1f, AnimationSpecs.springUnlockSettle)
+        levelBounce.animateTo(AnimationSpecs.Scale.levelBouncePeak, AnimationSpecs.springLevelBounce)
+        levelBounce.animateTo(1f, AnimationSpecs.springGentle)
+        contentAlpha.animateTo(1f, tween(AnimationSpecs.Duration.unlockContent))
     }
 
     Box(
@@ -289,9 +293,11 @@ fun LevelUpDialog(
                 Text("你已累计获得 $score 山河值", color = Color.Gray, fontSize = 13.sp)
                 Text("下一站是「$nextTitle」", color = MapChinaColors.Primary, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(16.dp))
+                val levelDismissSource = remember { MutableInteractionSource() }
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth().pressScale(),
+                    interactionSource = levelDismissSource,
+                    modifier = Modifier.fillMaxWidth().pressScale(levelDismissSource),
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                 ) { Text("继续探索") }
             }

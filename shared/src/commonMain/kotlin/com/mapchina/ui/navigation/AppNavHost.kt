@@ -3,8 +3,8 @@ package com.mapchina.ui.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -42,30 +42,30 @@ import org.koin.compose.koinInject
 // Page transitions (slide from right for push, slide from left for pop)
 private val AnimatedContentTransitionScope<*>.enterPageTransition: EnterTransition
     get() = slideInHorizontally(
-        animationSpec = tween(350, easing = FastOutSlowInEasing)
-    ) { (it * 0.3f).toInt() } + fadeIn(tween(350))
+        animationSpec = tween(AnimationSpecs.Duration.pageTransition, easing = AnimationSpecs.easingStandard)
+    ) { (it * 0.3f).toInt() } + fadeIn(tween(AnimationSpecs.Duration.pageTransition))
 
 private val AnimatedContentTransitionScope<*>.exitPageTransition: ExitTransition
     get() = slideOutHorizontally(
-        animationSpec = tween(250, easing = FastOutSlowInEasing)
-    ) { (it * 0.3f).toInt() } + fadeOut(tween(250))
+        animationSpec = tween(AnimationSpecs.Duration.detailPop, easing = AnimationSpecs.easingStandard)
+    ) { (it * 0.3f).toInt() } + fadeOut(tween(AnimationSpecs.Duration.detailPop))
 
 private val AnimatedContentTransitionScope<*>.popEnterPageTransition: EnterTransition
     get() = slideInHorizontally(
-        animationSpec = tween(350, easing = FastOutSlowInEasing)
-    ) { -(it * 0.3f).toInt() } + fadeIn(tween(350))
+        animationSpec = tween(AnimationSpecs.Duration.pageTransition, easing = AnimationSpecs.easingStandard)
+    ) { -(it * 0.3f).toInt() } + fadeIn(tween(AnimationSpecs.Duration.pageTransition))
 
 private val AnimatedContentTransitionScope<*>.popExitPageTransition: ExitTransition
     get() = slideOutHorizontally(
-        animationSpec = tween(350, easing = FastOutSlowInEasing)
-    ) { it } + fadeOut(tween(350))
+        animationSpec = tween(AnimationSpecs.Duration.pageTransition, easing = AnimationSpecs.easingStandard)
+    ) { it } + fadeOut(tween(AnimationSpecs.Duration.pageTransition))
 
 // Bottom tab transition (fade through, no slide)
 private val AnimatedContentTransitionScope<*>.tabEnterTransition: EnterTransition
-    get() = fadeIn(tween(200))
+    get() = fadeIn(tween(AnimationSpecs.Duration.tabTransition))
 
 private val AnimatedContentTransitionScope<*>.tabExitTransition: ExitTransition
-    get() = fadeOut(tween(200))
+    get() = fadeOut(tween(AnimationSpecs.Duration.tabTransition))
 
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {

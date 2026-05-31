@@ -24,7 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.spring
+import com.mapchina.ui.animation.AnimationSpecs
+import com.mapchina.ui.animation.LocalAnimationScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,10 +97,11 @@ private fun ImmersiveBottomBar(
                     NavigationBarItem(
                         icon = {
                             val scale = remember { Animatable(1f) }
+                            val animScale = LocalAnimationScale.current
                             LaunchedEffect(selected) {
-                                if (selected) {
-                                    scale.animateTo(1.3f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                                    scale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 200f))
+                                if (selected && animScale > 0f) {
+                                    scale.animateTo(AnimationSpecs.Scale.tabBouncePeak, AnimationSpecs.springTabBounce)
+                                    scale.animateTo(1f, AnimationSpecs.springGentle)
                                 }
                             }
                             Icon(

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
@@ -34,7 +35,7 @@ fun BreadcrumbNav(
     AnimatedContent(
         targetState = path,
         transitionSpec = {
-            fadeIn(tween(200)) togetherWith fadeOut(tween(200))
+            fadeIn(tween(AnimationSpecs.Duration.tabTransition)) togetherWith fadeOut(tween(AnimationSpecs.Duration.tabTransition))
         },
         label = "breadcrumb"
     ) { animatedPath ->

@@ -36,9 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.ui.animation.staggeredEntrance
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -173,7 +172,7 @@ private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
     val level = ui.levelInfo
     val animatedLevelProgress by animateFloatAsState(
         targetValue = level?.progressToNext ?: 0f,
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenProgress,
         label = "levelProgress"
     )
     Card(
@@ -241,7 +240,7 @@ private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
 private fun NextTargetCard(target: AchievementWithProgress, modifier: Modifier = Modifier) {
     val animatedProgress by animateFloatAsState(
         targetValue = target.progressPercent.coerceIn(0f, 1f),
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenProgress,
         label = "targetProgress"
     )
     Card(

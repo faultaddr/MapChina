@@ -14,66 +14,76 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// ===== Button press feedback (supports animationScale) =====
+// ===== Button press feedback (visual only, no click handling) =====
+// Pass interactionSource from parent (e.g. Button) to avoid double-clickable conflict.
 fun Modifier.pressScale(
+    interactionSource: MutableInteractionSource? = null,
     animationScale: Float = 1f
 ): Modifier = composed {
-    if (animationScale == 0f) return@composed this
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale = remember { Animatable(1f) }
+    val scale = LocalAnimationScale.current * animationScale
+    if (scale == 0f) return@composed this
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val isPressed by source.collectIsPressedAsState()
+    val anim = remember { Animatable(1f) }
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            scale.animateTo(
+            anim.animateTo(
                 AnimationSpecs.Scale.buttonPress,
-                animationSpec = tween((AnimationSpecs.Duration.buttonPress * animationScale).toInt())
+                animationSpec = tween((AnimationSpecs.Duration.buttonPress * scale).toInt())
             )
         } else {
-            scale.animateTo(1f, animationSpec = AnimationSpecs.springGentle)
+            anim.animateTo(1f, animationSpec = AnimationSpecs.springGentle)
         }
     }
 
     this
-        .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
-        .clickable(interactionSource = interactionSource, indication = null) {}
+        .graphicsLayer { scaleX = anim.value; scaleY = anim.value }
+        .then(
+            if (interactionSource == null) Modifier.clickable(interactionSource = source, indication = null) {}
+            else Modifier
+        )
 }
 
-// ===== Card press feedback (supports animationScale) =====
+// ===== Card press feedback =====
 fun Modifier.cardPress(
     onClick: () -> Unit,
     animationScale: Float = 1f
 ): Modifier = composed {
-    if (animationScale == 0f) return@composed this.clickable(onClick = onClick)
+    val scale = LocalAnimationScale.current * animationScale
+    if (scale == 0f) return@composed this.clickable(onClick = onClick)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale = remember { Animatable(1f) }
+    val anim = remember { Animatable(1f) }
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            scale.animateTo(
+            anim.animateTo(
                 AnimationSpecs.Scale.cardPress,
-                animationSpec = tween((AnimationSpecs.Duration.buttonPress * animationScale).toInt())
+                animationSpec = tween((AnimationSpecs.Duration.buttonPress * scale).toInt())
             )
         } else {
-            scale.animateTo(1f, animationSpec = AnimationSpecs.springGentle)
+            anim.animateTo(1f, animationSpec = AnimationSpecs.springGentle)
         }
     }
 
     this
-        .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
+        .graphicsLayer { scaleX = anim.value; scaleY = anim.value }
         .clickable(interactionSource = interactionSource, indication = null) { onClick() }
 }
 
 // ===== Elastic pop-in entrance =====
 @Composable
 fun rememberPopInAnimation(initialScale: Float = AnimationSpecs.Scale.popInFrom): Animatable<Float, AnimationVector1D> {
+    val scale = LocalAnimationScale.current
     val anim = remember { Animatable(initialScale) }
     LaunchedEffect(Unit) {
-        anim.animateTo(1f, animationSpec = AnimationSpecs.springBouncy)
+        if (scale > 0f) anim.animateTo(1f, animationSpec = AnimationSpecs.springBouncy)
+        else anim.snapTo(1f)
     }
     return anim
 }
@@ -83,11 +93,13 @@ fun Modifier.staggeredEntrance(
     index: Int,
     delayPerItem: Int = AnimationSpecs.Stagger.listItem
 ): Modifier = composed {
+    val scale = LocalAnimationScale.current
+    if (scale == 0f) return@composed this
     val alpha = remember { Animatable(0f) }
     val translationY = remember { Animatable(30f) }
 
     LaunchedEffect(Unit) {
-        delay((index * delayPerItem).toLong())
+        delay((index * delayPerItem * scale).toLong())
         launch {
             translationY.animateTo(0f, animationSpec = AnimationSpecs.springGentle)
         }
@@ -103,13 +115,18 @@ fun Modifier.staggeredEntrance(
 // ===== Number counter animation =====
 @Composable
 fun animateCount(targetValue: Int, maxDuration: Int = 800): Float {
+    val scale = LocalAnimationScale.current
     val animatedValue = remember { Animatable(0f) }
     val duration = if (targetValue <= 10) 300 else maxDuration.coerceAtMost(800)
     LaunchedEffect(targetValue) {
-        animatedValue.animateTo(
-            targetValue.toFloat(),
-            animationSpec = tween(durationMillis = duration, easing = LinearOutSlowInEasing)
-        )
+        if (scale > 0f) {
+            animatedValue.animateTo(
+                targetValue.toFloat(),
+                animationSpec = tween(durationMillis = (duration * scale).toInt(), easing = LinearOutSlowInEasing)
+            )
+        } else {
+            animatedValue.snapTo(targetValue.toFloat())
+        }
     }
     return animatedValue.value
 }

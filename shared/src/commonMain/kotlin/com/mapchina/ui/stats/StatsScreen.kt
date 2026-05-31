@@ -46,9 +46,8 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.animation.staggeredEntrance
 import com.mapchina.ui.animation.animateCount
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
 import com.mapchina.ui.theme.MapChinaColors
 import kotlin.math.min
 
@@ -449,7 +448,7 @@ private fun CoverageSection(
     val animatedVisited = animateCount(visited)
     val animatedPercent by animateFloatAsState(
         targetValue = percent,
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenCoverage,
         label = "coveragePercent"
     )
 

@@ -1,9 +1,8 @@
 package com.mapchina.ui.map
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearOutSlowInEasing
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -118,17 +117,17 @@ private fun FootprintButton(
     val entranceY = remember { Animatable(20f) }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay((staggerIndex * 80).toLong())
+        kotlinx.coroutines.delay((staggerIndex * AnimationSpecs.Stagger.rowItem).toLong())
         launch {
-            entranceAlpha.animateTo(1f, tween(200, easing = LinearOutSlowInEasing))
+            entranceAlpha.animateTo(1f, tween(AnimationSpecs.Duration.tabTransition))
         }
-        entranceY.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 150f))
+        entranceY.animateTo(0f, AnimationSpecs.springGentle)
     }
 
     LaunchedEffect(isPressed) {
         if (enabled) {
-            if (isPressed) scale.animateTo(0.97f, spring(dampingRatio = 0.5f, stiffness = 500f))
-            else scale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 150f))
+            if (isPressed) scale.animateTo(AnimationSpecs.Scale.buttonPress, AnimationSpecs.springPressSnap)
+            else scale.animateTo(1f, AnimationSpecs.springGentle)
         }
     }
 

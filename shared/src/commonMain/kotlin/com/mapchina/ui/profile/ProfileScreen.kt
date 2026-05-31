@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,9 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.ui.animation.pressScale
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.launch
@@ -79,9 +78,9 @@ fun ProfileScreen(
             val avatarAlpha = remember { Animatable(0f) }
 
             LaunchedEffect(Unit) {
-                launch { avatarAlpha.animateTo(1f, tween(400)) }
-                launch { avatarScale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 150f)) }
-                avatarRotation.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 150f))
+                launch { avatarAlpha.animateTo(1f, AnimationSpecs.tweenSlowEase) }
+                launch { avatarScale.animateTo(1f, AnimationSpecs.springGentle) }
+                avatarRotation.animateTo(0f, AnimationSpecs.springGentle)
             }
 
             Card(
@@ -118,7 +117,7 @@ fun ProfileScreen(
                     val levelInfo = profile.levelInfo
                     val animatedLevelProgress by animateFloatAsState(
                         targetValue = levelInfo?.progressToNext ?: 0f,
-                        animationSpec = tween(600, easing = FastOutSlowInEasing),
+                        animationSpec = AnimationSpecs.tweenProgress,
                         label = "levelProgress"
                     )
                     if (isLoggedIn && levelInfo != null) {
@@ -176,16 +175,20 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             if (isLoggedIn) {
+                val logoutSource = remember { MutableInteractionSource() }
                 Button(
                     onClick = { viewModel?.logout() },
+                    interactionSource = logoutSource,
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Error),
-                    modifier = Modifier.fillMaxWidth().pressScale()
+                    modifier = Modifier.fillMaxWidth().pressScale(logoutSource)
                 ) { Text("退出登录") }
             } else {
+                val loginSource = remember { MutableInteractionSource() }
                 Button(
                     onClick = { onNavigateToLogin?.invoke() },
+                    interactionSource = loginSource,
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
-                    modifier = Modifier.fillMaxWidth().pressScale()
+                    modifier = Modifier.fillMaxWidth().pressScale(loginSource)
                 ) { Text("登录") }
             }
         }

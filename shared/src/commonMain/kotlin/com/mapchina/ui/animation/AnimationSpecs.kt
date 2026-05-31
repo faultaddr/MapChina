@@ -14,6 +14,8 @@ object AnimationSpecs {
     val tweenSlowEase = tween<Float>(durationMillis = 400, easing = FastOutSlowInEasing)
     val tweenRipple = tween<Float>(durationMillis = 600, easing = LinearOutSlowInEasing)
     val tweenQuick = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
+    val tweenProgress = tween<Float>(durationMillis = 600, easing = FastOutSlowInEasing)
+    val tweenCoverage = tween<Float>(durationMillis = 400, easing = FastOutSlowInEasing)
 
     // ===== Timing constants =====
     object Duration {
@@ -31,6 +33,12 @@ object AnimationSpecs {
         val toastShow = 300
         val toastHold = 2000
         val toastHide = 250
+        val tabTransition = 200
+        val detailPop = 250
+        val panelSlide = 300
+        val chevronRotation = 300
+        val glowPulse = 1000
+        val entranceFade = 400
     }
 
     object Stagger {
@@ -48,5 +56,19 @@ object AnimationSpecs {
         val unlockOverShoot = 1.05f
         val popInFrom = 0.8f
         val entranceFrom = 0.95f
+        val tabBouncePeak = 1.3f
+        val levelBouncePeak = 1.2f
+        val burstExpand = 3f
     }
+
+    // ===== Additional spring curves =====
+    val springTabBounce = spring<Float>(dampingRatio = 0.5f, stiffness = 400f)
+    val springPressSnap = spring<Float>(dampingRatio = 0.5f, stiffness = 500f)
+    val springUnlockBounce = spring<Float>(dampingRatio = 0.6f, stiffness = 200f)
+    val springUnlockSettle = spring<Float>(dampingRatio = 0.7f, stiffness = 300f)
+    val springLevelBounce = spring<Float>(dampingRatio = 0.4f, stiffness = 300f)
+
+    // ===== Easing curves =====
+    val easingStandard = FastOutSlowInEasing
+    val easingDecelerate = LinearOutSlowInEasing
 }

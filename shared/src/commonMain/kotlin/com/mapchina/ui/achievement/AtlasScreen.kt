@@ -42,7 +42,7 @@ import com.mapchina.ui.animation.staggeredEntrance
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.border
 import com.mapchina.ui.theme.MapChinaColors
 
@@ -114,7 +114,7 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit, modifier: Modif
 
     val animatedProgress by animateFloatAsState(
         targetValue = (atlas.completionPercent.toFloat() / 100f).coerceIn(0f, 1f),
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenProgress,
         label = "atlasProgress"
     )
 
@@ -123,8 +123,8 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit, modifier: Modif
     LaunchedEffect(atlas.completionPercent >= 100) {
         if (atlas.completionPercent >= 100) {
             while (true) {
-                glowAlpha.animateTo(1f, tween(1000, easing = FastOutSlowInEasing))
-                glowAlpha.animateTo(0.3f, tween(1000, easing = FastOutSlowInEasing))
+                glowAlpha.animateTo(1f, tween(AnimationSpecs.Duration.glowPulse, easing = AnimationSpecs.easingStandard))
+                glowAlpha.animateTo(0.3f, tween(AnimationSpecs.Duration.glowPulse, easing = AnimationSpecs.easingStandard))
             }
         }
     }

@@ -9,9 +9,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -94,7 +93,7 @@ fun MapScreen(
 
     val chevronRotation by animateFloatAsState(
         targetValue = if (attractionsPanelExpanded) 0f else 180f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 150f),
+        animationSpec = AnimationSpecs.springGentle,
         label = "chevronRotation"
     )
 
@@ -159,8 +158,8 @@ fun MapScreen(
         // 右侧景点面板
         AnimatedVisibility(
             visible = showAttractionsPanel,
-            enter = slideInHorizontally { it } + fadeIn(tween(300)),
-            exit = slideOutHorizontally { it } + fadeOut(tween(250))
+            enter = slideInHorizontally { it } + fadeIn(tween(AnimationSpecs.Duration.panelSlide)),
+            exit = slideOutHorizontally { it } + fadeOut(tween(AnimationSpecs.Duration.detailPop))
         ) {
             Row(
                 modifier = Modifier
@@ -365,12 +364,12 @@ private fun CoverageOverlay(
 
     val animatedVisited by animateFloatAsState(
         targetValue = visitedCount.toFloat(),
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenCoverage,
         label = "visitedCount"
     )
     val animatedProgress by animateFloatAsState(
         targetValue = if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f,
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        animationSpec = AnimationSpecs.tweenCoverage,
         label = "progress"
     )
 
