@@ -1,0 +1,3 @@
+-- Normalize achievement status values to uppercase for enum compatibility
+UPDATE user_achievement SET status = 'LOCKED' WHERE status = 'locked';
+UPDATE user_achievement SET status = 'UNLOCKED' WHERE status = 'unlocked';

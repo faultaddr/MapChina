@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,6 +90,12 @@ fun MapScreen(
 
     var showFootprintSheet by remember { mutableStateOf(false) }
     var attractionsPanelExpanded by remember { mutableStateOf(true) }
+
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (attractionsPanelExpanded) 0f else 180f,
+        animationSpec = AnimationSpecs.springGentle,
+        label = "chevronRotation"
+    )
 
     val canDrillDown = currentLevel.nextDrillDown() != null
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
@@ -144,7 +156,11 @@ fun MapScreen(
         )
 
         // 右侧景点面板
-        if (showAttractionsPanel) {
+        AnimatedVisibility(
+            visible = showAttractionsPanel,
+            enter = slideInHorizontally { it } + fadeIn(tween(AnimationSpecs.Duration.panelSlide)),
+            exit = slideOutHorizontally { it } + fadeOut(tween(AnimationSpecs.Duration.detailPop))
+        ) {
             Row(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -163,7 +179,9 @@ fun MapScreen(
                         if (attractionsPanelExpanded) Icons.Default.ChevronRight else Icons.Default.ChevronLeft,
                         contentDescription = if (attractionsPanelExpanded) "收起" else "展开",
                         tint = Color.White,
-                        modifier = Modifier.padding(2.dp)
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .graphicsLayer { rotationZ = chevronRotation }
                     )
                 }
 
@@ -344,6 +362,17 @@ private fun CoverageOverlay(
         MapZoomLevel.DISTRICT -> "区"
     }
 
+    val animatedVisited by animateFloatAsState(
+        targetValue = visitedCount.toFloat(),
+        animationSpec = AnimationSpecs.tweenCoverage,
+        label = "visitedCount"
+    )
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f,
+        animationSpec = AnimationSpecs.tweenCoverage,
+        label = "progress"
+    )
+
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -362,7 +391,7 @@ private fun CoverageOverlay(
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "$visitedCount/$totalCount",
+                text = "${animatedVisited.toInt()}/$totalCount",
                 color = Color.White,
                 fontSize = 14.sp
             )
@@ -371,7 +400,7 @@ private fun CoverageOverlay(
         Spacer(modifier = Modifier.height(6.dp))
 
         LinearProgressIndicator(
-            progress = { if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f },
+            progress = { animatedProgress },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(6.dp)

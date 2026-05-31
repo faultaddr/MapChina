@@ -24,7 +24,7 @@ class FootprintServiceTest {
         val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
-        service = FootprintService(footprintRepo, regionRepo)
+        service = FootprintService(footprintRepo, regionRepo, null)
     }
 
     @Test

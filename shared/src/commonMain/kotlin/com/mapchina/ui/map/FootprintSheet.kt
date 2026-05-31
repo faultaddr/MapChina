@@ -1,5 +1,10 @@
 package com.mapchina.ui.map
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +19,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
@@ -68,19 +79,22 @@ fun FootprintSheet(
                     label = "路过",
                     color = MapChinaColors.FootprintPassBy,
                     onClick = { onMarkFootprint(region.regionId, FootprintLevel.PASS_BY) },
-                    enabled = region.footprintLevel == null
+                    enabled = region.footprintLevel == null,
+                    staggerIndex = 0
                 )
                 FootprintButton(
                     label = "短玩",
                     color = MapChinaColors.FootprintShortVisit,
                     onClick = { onMarkFootprint(region.regionId, FootprintLevel.SHORT_VISIT) },
-                    enabled = region.footprintLevel?.let { it < FootprintLevel.SHORT_VISIT } ?: true
+                    enabled = region.footprintLevel?.let { it < FootprintLevel.SHORT_VISIT } ?: true,
+                    staggerIndex = 1
                 )
                 FootprintButton(
                     label = "深度",
                     color = MapChinaColors.FootprintDeep,
                     onClick = { onMarkFootprint(region.regionId, FootprintLevel.DEEP) },
-                    enabled = region.footprintLevel?.let { it < FootprintLevel.DEEP } ?: true
+                    enabled = region.footprintLevel?.let { it < FootprintLevel.DEEP } ?: true,
+                    staggerIndex = 2
                 )
             }
         }
@@ -93,13 +107,41 @@ private fun FootprintButton(
     color: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     enabled: Boolean,
+    staggerIndex: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale = remember { Animatable(1f) }
+    val entranceAlpha = remember { Animatable(0f) }
+    val entranceY = remember { Animatable(20f) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay((staggerIndex * AnimationSpecs.Stagger.rowItem).toLong())
+        launch {
+            entranceAlpha.animateTo(1f, tween(AnimationSpecs.Duration.tabTransition))
+        }
+        entranceY.animateTo(0f, AnimationSpecs.springGentle)
+    }
+
+    LaunchedEffect(isPressed) {
+        if (enabled) {
+            if (isPressed) scale.animateTo(AnimationSpecs.Scale.buttonPress, AnimationSpecs.springPressSnap)
+            else scale.animateTo(1f, AnimationSpecs.springGentle)
+        }
+    }
+
     Button(
         onClick = onClick,
         enabled = enabled,
+        interactionSource = interactionSource,
         colors = ButtonDefaults.buttonColors(containerColor = color),
-        modifier = modifier
+        modifier = modifier.graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+            alpha = entranceAlpha.value
+            translationY = entranceY.value
+        }
     ) {
         Text(label)
     }

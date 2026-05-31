@@ -31,7 +31,7 @@ class EndToEndTest {
         regionRepo = RegionRepository(database)
         footprintRepo = FootprintRepository(database)
         attractionRepo = AttractionRepository(database)
-        footprintService = FootprintService(footprintRepo, regionRepo)
+        footprintService = FootprintService(footprintRepo, regionRepo, null)
 
         DataSeeder.seedRegions(regionRepo)
         DataSeeder.seedAttractions(attractionRepo)
@@ -42,7 +42,7 @@ class EndToEndTest {
         val userId = "testUser"
 
         // 1. Browse provinces at national level
-        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, userId)
+        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, com.mapchina.domain.service.AttractionService(attractionRepo), null, userId)
         val provinces = mapViewModel.regions.value
         assertEquals(34, provinces.size)
 
@@ -68,7 +68,7 @@ class EndToEndTest {
         assertEquals(FootprintLevel.PASS_BY, beijing?.footprintLevel)
 
         // 6. Search attractions
-        val attractionViewModel = AttractionViewModel(attractionRepo, footprintService, footprintRepo, userId)
+        val attractionViewModel = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
         attractionViewModel.searchAttractions("故宫")
         val searchResults = attractionViewModel.attractions.value
         assertTrue(searchResults.isNotEmpty())
@@ -80,7 +80,7 @@ class EndToEndTest {
         assertEquals(FootprintLevel.DEEP, updatedAttraction?.visitLevel)
 
         // 8. Check coverage stats
-        val statsViewModel = StatsViewModel(footprintService, userId)
+        val statsViewModel = StatsViewModel(footprintService, attractionRepo, footprintRepo)
         statsViewModel.refreshStats()
         val stats = statsViewModel.stats.value
         assertTrue(stats.visitedProvinces >= 2) // Beijing + Sichuan

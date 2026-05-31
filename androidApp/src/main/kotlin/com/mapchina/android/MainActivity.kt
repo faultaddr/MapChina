@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.mapchina.data.remote.BoundaryLoader
+import com.mapchina.data.repository.AchievementRepository
+import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.di.appModule
@@ -24,7 +26,12 @@ class MainActivity : ComponentActivity() {
             modules(appModule, platformModule)
         }
 
-        enableEdgeToEdge()
+        try {
+            enableEdgeToEdge()
+        } catch (_: SecurityException) {
+            // Some OEM ROMs (Huawei/HarmonyOS) throw SecurityException for WRITE_SETTINGS
+            // when enableEdgeToEdge tries to adjust system bars. Safe to ignore.
+        }
         setContent {
             MapChinaApp()
         }
@@ -35,7 +42,9 @@ class MainActivity : ComponentActivity() {
             val regionRepo = koin.get<RegionRepository>()
             val attractionRepo = koin.get<AttractionRepository>()
             val boundaryLoader = koin.get<BoundaryLoader>()
-            seedDataAsync(regionRepo, attractionRepo, boundaryLoader)
+            val achievementRepo = koin.get<AchievementRepository>()
+            val atlasRepo = koin.get<AtlasRepository>()
+            seedDataAsync(regionRepo, attractionRepo, boundaryLoader, achievementRepo, atlasRepo)
         }
     }
 }

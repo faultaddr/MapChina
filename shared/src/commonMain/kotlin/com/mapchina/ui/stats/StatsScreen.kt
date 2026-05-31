@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.ui.animation.staggeredEntrance
+import com.mapchina.ui.animation.animateCount
+import com.mapchina.ui.animation.AnimationSpecs
+import androidx.compose.animation.core.animateFloatAsState
 import com.mapchina.ui.theme.MapChinaColors
 import kotlin.math.min
 
@@ -104,8 +109,8 @@ fun StatsScreen(
                         fontWeight = FontWeight.Medium
                     )
                 }
-                items(stats.visitedAttractionList, key = { it.id }) { attraction ->
-                    VisitedAttractionCard(attraction)
+                itemsIndexed(stats.visitedAttractionList, key = { _, item -> item.id }) { index, attraction ->
+                    VisitedAttractionCard(attraction, modifier = Modifier.staggeredEntrance(index))
                 }
             }
         }
@@ -375,7 +380,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
 }
 
 @Composable
-private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
+private fun VisitedAttractionCard(attraction: VisitedAttractionUi, modifier: Modifier = Modifier) {
     val levelBadge = when (attraction.level) {
         "A5" -> "5A"
         "A4" -> "4A"
@@ -393,7 +398,7 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
     ) {
         Row(
@@ -440,6 +445,13 @@ private fun CoverageSection(
     total: Int,
     percent: Float
 ) {
+    val animatedVisited = animateCount(visited)
+    val animatedPercent by animateFloatAsState(
+        targetValue = percent,
+        animationSpec = AnimationSpecs.tweenCoverage,
+        label = "coveragePercent"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -453,14 +465,14 @@ private fun CoverageSection(
         ) {
             Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp)
             Text(
-                "$visited / $total",
+                "${animatedVisited.toInt()} / $total",
                 color = MapChinaColors.Primary,
                 fontSize = 14.sp
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
         LinearProgressIndicator(
-            progress = { percent },
+            progress = { animatedPercent },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
@@ -470,7 +482,7 @@ private fun CoverageSection(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "${(percent * 100).toInt()}%",
+            "${(animatedPercent * 100).toInt()}%",
             fontSize = 12.sp,
             color = Color.Gray
         )

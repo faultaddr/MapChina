@@ -1,0 +1,17 @@
+CREATE TABLE atlas_definition (
+    atlas_id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    cover_image TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'active'
+);
+
+selectAll:
+SELECT * FROM atlas_definition WHERE status = 'active' ORDER BY atlas_id;
+
+selectById:
+SELECT * FROM atlas_definition WHERE atlas_id = ?;
+
+insertDefinition:
+INSERT OR IGNORE INTO atlas_definition(atlas_id, name, description, cover_image, status)
+VALUES (?, ?, ?, ?, ?);

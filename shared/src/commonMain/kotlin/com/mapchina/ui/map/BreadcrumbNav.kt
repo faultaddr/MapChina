@@ -1,5 +1,11 @@
 package com.mapchina.ui.map
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
+import com.mapchina.ui.animation.AnimationSpecs
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -26,25 +32,33 @@ fun BreadcrumbNav(
     onNavigateTo: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (path.size > 1) {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回上级",
-                    modifier = Modifier.size(20.dp)
-                )
+    AnimatedContent(
+        targetState = path,
+        transitionSpec = {
+            fadeIn(tween(AnimationSpecs.Duration.tabTransition)) togetherWith fadeOut(tween(AnimationSpecs.Duration.tabTransition))
+        },
+        label = "breadcrumb"
+    ) { animatedPath ->
+        Row(
+            modifier = modifier.horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (animatedPath.size > 1) {
+                IconButton(onClick = onNavigateUp) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回上级",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-        }
-        path.forEachIndexed { index, item ->
-            if (index > 0) {
-                Text(" > ", color = Color.Gray, fontSize = 14.sp)
-            }
-            TextButton(onClick = { onNavigateTo(item.id) }) {
-                Text(item.name, fontSize = 14.sp)
+            animatedPath.forEachIndexed { index, item ->
+                if (index > 0) {
+                    Text(" > ", color = Color.Gray, fontSize = 14.sp)
+                }
+                TextButton(onClick = { onNavigateTo(item.id) }) {
+                    Text(item.name, fontSize = 14.sp)
+                }
             }
         }
     }
