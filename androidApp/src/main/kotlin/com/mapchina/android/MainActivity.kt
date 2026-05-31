@@ -26,7 +26,12 @@ class MainActivity : ComponentActivity() {
             modules(appModule, platformModule)
         }
 
-        enableEdgeToEdge()
+        try {
+            enableEdgeToEdge()
+        } catch (_: SecurityException) {
+            // Some OEM ROMs (Huawei/HarmonyOS) throw SecurityException for WRITE_SETTINGS
+            // when enableEdgeToEdge tries to adjust system bars. Safe to ignore.
+        }
         setContent {
             MapChinaApp()
         }
