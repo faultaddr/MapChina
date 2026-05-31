@@ -56,9 +56,9 @@ class AchievementRepository(private val database: MapChinaDatabase) {
 
     fun updateProgress(userId: String, achievementId: String, progressValue: Int, target: Int) {
         val existing = database.userAchievementQueries.selectByUserAndAchievement(userId, achievementId).executeAsOneOrNull()
-        if (existing != null && existing.status == "unlocked") return
+        if (existing != null && existing.status.uppercase() == "UNLOCKED") return
 
-        val status = if (progressValue >= target) "unlocked" else "locked"
+        val status = if (progressValue >= target) "UNLOCKED" else "LOCKED"
         val unlockTime = if (status == "unlocked") Clock.System.now().toEpochMilliseconds() else null
         database.userAchievementQueries.upsertProgress(userId, achievementId, progressValue.toLong(), target.toLong(), status, unlockTime)
     }
@@ -91,7 +91,7 @@ class AchievementRepository(private val database: MapChinaDatabase) {
         achievementId = achievement_id,
         progressValue = progress_value.toInt(),
         progressTarget = progress_target.toInt(),
-        status = AchievementStatus.valueOf(status),
+        status = AchievementStatus.valueOf(status.uppercase()),
         unlockTime = unlock_time?.let { Instant.fromEpochMilliseconds(it) }
     )
 }
