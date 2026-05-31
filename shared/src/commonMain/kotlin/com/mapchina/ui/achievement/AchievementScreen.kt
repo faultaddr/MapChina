@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.ui.animation.staggeredEntrance
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -168,6 +171,11 @@ fun AchievementScreen(
 @Composable
 private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
     val level = ui.levelInfo
+    val animatedLevelProgress by animateFloatAsState(
+        targetValue = level?.progressToNext ?: 0f,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "levelProgress"
+    )
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
@@ -214,7 +222,7 @@ private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 LinearProgressIndicator(
-                    progress = { level.progressToNext },
+                    progress = { animatedLevelProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
@@ -231,6 +239,11 @@ private fun LevelCard(ui: AchievementUi, modifier: Modifier = Modifier) {
 
 @Composable
 private fun NextTargetCard(target: AchievementWithProgress, modifier: Modifier = Modifier) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = target.progressPercent.coerceIn(0f, 1f),
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "targetProgress"
+    )
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
@@ -242,7 +255,7 @@ private fun NextTargetCard(target: AchievementWithProgress, modifier: Modifier =
             Text(target.definition.description, color = Color.Gray, fontSize = 13.sp)
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = { target.progressPercent.coerceIn(0f, 1f) },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp)
