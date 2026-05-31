@@ -35,6 +35,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.ui.animation.pressScale
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -65,6 +73,17 @@ fun ProfileScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Avatar entrance animation
+            val avatarScale = remember { Animatable(0.8f) }
+            val avatarRotation = remember { Animatable(-5f) }
+            val avatarAlpha = remember { Animatable(0f) }
+
+            LaunchedEffect(Unit) {
+                launch { avatarAlpha.animateTo(1f, tween(400)) }
+                launch { avatarScale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 150f)) }
+                avatarRotation.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 150f))
+            }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
@@ -81,7 +100,13 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF3D3D5C))
+                            .graphicsLayer {
+                                scaleX = avatarScale.value
+                                scaleY = avatarScale.value
+                                rotationZ = avatarRotation.value
+                                alpha = avatarAlpha.value
+                            },
                         tint = if (isLoggedIn) MapChinaColors.Primary else Color.Gray
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -91,6 +116,11 @@ fun ProfileScreen(
                     }
 
                     val levelInfo = profile.levelInfo
+                    val animatedLevelProgress by animateFloatAsState(
+                        targetValue = levelInfo?.progressToNext ?: 0f,
+                        animationSpec = tween(600, easing = FastOutSlowInEasing),
+                        label = "levelProgress"
+                    )
                     if (isLoggedIn && levelInfo != null) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
@@ -121,7 +151,7 @@ fun ProfileScreen(
                                 )
                                 if (!levelInfo.isMaxLevel) {
                                     LinearProgressIndicator(
-                                        progress = { levelInfo.progressToNext },
+                                        progress = { animatedLevelProgress },
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(4.dp)

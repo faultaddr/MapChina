@@ -45,6 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.animation.staggeredEntrance
+import com.mapchina.ui.animation.animateCount
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.mapchina.ui.theme.MapChinaColors
 import kotlin.math.min
 
@@ -442,6 +446,13 @@ private fun CoverageSection(
     total: Int,
     percent: Float
 ) {
+    val animatedVisited = animateCount(visited)
+    val animatedPercent by animateFloatAsState(
+        targetValue = percent,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "coveragePercent"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -455,14 +466,14 @@ private fun CoverageSection(
         ) {
             Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp)
             Text(
-                "$visited / $total",
+                "${animatedVisited.toInt()} / $total",
                 color = MapChinaColors.Primary,
                 fontSize = 14.sp
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
         LinearProgressIndicator(
-            progress = { percent },
+            progress = { animatedPercent },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
@@ -472,7 +483,7 @@ private fun CoverageSection(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "${(percent * 100).toInt()}%",
+            "${(animatedPercent * 100).toInt()}%",
             fontSize = 12.sp,
             color = Color.Gray
         )

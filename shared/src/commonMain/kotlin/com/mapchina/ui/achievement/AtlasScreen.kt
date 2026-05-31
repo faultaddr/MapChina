@@ -39,6 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AtlasProgress
 import com.mapchina.ui.animation.staggeredEntrance
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.border
 import com.mapchina.ui.theme.MapChinaColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,9 +112,32 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit, modifier: Modif
         else -> Color(0xFF4A6FA5)
     }
 
+    val animatedProgress by animateFloatAsState(
+        targetValue = (atlas.completionPercent.toFloat() / 100f).coerceIn(0f, 1f),
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "atlasProgress"
+    )
+
+    // Gold glow pulse for completed atlas
+    val glowAlpha = remember { Animatable(0.3f) }
+    LaunchedEffect(atlas.completionPercent >= 100) {
+        if (atlas.completionPercent >= 100) {
+            while (true) {
+                glowAlpha.animateTo(1f, tween(1000, easing = FastOutSlowInEasing))
+                glowAlpha.animateTo(0.3f, tween(1000, easing = FastOutSlowInEasing))
+            }
+        }
+    }
+    val borderAlpha = if (atlas.completionPercent >= 100) glowAlpha.value else 0f
+
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .then(
+                if (atlas.completionPercent >= 100) {
+                    Modifier.border(2.dp, Color(0xFFFFD700).copy(alpha = borderAlpha), RoundedCornerShape(12.dp))
+                } else Modifier
+            )
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
     ) {
@@ -141,7 +169,7 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit, modifier: Modif
             }
             Spacer(modifier = Modifier.height(10.dp))
             LinearProgressIndicator(
-                progress = { (atlas.completionPercent.toFloat() / 100f).coerceIn(0f, 1f) },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
