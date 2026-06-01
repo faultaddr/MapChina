@@ -1,0 +1,24 @@
+CREATE TABLE atlas_item (
+    atlas_id TEXT NOT NULL,
+    attraction_id TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    province TEXT NOT NULL DEFAULT '',
+    city TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (atlas_id, attraction_id)
+);
+
+selectByAtlas:
+SELECT * FROM atlas_item WHERE atlas_id = ? ORDER BY item_name;
+
+selectByAttraction:
+SELECT * FROM atlas_item WHERE attraction_id = ?;
+
+selectAll:
+SELECT * FROM atlas_item ORDER BY atlas_id, item_name;
+
+countByAtlas:
+SELECT COUNT(*) AS total FROM atlas_item WHERE atlas_id = ?;
+
+insertItem:
+INSERT OR IGNORE INTO atlas_item(atlas_id, attraction_id, item_name, province, city)
+VALUES (?, ?, ?, ?, ?);

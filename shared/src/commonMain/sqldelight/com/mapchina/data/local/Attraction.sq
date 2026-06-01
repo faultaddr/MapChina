@@ -23,6 +23,9 @@ SELECT * FROM attraction WHERE region_id LIKE ? ORDER BY name;
 countAll:
 SELECT COUNT(*) AS total FROM attraction;
 
+deleteAll:
+DELETE FROM attraction;
+
 searchByName:
 SELECT * FROM attraction WHERE name LIKE ? ORDER BY name;
 

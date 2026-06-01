@@ -1,16 +1,15 @@
 package com.mapchina.ui.map
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,17 +18,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +44,10 @@ import androidx.navigation.NavHostController
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.domain.service.AchievementUnlockResult
+import com.mapchina.ui.achievement.AchievementUnlockDialog
+import com.mapchina.ui.navigation.JournalDetailScreen
+import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
 
@@ -73,8 +73,13 @@ fun MapScreen(
     val regions by viewModel.regions.collectAsState()
     val selectedRegion by viewModel.selectedRegion.collectAsState()
     val attractions by viewModel.attractions.collectAsState()
+    val selectedRegionAttractions by viewModel.selectedRegionAttractions.collectAsState()
+    val achievementResult by viewModel.achievementUnlock.collectAsState()
 
-    // seed 异步加载后刷新数据
+    val showOnboarding by viewModel.showOnboarding.collectAsState()
+    val photoClusters by viewModel.photoClusters.collectAsState()
+    val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
+
     LaunchedEffect(regions) {
         if (regions.isEmpty()) {
             kotlinx.coroutines.delay(500)
@@ -82,38 +87,44 @@ fun MapScreen(
         }
     }
 
-    var showFootprintSheet by remember { mutableStateOf(false) }
-    var attractionsPanelExpanded by remember { mutableStateOf(true) }
+    var showRegionCard by remember { mutableStateOf(false) }
+    var showAttractionsSheet by remember { mutableStateOf(false) }
+    var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
 
     val canDrillDown = currentLevel.nextDrillDown() != null
+    val levelLabel = when (currentLevel) {
+        MapZoomLevel.NATIONAL -> "省"
+        MapZoomLevel.PROVINCIAL -> "市"
+        MapZoomLevel.CITY -> "区"
+        MapZoomLevel.DISTRICT -> "区"
+    }
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
     val totalCount = regions.size
     val coveragePercent = if (totalCount > 0) visitedCount * 100 / totalCount else 0
 
-    val currentParentId = currentPath.lastOrNull()?.id
-    val showAttractionsPanel = currentLevel != MapZoomLevel.NATIONAL && attractions.isNotEmpty()
-
-    mapController.setOnRegionLongPressListener { regionId ->
+    // Single tap on region → pulse + show card
+    mapController.setOnRegionTapListener { regionId ->
+        mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
-        showFootprintSheet = true
+        showRegionCard = true
     }
-    mapController.setOnRegionDoubleTapListener { regionId ->
-        if (canDrillDown) {
-            viewModel.drillIntoRegion(regionId)
+    mapController.setOnMarkerTapListener { markerId ->
+        val cluster = photoClusters.find { it.id == markerId }
+        if (cluster != null) {
+            photoPreviewCluster = cluster
+        } else {
+            navController.navigate(AttractionDetailScreen(markerId))
         }
-    }
-    mapController.setOnMarkerTapListener { attractionId ->
-        navController.navigate(AttractionDetailScreen(attractionId))
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 全屏地图
+        // Full-screen map
         PlatformMapView(
             controller = mapController,
             modifier = Modifier.fillMaxSize()
         )
 
-        // 顶部面包屑（悬浮，不占空间）
+        // Top breadcrumb
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -127,124 +138,166 @@ fun MapScreen(
             )
         }
 
-        // 底部覆盖率
-        CoverageOverlay(
+        // Top-right FAB: coverage + photo toggle
+        MapFab(
             visitedCount = visitedCount,
             totalCount = totalCount,
             coveragePercent = coveragePercent,
-            currentLevel = currentLevel,
+            currentLevel = levelLabel,
+            photoMarkersVisible = photoMarkersVisible,
+            onTogglePhotos = { viewModel.togglePhotoMarkers() },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = 16.dp,
-                    end = if (showAttractionsPanel && attractionsPanelExpanded) 0.dp else 16.dp,
-                    bottom = 16.dp
-                )
-                .align(Alignment.BottomStart)
+                .align(Alignment.TopEnd)
+                .padding(top = 48.dp, end = 12.dp)
         )
 
-        // 右侧景点面板
-        if (showAttractionsPanel) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-            ) {
-                // 收起/展开按钮
-                Box(
-                    modifier = Modifier
-                        .width(28.dp)
-                        .fillMaxHeight()
-                        .background(Color(0xAA1A1A2E))
-                        .clickable { attractionsPanelExpanded = !attractionsPanelExpanded },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        if (attractionsPanelExpanded) Icons.Default.ChevronRight else Icons.Default.ChevronLeft,
-                        contentDescription = if (attractionsPanelExpanded) "收起" else "展开",
-                        tint = Color.White,
-                        modifier = Modifier.padding(2.dp)
-                    )
-                }
-
-                if (attractionsPanelExpanded) {
-                    AttractionsPanel(
-                        attractions = attractions,
-                        currentRegionId = currentParentId ?: "",
-                        onMarkVisit = { attractionId, regionId, level ->
-                            viewModel.markAttractionVisit(attractionId, regionId, level)
-                        },
-                        onRemoveVisit = { attractionId ->
-                            viewModel.removeAttractionVisit(attractionId)
-                        },
-                        onAttractionClick = { attractionId ->
-                            navController.navigate(AttractionDetailScreen(attractionId))
-                        },
-                        modifier = Modifier
-                            .width(280.dp)
-                            .fillMaxHeight()
-                    )
-                }
+        // Bottom RegionCard
+        AnimatedVisibility(
+            visible = showRegionCard && selectedRegion != null,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            if (selectedRegion != null) {
+                RegionCard(
+                    region = selectedRegion!!,
+                    attractionCount = viewModel.getAttractionCountForRegion(selectedRegion!!.regionId),
+                    canDrillDown = canDrillDown,
+                    onMarkFootprint = { regionId, level ->
+                        viewModel.markFootprint(regionId, level)
+                    },
+                    onDrillDown = {
+                        showRegionCard = false
+                        viewModel.drillIntoRegion(selectedRegion!!.regionId)
+                    },
+                    onShowAttractions = {
+                        showAttractionsSheet = true
+                    },
+                    onClose = {
+                        showRegionCard = false
+                        viewModel.clearSelection()
+                    }
+                )
             }
         }
     }
 
-    if (showFootprintSheet && selectedRegion != null) {
-        FootprintSheet(
-            region = selectedRegion!!,
-            onMarkFootprint = { regionId, level ->
-                viewModel.markFootprint(regionId, level)
-                showFootprintSheet = false
-                viewModel.clearSelection()
+    // Photo preview overlay
+    if (photoPreviewCluster != null) {
+        PhotoPreviewOverlay(
+            cluster = photoPreviewCluster!!,
+            onDismiss = { photoPreviewCluster = null }
+        )
+    }
+
+    // Onboarding overlay
+    OnboardingOverlay(
+        visible = showOnboarding,
+        onDismiss = { viewModel.dismissOnboarding() }
+    )
+
+    // Attractions bottom sheet
+    if (showAttractionsSheet && selectedRegion != null) {
+        AttractionsBottomSheet(
+            attractions = selectedRegionAttractions,
+            currentRegionId = selectedRegion!!.regionId,
+            onMarkVisit = { attractionId, regionId, level ->
+                viewModel.markAttractionVisit(attractionId, regionId, level)
+            },
+            onRemoveVisit = { attractionId ->
+                viewModel.removeAttractionVisit(attractionId)
+            },
+            onAttractionClick = { attractionId ->
+                showAttractionsSheet = false
+                navController.navigate(AttractionDetailScreen(attractionId))
             },
             onDismiss = {
-                showFootprintSheet = false
-                viewModel.clearSelection()
+                showAttractionsSheet = false
             }
+        )
+    }
+
+    // Achievement unlock dialog
+    if (achievementResult != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissAchievementUnlock() },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissAchievementUnlock() }) {
+                    Text("继续探索", color = MapChinaColors.Primary)
+                }
+            },
+            title = { Text("成就解锁！", color = Color.White) },
+            text = {
+                Text(
+                    "恭喜获得 ${achievementResult!!.newlyUnlocked.size} 个新成就，+${achievementResult!!.scoreAdded} 山河值",
+                    color = Color.Gray
+                )
+            },
+            containerColor = Color(0xFF1A2C3D)
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AttractionsPanel(
+private fun AttractionsBottomSheet(
     attractions: List<AttractionUi>,
     currentRegionId: String,
     onMarkVisit: (String, String, FootprintLevel) -> Unit,
     onRemoveVisit: (String) -> Unit,
     onAttractionClick: (String) -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .background(Color(0xDD1A1A2E))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = Color(0xFF0F1923)
     ) {
-        Text(
-            text = "4A/5A 景点",
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp, top = 4.dp)
-        )
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
         ) {
-            items(attractions, key = { it.id }) { attraction ->
-                AttractionPanelCard(
-                    attraction = attraction,
-                    regionId = currentRegionId,
-                    onMarkVisit = onMarkVisit,
-                    onRemoveVisit = onRemoveVisit,
-                    onClick = { onAttractionClick(attraction.id) }
-                )
+            Text(
+                text = "4A/5A 景点",
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            if (attractions.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("暂无景点数据", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(attractions, key = { it.id }) { attraction ->
+                        AttractionSheetCard(
+                            attraction = attraction,
+                            regionId = currentRegionId,
+                            onMarkVisit = onMarkVisit,
+                            onRemoveVisit = onRemoveVisit,
+                            onClick = { onAttractionClick(attraction.id) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AttractionPanelCard(
+private fun AttractionSheetCard(
     attraction: AttractionUi,
     regionId: String,
     onMarkVisit: (String, String, FootprintLevel) -> Unit,
@@ -261,132 +314,98 @@ private fun AttractionPanelCard(
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep.copy(alpha = 0.2f)
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit.copy(alpha = 0.2f)
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy.copy(alpha = 0.2f)
-        null -> Color(0xFF2D2D44)
+        null -> Color(0xFF1A2C3D)
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(10.dp)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = levelBadge,
-                        color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .background(
-                                if (attraction.level == "A5") Color(0xFF332200) else Color(0xFF0D2744),
-                                RoundedCornerShape(4.dp)
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = attraction.name,
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (isVisited) "已玩过" else "未到访",
-                    color = if (isVisited) MapChinaColors.FootprintDeep else Color.Gray,
+                    text = levelBadge,
+                    color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(if (isVisited) Color(0x33E94560) else Color(0x33888888))
-                        .clickable {
-                            if (isVisited) {
-                                onRemoveVisit(attraction.id)
-                            } else {
-                                onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
-                            }
-                        }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .background(
+                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                            RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = attraction.name,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
+
+            Text(
+                text = if (isVisited) "已玩过" else "未到访",
+                color = if (isVisited) MapChinaColors.FootprintDeep else Color.Gray,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(if (isVisited) Color(0x332EC4B6) else Color(0x33888888))
+                    .clickable {
+                        if (isVisited) {
+                            onRemoveVisit(attraction.id)
+                        } else {
+                            onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
+                        }
+                    }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun CoverageOverlay(
-    visitedCount: Int,
-    totalCount: Int,
-    coveragePercent: Int,
-    currentLevel: MapZoomLevel,
-    modifier: Modifier = Modifier
+private fun PhotoPreviewOverlay(
+    cluster: PhotoCluster,
+    onDismiss: () -> Unit
 ) {
-    val levelLabel = when (currentLevel) {
-        MapZoomLevel.NATIONAL -> "省"
-        MapZoomLevel.PROVINCIAL -> "市"
-        MapZoomLevel.CITY -> "区"
-        MapZoomLevel.DISTRICT -> "区"
-    }
-
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xAA1A1A2E))
-            .padding(12.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xDD0F1923))
+            .clickable(onClick = onDismiss)
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "${cluster.count} 张照片",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text("点击空白关闭", color = Color(0xFF5A7080), fontSize = 12.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "${levelLabel}覆盖率",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "$visitedCount/$totalCount",
-                color = Color.White,
-                fontSize = 14.sp
+                "%.4f, %.4f".format(cluster.latitude, cluster.longitude),
+                color = Color(0xFF5A7080),
+                fontSize = 11.sp
             )
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        LinearProgressIndicator(
-            progress = { if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-            color = Color(0xFFE94560),
-            trackColor = Color(0xFF2D2D44),
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "$coveragePercent%",
-            color = Color(0xFFE94560),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
+

@@ -7,7 +7,11 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
 
-data class FootprintResult(val isSuccess: Boolean, val footprint: com.mapchina.domain.model.Footprint? = null)
+data class FootprintResult(
+    val isSuccess: Boolean,
+    val footprint: com.mapchina.domain.model.Footprint? = null,
+    val achievementResult: AchievementUnlockResult? = null
+)
 
 data class CoverageStats(
     val visitedProvinces: Int,
@@ -22,18 +26,27 @@ data class CoverageStats(
 
 class FootprintService(
     private val footprintRepository: FootprintRepository,
-    private val regionRepository: RegionRepository
+    private val regionRepository: RegionRepository,
+    private val achievementService: AchievementService? = null
 ) {
     fun markFootprint(userId: String, regionId: String, level: FootprintLevel): FootprintResult {
         footprintRepository.markFootprint(userId, regionId, level)
         val footprint = footprintRepository.getFootprint(userId, regionId)
-        return FootprintResult(isSuccess = true, footprint = footprint)
+
+        achievementService?.addFootprintScore(userId, level)
+        val achievementResult = achievementService?.evaluateAndSettle(userId)
+
+        return FootprintResult(isSuccess = true, footprint = footprint, achievementResult = achievementResult)
     }
 
     fun markAttractionVisit(userId: String, attractionId: String, regionId: String, level: FootprintLevel): FootprintResult {
         footprintRepository.markAttractionVisit(userId, attractionId, regionId, level)
         val footprint = footprintRepository.getFootprint(userId, regionId)
-        return FootprintResult(isSuccess = true, footprint = footprint)
+
+        achievementService?.addFootprintScore(userId, level)
+        val achievementResult = achievementService?.evaluateAndSettle(userId)
+
+        return FootprintResult(isSuccess = true, footprint = footprint, achievementResult = achievementResult)
     }
 
     fun removeAttractionVisit(userId: String, attractionId: String) {

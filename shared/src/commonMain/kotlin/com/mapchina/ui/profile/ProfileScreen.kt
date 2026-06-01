@@ -2,27 +2,29 @@ package com.mapchina.ui.profile
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,11 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.ui.theme.MapChinaColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel? = null,
     onNavigateToLogin: (() -> Unit)? = null,
+    onNavigateToJournals: (() -> Unit)? = null,
+    onLoginSuccess: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val profile by (viewModel?.profile?.collectAsState() ?: remember { androidx.compose.runtime.mutableStateOf(ProfileUi("未登录", null, null)) })
@@ -48,7 +51,7 @@ fun ProfileScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         Text(
             "我的",
@@ -64,10 +67,9 @@ fun ProfileScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
             ) {
                 Column(
                     modifier = Modifier
@@ -81,22 +83,82 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF213647)),
                         tint = if (isLoggedIn) MapChinaColors.Primary else Color.Gray
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        profile.nickname,
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
+                    Text(profile.nickname, fontSize = 20.sp, color = Color.White)
                     if (profile.phone != null) {
-                        Text(
-                            profile.phone!!,
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
+                        Text(profile.phone!!, fontSize = 14.sp, color = Color.Gray)
                     }
+
+                    val levelInfo = profile.levelInfo
+                    if (isLoggedIn && levelInfo != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(MapChinaColors.Primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "Lv${levelInfo.currentLevel}",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    levelInfo.currentTitle,
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                if (!levelInfo.isMaxLevel) {
+                                    LinearProgressIndicator(
+                                        progress = { levelInfo.progressToNext },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(4.dp)
+                                            .clip(RoundedCornerShape(2.dp)),
+                                        color = MapChinaColors.Primary,
+                                        trackColor = Color(0xFF0F1923)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "${levelInfo.currentScore}",
+                                color = MapChinaColors.Primary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { onNavigateToJournals?.invoke() },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Book, contentDescription = null, tint = MapChinaColors.Primary, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("我的游记", color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    Text(">", color = Color.Gray, fontSize = 16.sp)
                 }
             }
 
@@ -107,17 +169,13 @@ fun ProfileScreen(
                     onClick = { viewModel?.logout() },
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Error),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("退出登录")
-                }
+                ) { Text("退出登录") }
             } else {
                 Button(
                     onClick = { onNavigateToLogin?.invoke() },
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("登录")
-                }
+                ) { Text("登录") }
             }
         }
     }

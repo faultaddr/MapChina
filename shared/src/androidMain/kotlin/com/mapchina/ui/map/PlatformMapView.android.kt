@@ -20,7 +20,7 @@ actual fun PlatformMapView(controller: MapController, modifier: Modifier) {
             MapView(context).apply {
                 onCreate(null)
                 val aMap = map
-                androidController.bindMap(aMap)
+                androidController.bindMap(aMap, context)
             }
         },
         update = { mapView ->

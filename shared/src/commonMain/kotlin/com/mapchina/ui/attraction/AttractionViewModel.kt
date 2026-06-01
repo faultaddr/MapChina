@@ -6,10 +6,15 @@ import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class AttractionUi(
     val id: String,
@@ -28,8 +33,11 @@ class AttractionViewModel(
     private val footprintService: FootprintService,
     private val footprintRepository: FootprintRepository,
     private val detailProvider: AttractionDetailProvider?,
+    private val attractionService: AttractionService? = null,
     private val userId: String = ""
 ) {
+    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val attractions: StateFlow<List<AttractionUi>> = _attractions.asStateFlow()
 
@@ -39,19 +47,35 @@ class AttractionViewModel(
     private val _selectedAttraction = MutableStateFlow<AttractionUi?>(null)
     val selectedAttraction: StateFlow<AttractionUi?> = _selectedAttraction.asStateFlow()
 
+    init {
+        loadAllAttractions()
+    }
+
+    private fun loadAllAttractions() {
+        vmScope.launch {
+            val all = attractionRepository.getAllAttractions()
+            _attractions.value = all.map { it.toUi() }
+        }
+    }
+
     fun loadAttractionsByRegion(regionId: String) {
-        val attractions = attractionRepository.getAttractionsByRegion(regionId)
-        _attractions.value = attractions.map { it.toUi() }
+        vmScope.launch {
+            val list = attractionService?.getAttractionsByParentRegion(regionId)
+                ?: attractionRepository.getAttractionsByRegion(regionId)
+            _attractions.value = list.map { it.toUi() }
+        }
     }
 
     fun searchAttractions(query: String) {
         _searchQuery.value = query
         if (query.isBlank()) {
-            _attractions.value = emptyList()
+            loadAllAttractions()
             return
         }
-        val results = attractionRepository.searchAttractions(query)
-        _attractions.value = results.map { it.toUi() }
+        vmScope.launch {
+            val results = attractionRepository.searchAttractions(query)
+            _attractions.value = results.map { it.toUi() }
+        }
     }
 
     fun selectAttraction(attractionId: String) {
@@ -74,8 +98,17 @@ class AttractionViewModel(
     }
 
     fun markVisit(attractionId: String, regionId: String, level: FootprintLevel) {
-        footprintService.markAttractionVisit(userId, attractionId, regionId, level)
-        refreshAttractions()
+        vmScope.launch {
+            footprintService.markAttractionVisit(userId, attractionId, regionId, level)
+            refreshAttractions()
+        }
+    }
+
+    fun removeVisit(attractionId: String) {
+        vmScope.launch {
+            footprintService.removeAttractionVisit(userId, attractionId)
+            refreshAttractions()
+        }
     }
 
     private fun refreshAttractions() {

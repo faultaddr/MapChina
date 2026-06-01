@@ -1,0 +1,30 @@
+CREATE TABLE achievement_definition (
+    achievement_id TEXT NOT NULL PRIMARY KEY,
+    category TEXT NOT NULL,
+    sub_category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    rarity TEXT NOT NULL,
+    trigger_type TEXT NOT NULL,
+    trigger_condition TEXT NOT NULL,
+    reward_score INTEGER NOT NULL,
+    sort_order INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active'
+);
+
+selectAll:
+SELECT * FROM achievement_definition WHERE status = 'active' ORDER BY sort_order;
+
+selectByCategory:
+SELECT * FROM achievement_definition WHERE category = ? AND status = 'active' ORDER BY sort_order;
+
+selectById:
+SELECT * FROM achievement_definition WHERE achievement_id = ?;
+
+insertDefinition:
+INSERT OR IGNORE INTO achievement_definition(achievement_id, category, sub_category, name, description, icon, rarity, trigger_type, trigger_condition, reward_score, sort_order, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+countAll:
+SELECT COUNT(*) AS total FROM achievement_definition WHERE status = 'active';

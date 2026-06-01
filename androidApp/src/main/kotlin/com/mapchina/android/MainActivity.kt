@@ -1,41 +1,57 @@
 package com.mapchina.android
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.mapchina.data.remote.BoundaryLoader
-import com.mapchina.data.repository.AttractionRepository
-import com.mapchina.data.repository.RegionRepository
-import com.mapchina.di.appModule
-import com.mapchina.di.platformModule
-import com.mapchina.di.seedDataAsync
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.mapchina.platform.PhotoPicker
 import com.mapchina.ui.MapChinaApp
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
-import org.koin.mp.KoinPlatform
-import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startKoin {
-            androidContext(this@MainActivity)
-            modules(appModule, platformModule)
-        }
-
+        PhotoPicker.setActivity(this)
         enableEdgeToEdge()
+        requestPhotoPermission()
         setContent {
             MapChinaApp()
         }
+    }
 
-        // 所有数据 seed 都在后台线程执行
-        thread(name = "data-seed") {
-            val koin = KoinPlatform.getKoin()
-            val regionRepo = koin.get<RegionRepository>()
-            val attractionRepo = koin.get<AttractionRepository>()
-            val boundaryLoader = koin.get<BoundaryLoader>()
-            seedDataAsync(regionRepo, attractionRepo, boundaryLoader)
+    private fun requestPhotoPermission() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
+        val needsRequest = permissions.any {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (needsRequest) {
+            permissionLauncher.launch(permissions)
+        }
+    }
+
+    @Deprecated("Override for photo picker result handling")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val paths = PhotoPicker.handleActivityResult(requestCode, resultCode, data, this)
+        if (paths.isNotEmpty()) {
+            PhotoPicker.deliverResult(paths)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        PhotoPicker.setActivity(this)
     }
 }

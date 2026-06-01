@@ -2,11 +2,13 @@ package com.mapchina.ui.map
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.local.TestDatabaseDriverFactory
+import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
+import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapZoomLevel
 import kotlin.test.BeforeTest
@@ -27,8 +29,10 @@ class MapViewModelTest {
         val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
-        footprintService = FootprintService(footprintRepo, regionRepo)
-        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, "testUser")
+        val attractionRepo = AttractionRepository(database)
+        val attractionService = AttractionService(attractionRepo)
+        footprintService = FootprintService(footprintRepo, regionRepo, null)
+        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, "testUser")
     }
 
     @Test

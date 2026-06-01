@@ -2,8 +2,7 @@ package com.mapchina.map
 
 actual class MapController actual constructor() {
 
-    private var regionLongPressListener: ((String) -> Unit)? = null
-    private var regionDoubleTapListener: ((String) -> Unit)? = null
+    private var regionTapListener: ((String) -> Unit)? = null
     private var markerTapListener: ((String) -> Unit)? = null
 
     actual fun addOverlay(regionId: String, boundary: String, style: OverlayStyle) {
@@ -34,16 +33,36 @@ actual class MapController actual constructor() {
         // TODO: Integrate with AMap SDK
     }
 
+    actual fun addPolyline(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun removePolyline(id: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun clearPolylines() {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun addImageMarker(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun removeImageMarker(id: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun clearImageMarkers() {
+        // TODO: Integrate with AMap SDK
+    }
+
     actual fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean) {
         // TODO: Integrate with AMap SDK
     }
 
-    actual fun setOnRegionLongPressListener(listener: ((String) -> Unit)?) {
-        regionLongPressListener = listener
-    }
-
-    actual fun setOnRegionDoubleTapListener(listener: ((String) -> Unit)?) {
-        regionDoubleTapListener = listener
+    actual fun setOnRegionTapListener(listener: ((String) -> Unit)?) {
+        regionTapListener = listener
     }
 
     actual fun setOnMarkerTapListener(listener: ((String) -> Unit)?) {
@@ -54,9 +73,12 @@ actual class MapController actual constructor() {
         // TODO
     }
 
+    actual fun pulseOverlay(regionId: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
     actual fun dispose() {
-        regionLongPressListener = null
-        regionDoubleTapListener = null
+        regionTapListener = null
         markerTapListener = null
     }
 }

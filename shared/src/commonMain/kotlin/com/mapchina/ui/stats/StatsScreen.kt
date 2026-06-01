@@ -61,7 +61,7 @@ fun StatsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         Text(
             "统计",
@@ -118,7 +118,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF2D2D44))
+            .background(Color(0xFF1A2C3D))
             .padding(16.dp)
     ) {
         Text("景点等级分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -141,7 +141,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
 
                 // 背景环
                 drawArc(
-                    color = Color(0xFF1A1A2E),
+                    color = Color(0xFF0F1923),
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,
@@ -223,7 +223,7 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF2D2D44))
+            .background(Color(0xFF1A2C3D))
             .padding(16.dp)
     ) {
         Text("到访级别分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -264,7 +264,7 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
 
                 // 中心挖空
                 drawCircle(
-                    color = Color(0xFF2D2D44),
+                    color = Color(0xFF1A2C3D),
                     radius = diameter / 2f - strokeWidth
                 )
 
@@ -317,7 +317,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF2D2D44))
+            .background(Color(0xFF1A2C3D))
             .padding(16.dp)
     ) {
         Text("造访景点省份分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -341,7 +341,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
                         .weight(1f)
                         .height(18.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF1A1A2E))
+                        .background(Color(0xFF0F1923))
                 ) {
                     // 总量背景条
                     val totalWidth = pv.attractionCount.toFloat() / maxCount
@@ -350,7 +350,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
                             .height(12.dp)
                             .fillMaxWidth(totalWidth)
                             .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFF3D3D5C))
+                            .background(Color(0xFF213647))
                     )
                     // 已到访前景条
                     val visitedWidth = if (pv.attractionCount > 0) pv.visitedCount.toFloat() / pv.attractionCount else 0f
@@ -394,7 +394,7 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Row(
             modifier = Modifier
@@ -411,7 +411,7 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332200) else Color(0xFF0D2744),
+                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -444,7 +444,7 @@ private fun CoverageSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF2D2D44))
+            .background(Color(0xFF1A2C3D))
             .padding(16.dp)
     ) {
         Row(
@@ -466,7 +466,7 @@ private fun CoverageSection(
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = MapChinaColors.Primary,
-            trackColor = Color(0xFF1A1A2E)
+            trackColor = Color(0xFF0F1923)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
