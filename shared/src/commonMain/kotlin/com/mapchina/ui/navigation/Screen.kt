@@ -18,3 +18,6 @@ import kotlinx.serialization.Serializable
 @Serializable data class AttractionDetailScreen(val attractionId: String) : Screen()
 @Serializable data object AtlasScreen : Screen()
 @Serializable data class AtlasDetailScreen(val atlasId: String) : Screen()
+@Serializable data object JournalListScreen : Screen()
+@Serializable data class JournalDetailScreen(val journalId: String) : Screen()
+@Serializable data class JournalCreateScreen(val regionId: String? = null) : Screen()

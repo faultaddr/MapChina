@@ -52,6 +52,10 @@ class AttractionRepository(private val database: MapChinaDatabase) {
         return database.attractionQueries.selectAll().executeAsList().map { rowToAttraction(it) }
     }
 
+    fun deleteAll() {
+        database.attractionQueries.deleteAll()
+    }
+
     private fun rowToAttraction(row: com.mapchina.data.local.Attraction): Attraction =
         Attraction(
             id = row.id,

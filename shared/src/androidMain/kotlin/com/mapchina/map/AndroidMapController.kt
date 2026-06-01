@@ -9,6 +9,8 @@ import com.amap.api.maps.model.LatLng
 import com.amap.api.maps.model.Marker
 import com.amap.api.maps.model.MarkerOptions
 import com.amap.api.maps.model.PolygonOptions
+import com.amap.api.maps.model.PolylineOptions
+import com.amap.api.maps.model.BitmapDescriptorFactory
 import org.json.JSONArray
 
 actual class MapController actual constructor() {
@@ -16,6 +18,9 @@ actual class MapController actual constructor() {
     private var aMap: AMap? = null
     private val overlays = mutableMapOf<String, com.amap.api.maps.model.Polygon>()
     private val markers = mutableMapOf<String, Marker>()
+    private val polylines = mutableMapOf<String, com.amap.api.maps.model.Polyline>()
+    private val imageMarkers = mutableMapOf<String, Marker>()
+    var appContext: android.content.Context? = null
     private var regionTapListener: ((String) -> Unit)? = null
     private var markerTapListener: ((String) -> Unit)? = null
     private var cameraZoomChangeListener: ((Float) -> Unit)? = null
@@ -24,6 +29,10 @@ actual class MapController actual constructor() {
     private val pendingOverlays = mutableListOf<PendingOverlay>()
     private data class PendingMarker(val attractionId: String, val name: String, val lat: Double, val lng: Double, val visited: Boolean)
     private val pendingMarkers = mutableListOf<PendingMarker>()
+    private data class PendingPolyline(val id: String, val points: List<Pair<Double, Double>>, val color: Long, val width: Float)
+    private val pendingPolylines = mutableListOf<PendingPolyline>()
+    private data class PendingImageMarker(val id: String, val lat: Double, val lng: Double, val imagePath: String, val count: Int)
+    private val pendingImageMarkers = mutableListOf<PendingImageMarker>()
     private var pendingCamera: Triple<Double, Double, Float>? = null
 
     // Touch state
@@ -35,8 +44,14 @@ actual class MapController actual constructor() {
     private var pulseTargetId: String? = null
     private var pulseOriginalStyle: OverlayStyle? = null
 
-    fun bindMap(amap: AMap) {
+    fun bindMap(amap: AMap, context: android.content.Context? = null) {
         this.aMap = amap
+        if (context != null) {
+            appContext = context
+        }
+
+        // Set initial camera before listeners to avoid spurious zoom change events
+        amap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(34.5, 106.0), 3.8f))
 
         amap.setOnMapTouchListener { motionEvent ->
             when (motionEvent.action) {
@@ -70,7 +85,9 @@ actual class MapController actual constructor() {
         }
 
         amap.setOnMarkerClickListener { marker ->
-            markers.entries.find { it.value == marker }?.key?.let { id ->
+            val id = markers.entries.find { it.value == marker }?.key
+                ?: imageMarkers.entries.find { it.value == marker }?.key
+            if (id != null) {
                 markerTapListener?.invoke(id)
             }
             true
@@ -97,12 +114,24 @@ actual class MapController actual constructor() {
             addMarkerToMap(m.attractionId, m.name, m.lat, m.lng, m.visited)
         }
 
+        // Replay cached polylines
+        val polylinesToReplay = pendingPolylines.toList()
+        pendingPolylines.clear()
+        for (p in polylinesToReplay) {
+            addPolylineToMap(p.id, p.points, p.color, p.width)
+        }
+
+        // Replay cached image markers
+        val imageMarkersToReplay = pendingImageMarkers.toList()
+        pendingImageMarkers.clear()
+        for (im in imageMarkersToReplay) {
+            addImageMarkerToMap(im.id, im.lat, im.lng, im.imagePath, im.count)
+        }
+
         pendingCamera?.let { (lat, lng, zoom) ->
             amap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), zoom))
         }
         pendingCamera = null
-
-        amap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(34.5, 106.0), 3.8f))
     }
 
     fun unbindMap() {
@@ -160,6 +189,48 @@ actual class MapController actual constructor() {
         pendingMarkers.clear()
     }
 
+    actual fun addPolyline(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float) {
+        val map = aMap
+        if (map != null) {
+            addPolylineToMap(id, points, color, width)
+        } else {
+            pendingPolylines.removeAll { it.id == id }
+            pendingPolylines.add(PendingPolyline(id, points, color, width))
+        }
+    }
+
+    actual fun removePolyline(id: String) {
+        polylines.remove(id)?.remove()
+        pendingPolylines.removeAll { it.id == id }
+    }
+
+    actual fun clearPolylines() {
+        polylines.values.forEach { it.remove() }
+        polylines.clear()
+        pendingPolylines.clear()
+    }
+
+    actual fun addImageMarker(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {
+        val map = aMap
+        if (map != null) {
+            addImageMarkerToMap(id, lat, lng, imagePath, count)
+        } else {
+            pendingImageMarkers.removeAll { it.id == id }
+            pendingImageMarkers.add(PendingImageMarker(id, lat, lng, imagePath, count))
+        }
+    }
+
+    actual fun removeImageMarker(id: String) {
+        imageMarkers.remove(id)?.remove()
+        pendingImageMarkers.removeAll { it.id == id }
+    }
+
+    actual fun clearImageMarkers() {
+        imageMarkers.values.forEach { it.remove() }
+        imageMarkers.clear()
+        pendingImageMarkers.clear()
+    }
+
     actual fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean) {
         val map = aMap
         if (map != null) {
@@ -211,8 +282,14 @@ actual class MapController actual constructor() {
         overlays.clear()
         markers.values.forEach { it.remove() }
         markers.clear()
+        polylines.values.forEach { it.remove() }
+        polylines.clear()
+        imageMarkers.values.forEach { it.remove() }
+        imageMarkers.clear()
         pendingOverlays.clear()
         pendingMarkers.clear()
+        pendingPolylines.clear()
+        pendingImageMarkers.clear()
         regionTapListener = null
         markerTapListener = null
         cameraZoomChangeListener = null
@@ -250,6 +327,39 @@ actual class MapController actual constructor() {
             .snippet(if (visited) "已到访" else "未到访")
         )
         markers[attractionId] = marker
+    }
+
+    private fun addImageMarkerToMap(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {
+        val map = aMap ?: return
+        removeImageMarker(id)
+        val context = appContext ?: return
+        val bitmap = PhotoMarkerRenderer.render(context, imagePath, count) ?: return
+        val descriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
+        val marker = map.addMarker(MarkerOptions()
+            .position(LatLng(lat, lng))
+            .icon(descriptor)
+            .anchor(0.5f, 1f)
+            .zIndex(3f)
+        )
+        marker.title = "photo_marker_$id"
+        imageMarkers[id] = marker
+        bitmap.recycle()
+    }
+
+    private fun addPolylineToMap(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float) {
+        val map = aMap ?: return
+        removePolyline(id)
+        if (points.size < 2) return
+
+        val latLngs = points.map { LatLng(it.first, it.second) }
+        val polylineOptions = PolylineOptions()
+            .addAll(latLngs)
+            .color(color.toInt())
+            .width(width)
+            .zIndex(2f)
+
+        val polyline = map.addPolyline(polylineOptions)
+        polylines[id] = polyline
     }
 
     private fun findRegionAt(latLng: LatLng): String? {

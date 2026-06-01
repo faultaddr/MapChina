@@ -1,0 +1,10 @@
+CREATE TABLE app_setting (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+selectByKey:
+SELECT * FROM app_setting WHERE key = ?;
+
+upsert:
+INSERT OR REPLACE INTO app_setting (key, value) VALUES (?, ?);

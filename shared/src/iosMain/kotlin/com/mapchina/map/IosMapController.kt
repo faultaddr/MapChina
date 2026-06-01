@@ -33,6 +33,30 @@ actual class MapController actual constructor() {
         // TODO: Integrate with AMap SDK
     }
 
+    actual fun addPolyline(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun removePolyline(id: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun clearPolylines() {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun addImageMarker(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun removeImageMarker(id: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun clearImageMarkers() {
+        // TODO: Integrate with AMap SDK
+    }
+
     actual fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean) {
         // TODO: Integrate with AMap SDK
     }

@@ -544,6 +544,7 @@ object DataSeeder {
 
     fun seedAttractions(attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
         val seeds = boundaryLoader?.loadAttractionSeeds() ?: return
+        attractionRepo.deleteAll()
         val attractions = seeds.map { seed ->
             Attraction(
                 id = seed.id,

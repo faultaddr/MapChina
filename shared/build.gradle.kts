@@ -47,6 +47,7 @@ kotlin {
             implementation("app.cash.sqldelight:android-driver:2.0.2")
             implementation("io.insert-koin:koin-android:4.0.4")
             implementation("com.amap.api:3dmap:10.0.600")
+            implementation("androidx.exifinterface:exifinterface:1.3.7")
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:3.1.3")

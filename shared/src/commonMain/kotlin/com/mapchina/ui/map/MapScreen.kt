@@ -22,7 +22,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +46,8 @@ import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.achievement.AchievementUnlockDialog
+import com.mapchina.ui.navigation.JournalDetailScreen
+import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
 
@@ -73,8 +74,11 @@ fun MapScreen(
     val selectedRegion by viewModel.selectedRegion.collectAsState()
     val attractions by viewModel.attractions.collectAsState()
     val selectedRegionAttractions by viewModel.selectedRegionAttractions.collectAsState()
-    val drillDownHint by viewModel.drillDownHint.collectAsState()
     val achievementResult by viewModel.achievementUnlock.collectAsState()
+
+    val showOnboarding by viewModel.showOnboarding.collectAsState()
+    val photoClusters by viewModel.photoClusters.collectAsState()
+    val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
 
     LaunchedEffect(regions) {
         if (regions.isEmpty()) {
@@ -85,9 +89,15 @@ fun MapScreen(
 
     var showRegionCard by remember { mutableStateOf(false) }
     var showAttractionsSheet by remember { mutableStateOf(false) }
-    var showOnboarding by remember { mutableStateOf(true) }
+    var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
 
     val canDrillDown = currentLevel.nextDrillDown() != null
+    val levelLabel = when (currentLevel) {
+        MapZoomLevel.NATIONAL -> "省"
+        MapZoomLevel.PROVINCIAL -> "市"
+        MapZoomLevel.CITY -> "区"
+        MapZoomLevel.DISTRICT -> "区"
+    }
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
     val totalCount = regions.size
     val coveragePercent = if (totalCount > 0) visitedCount * 100 / totalCount else 0
@@ -98,8 +108,13 @@ fun MapScreen(
         viewModel.selectRegion(regionId)
         showRegionCard = true
     }
-    mapController.setOnMarkerTapListener { attractionId ->
-        navController.navigate(AttractionDetailScreen(attractionId))
+    mapController.setOnMarkerTapListener { markerId ->
+        val cluster = photoClusters.find { it.id == markerId }
+        if (cluster != null) {
+            photoPreviewCluster = cluster
+        } else {
+            navController.navigate(AttractionDetailScreen(markerId))
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -123,20 +138,17 @@ fun MapScreen(
             )
         }
 
-        // Bottom coverage overlay — shifts up when RegionCard is visible
-        CoverageOverlay(
+        // Top-right FAB: coverage + photo toggle
+        MapFab(
             visitedCount = visitedCount,
             totalCount = totalCount,
             coveragePercent = coveragePercent,
-            currentLevel = currentLevel,
+            currentLevel = levelLabel,
+            photoMarkersVisible = photoMarkersVisible,
+            onTogglePhotos = { viewModel.togglePhotoMarkers() },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = if (showRegionCard && selectedRegion != null) 8.dp else 16.dp
-                )
-                .align(Alignment.BottomStart)
+                .align(Alignment.TopEnd)
+                .padding(top = 48.dp, end = 12.dp)
         )
 
         // Bottom RegionCard
@@ -160,16 +172,28 @@ fun MapScreen(
                     },
                     onShowAttractions = {
                         showAttractionsSheet = true
+                    },
+                    onClose = {
+                        showRegionCard = false
+                        viewModel.clearSelection()
                     }
                 )
             }
         }
     }
 
+    // Photo preview overlay
+    if (photoPreviewCluster != null) {
+        PhotoPreviewOverlay(
+            cluster = photoPreviewCluster!!,
+            onDismiss = { photoPreviewCluster = null }
+        )
+    }
+
     // Onboarding overlay
     OnboardingOverlay(
         visible = showOnboarding,
-        onDismiss = { showOnboarding = false }
+        onDismiss = { viewModel.dismissOnboarding() }
     )
 
     // Attractions bottom sheet
@@ -190,29 +214,6 @@ fun MapScreen(
             onDismiss = {
                 showAttractionsSheet = false
             }
-        )
-    }
-
-    // Drill-down hint
-    if (drillDownHint != null) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissDrillDownHint() },
-            title = { Text("继续探索", color = Color.White) },
-            text = { Text("放大查看「$drillDownHint」的子区域？", color = Color.Gray) },
-            confirmButton = {
-                TextButton(onClick = {
-                    val regionId = viewModel.selectedRegion.value?.regionId
-                        ?: viewModel.currentPath.value.lastOrNull()?.id
-                    if (regionId != null) {
-                        viewModel.drillIntoRegion(regionId)
-                    }
-                    viewModel.dismissDrillDownHint()
-                }) { Text("查看", color = MapChinaColors.Primary) }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissDrillDownHint() }) { Text("取消", color = Color.Gray) }
-            },
-            containerColor = Color(0xFF1A2C3D)
         )
     }
 
@@ -371,63 +372,40 @@ private fun AttractionSheetCard(
 }
 
 @Composable
-private fun CoverageOverlay(
-    visitedCount: Int,
-    totalCount: Int,
-    coveragePercent: Int,
-    currentLevel: MapZoomLevel,
-    modifier: Modifier = Modifier
+private fun PhotoPreviewOverlay(
+    cluster: PhotoCluster,
+    onDismiss: () -> Unit
 ) {
-    val levelLabel = when (currentLevel) {
-        MapZoomLevel.NATIONAL -> "省"
-        MapZoomLevel.PROVINCIAL -> "市"
-        MapZoomLevel.CITY -> "区"
-        MapZoomLevel.DISTRICT -> "区"
-    }
-
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xAA0F1923))
-            .padding(12.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xDD0F1923))
+            .clickable(onClick = onDismiss)
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "${cluster.count} 张照片",
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text("点击空白关闭", color = Color(0xFF5A7080), fontSize = 12.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "${levelLabel}覆盖率",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "$visitedCount/$totalCount",
-                color = Color.White,
-                fontSize = 14.sp
+                "%.4f, %.4f".format(cluster.latitude, cluster.longitude),
+                color = Color(0xFF5A7080),
+                fontSize = 11.sp
             )
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        LinearProgressIndicator(
-            progress = { if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-            color = Color(0xFFE94560),
-            trackColor = Color(0xFF1A2C3D),
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "$coveragePercent%",
-            color = Color(0xFFE94560),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
+

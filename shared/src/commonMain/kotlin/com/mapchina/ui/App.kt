@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Attractions
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -47,7 +46,6 @@ import androidx.navigation.compose.rememberNavController
 import com.mapchina.ui.navigation.AppNavHost
 import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.navigation.AttractionsScreen
-import com.mapchina.ui.navigation.StatsScreen
 import com.mapchina.ui.navigation.AchievementScreen
 import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.Screen
@@ -60,7 +58,6 @@ data class BottomNavItem(val screen: Screen, val label: String, val icon: ImageV
 val bottomNavItems = listOf(
     BottomNavItem(MapScreen, "足迹地图", Icons.Default.LocationOn),
     BottomNavItem(AttractionsScreen, "景点", Icons.Default.Attractions),
-    BottomNavItem(StatsScreen, "统计", Icons.Default.BarChart),
     BottomNavItem(AchievementScreen, "成就", Icons.Default.EmojiEvents),
     BottomNavItem(ProfileScreen, "我的", Icons.Default.Person),
 )

@@ -2,15 +2,16 @@ package com.mapchina.ui.map
 
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.data.repository.RegionRepository
+import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
-import com.mapchina.domain.service.AchievementService
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapController
+import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayStyle
 import kotlinx.coroutines.CoroutineScope
@@ -52,6 +53,8 @@ class MapViewModel(
     private val footprintRepository: FootprintRepository,
     private val attractionService: AttractionService,
     private val boundaryLoader: BoundaryLoader? = null,
+    private val settingsRepository: SettingsRepository? = null,
+    private val devicePhotoProvider: DevicePhotoProvider? = null,
     private val userId: String = ""
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -80,17 +83,33 @@ class MapViewModel(
     private val _selectedRegionAttractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val selectedRegionAttractions: StateFlow<List<AttractionUi>> = _selectedRegionAttractions.asStateFlow()
 
+    private val _showOnboarding = MutableStateFlow(false)
+    val showOnboarding: StateFlow<Boolean> = _showOnboarding.asStateFlow()
+
+    private val _photoClusters = MutableStateFlow<List<PhotoCluster>>(emptyList())
+    val photoClusters: StateFlow<List<PhotoCluster>> = _photoClusters.asStateFlow()
+
+    private val _photoMarkersVisible = MutableStateFlow(false)
+    val photoMarkersVisible: StateFlow<Boolean> = _photoMarkersVisible.asStateFlow()
+
     private var footprintCache: Map<String, FootprintLevel>? = null
+
+    private var childrenIndex: Map<String, List<String>> = emptyMap()
+    private var childrenIndexReady = false
 
     private var _mapController: MapController? = null
     private var _programmaticCamera = false
+    private var lastBoundaries: Map<String, String>? = null
+    private var lastSyncedRegionIds: Set<String> = emptySet()
     var mapController: MapController?
         get() = _mapController
         set(value) {
+            if (_mapController === value) return
             _mapController = value
             if (value != null) {
+                lastSyncedRegionIds = emptySet()
                 if (_regions.value.isNotEmpty()) {
-                    syncOverlaysToMap()
+                    syncOverlaysToMap(lastBoundaries)
                 }
                 value.setOnCameraZoomChangeListener { zoom ->
                     onCameraZoomChanged(zoom)
@@ -98,20 +117,44 @@ class MapViewModel(
             }
         }
 
-    // Cache attraction counts per region to avoid repeated queries
     private val attractionCountCache = mutableMapOf<String, Int>()
+    private var attractionVisitsCache: Map<String, FootprintLevel>? = null
+
+    companion object {
+        private const val KEY_ONBOARDING_COUNT = "onboarding_shown_count"
+        private const val MAX_ONBOARDING_SHOWS = 2
+    }
 
     init {
-        loadTopLevelRegions()
+        val shownCount = settingsRepository?.getInt(KEY_ONBOARDING_COUNT) ?: 0
+        _showOnboarding.value = shownCount < MAX_ONBOARDING_SHOWS
+        if (_showOnboarding.value) {
+            settingsRepository?.setInt(KEY_ONBOARDING_COUNT, shownCount + 1)
+        }
+
+        vmScope.launch {
+            loadTopLevelRegions()
+            rebuildChildrenIndex()
+            childrenIndexReady = true
+            refreshCoverage()
+        }
     }
 
     fun reloadData() {
         footprintCache = null
+        attractionVisitsCache = null
         attractionCountCache.clear()
-        if (_currentPath.value.isEmpty()) {
-            loadTopLevelRegions()
-        } else {
-            refreshRegions()
+        vmScope.launch {
+            if (_currentPath.value.isEmpty()) {
+                loadTopLevelRegions()
+            } else {
+                refreshRegions()
+            }
+            if (!childrenIndexReady) {
+                rebuildChildrenIndex()
+                childrenIndexReady = true
+            }
+            refreshCoverage()
         }
     }
 
@@ -123,6 +166,29 @@ class MapViewModel(
         return footprintCache!!
     }
 
+    private fun getAttractionVisitsCache(): Map<String, FootprintLevel> {
+        if (attractionVisitsCache == null) {
+            attractionVisitsCache = footprintRepository.getAttractionVisitsByUser(userId)
+                .associate { it.attractionId to it.level }
+        }
+        return attractionVisitsCache!!
+    }
+
+    private fun rebuildChildrenIndex() {
+        val index = mutableMapOf<String, MutableList<String>>()
+        val allCities = regionRepository.getRegionsByLevel(RegionLevel.CITY)
+        for (city in allCities) {
+            val parentId = city.parentId ?: continue
+            index.getOrPut(parentId) { mutableListOf() }.add(city.id)
+        }
+        val allDistricts = regionRepository.getRegionsByLevel(RegionLevel.DISTRICT)
+        for (district in allDistricts) {
+            val parentId = district.parentId ?: continue
+            index.getOrPut(parentId) { mutableListOf() }.add(district.id)
+        }
+        childrenIndex = index
+    }
+
     fun drillIntoRegion(regionId: String) {
         val region = regionRepository.getRegion(regionId) ?: return
         _currentPath.value = _currentPath.value + region
@@ -131,31 +197,42 @@ class MapViewModel(
             RegionLevel.CITY -> MapZoomLevel.CITY
             RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
         }
-        loadChildRegions(regionId)
+        _selectedRegion.value = null
         moveCameraToRegion(region)
-        loadAttractionsForRegion(regionId)
+
+        vmScope.launch {
+            loadChildRegions(regionId)
+            loadAttractionsForRegion(regionId)
+        }
     }
 
     fun navigateUp() {
-        if (_currentPath.value.size > 1) {
-            _currentPath.value = _currentPath.value.dropLast(1)
+        val path = _currentPath.value
+        if (path.size > 1) {
+            _currentPath.value = path.dropLast(1)
             val parent = _currentPath.value.last()
             _currentLevel.value = when (parent.level) {
                 RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
                 RegionLevel.CITY -> MapZoomLevel.CITY
                 RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
             }
-            loadChildRegions(parent.id)
             moveCameraToRegion(parent)
-            loadAttractionsForRegion(parent.id)
-        } else {
+
+            vmScope.launch {
+                loadChildRegions(parent.id)
+                loadAttractionsForRegion(parent.id)
+            }
+        } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
-            loadTopLevelRegions()
-            _attractions.value = emptyList()
-            mapController?.clearMarkers()
             _programmaticCamera = true
             mapController?.setCamera(34.5, 106.0, 3.8f, true)
+
+            vmScope.launch {
+                loadTopLevelRegions()
+                _attractions.value = emptyList()
+                mapController?.clearMarkers()
+            }
         }
     }
 
@@ -168,11 +245,13 @@ class MapViewModel(
             RegionLevel.CITY -> MapZoomLevel.CITY
             RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
         }
-        loadChildRegions(regionId)
         moveCameraToRegion(region)
-        loadAttractionsForRegion(regionId)
-    }
 
+        vmScope.launch {
+            loadChildRegions(regionId)
+            loadAttractionsForRegion(regionId)
+        }
+    }
 
     fun selectRegion(regionId: String) {
         val fromList = _regions.value.find { it.regionId == regionId }
@@ -189,7 +268,7 @@ class MapViewModel(
                 bounds = RegionBounds(0f, 0f, 0f, 0f)
             )
         }
-        loadAttractionsForSelectedRegion(regionId)
+        vmScope.launch { loadAttractionsForSelectedRegion(regionId) }
     }
 
     fun clearSelection() {
@@ -205,9 +284,44 @@ class MapViewModel(
         _drillDownHint.value = null
     }
 
+    fun dismissOnboarding() {
+        _showOnboarding.value = false
+    }
+
     fun getAttractionCountForRegion(regionId: String): Int {
         return attractionCountCache.getOrPut(regionId) {
             attractionService.getAttractionsByParentRegion(regionId).size
+        }
+    }
+
+    fun togglePhotoMarkers() {
+        val newValue = !_photoMarkersVisible.value
+        _photoMarkersVisible.value = newValue
+        if (newValue) {
+            syncPhotoMarkersToMap()
+        } else {
+            _mapController?.clearImageMarkers()
+            _photoClusters.value = emptyList()
+        }
+    }
+
+    fun syncPhotoMarkersToMap() {
+        val controller = _mapController ?: return
+        val provider = devicePhotoProvider ?: return
+        if (!provider.isAvailable()) return
+        vmScope.launch {
+            val photos = provider.getPhotosWithLocation()
+            if (photos.isEmpty()) {
+                controller.clearImageMarkers()
+                _photoClusters.value = emptyList()
+                return@launch
+            }
+            val clusters = PhotoClusterer.cluster(photos)
+            _photoClusters.value = clusters
+            controller.clearImageMarkers()
+            for (cluster in clusters) {
+                controller.addImageMarker(cluster.id, cluster.latitude, cluster.longitude, cluster.coverPath, cluster.count)
+            }
         }
     }
 
@@ -215,6 +329,7 @@ class MapViewModel(
         vmScope.launch {
             val result = footprintService.markFootprint(userId, regionId, level)
             footprintCache = null
+            attractionVisitsCache = null
             refreshRegions()
             updateOverlayColor(regionId, level)
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
@@ -227,6 +342,8 @@ class MapViewModel(
         vmScope.launch {
             val result = footprintService.markAttractionVisit(userId, attractionId, regionId, level)
             footprintCache = null
+            attractionVisitsCache = null
+            attractionCountCache.clear()
             refreshAttractions()
             refreshRegions()
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
@@ -239,6 +356,7 @@ class MapViewModel(
         vmScope.launch {
             footprintService.removeAttractionVisit(userId, attractionId)
             footprintCache = null
+            attractionVisitsCache = null
             refreshAttractions()
             refreshRegions()
         }
@@ -247,37 +365,37 @@ class MapViewModel(
     private fun refreshAttractions() {
         val currentParentId = _currentPath.value.lastOrNull()?.id
         if (currentParentId != null) {
-            loadAttractionsForRegion(currentParentId)
+            vmScope.launch { loadAttractionsForRegion(currentParentId) }
         }
     }
 
-    private fun loadAttractionsForRegion(regionId: String) {
+    private suspend fun loadAttractionsForRegion(regionId: String) {
         val list = attractionService.getAttractionsByParentRegion(regionId)
+        val visits = getAttractionVisitsCache()
         _attractions.value = list.map { attraction ->
-            val visit = footprintRepository.getAttractionVisit(userId, attraction.id)
             AttractionUi(
                 id = attraction.id,
                 name = attraction.name,
                 level = attraction.level.name,
                 regionId = attraction.regionId,
                 description = attraction.description,
-                visitLevel = visit?.level
+                visitLevel = visits[attraction.id]
             )
         }
         syncMarkersToMap()
     }
 
-    private fun loadAttractionsForSelectedRegion(regionId: String) {
+    private suspend fun loadAttractionsForSelectedRegion(regionId: String) {
         val list = attractionService.getAttractionsByParentRegion(regionId)
+        val visits = getAttractionVisitsCache()
         _selectedRegionAttractions.value = list.map { attraction ->
-            val visit = footprintRepository.getAttractionVisit(userId, attraction.id)
             AttractionUi(
                 id = attraction.id,
                 name = attraction.name,
                 level = attraction.level.name,
                 regionId = attraction.regionId,
                 description = attraction.description,
-                visitLevel = visit?.level
+                visitLevel = visits[attraction.id]
             )
         }
     }
@@ -287,8 +405,8 @@ class MapViewModel(
         if (provinces.isEmpty()) return
         val footprints = getFootprintCache()
         val boundaries = regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
+        lastBoundaries = boundaries
 
-        // Fast path: render with coverage = 0 first
         _regions.value = provinces.map { region ->
             RegionFootprintUi(
                 regionId = region.id,
@@ -296,27 +414,12 @@ class MapViewModel(
                 footprintLevel = footprints[region.id],
                 normalizedPath = emptyList(),
                 bounds = RegionBounds(0f, 0f, 0f, 0f),
-                childCoverageRate = 0f
+                childCoverageRate = if (childrenIndexReady) {
+                    computeCoverageBatch(listOf(region.id), footprints)[region.id] ?: 0f
+                } else 0f
             )
         }
         syncOverlaysToMap(boundaries)
-
-        // Async: compute coverage and update overlays
-        vmScope.launch {
-            val updated = provinces.map { region ->
-                val coverage = computeChildCoverageBatch(region.id, footprints)
-                RegionFootprintUi(
-                    regionId = region.id,
-                    name = region.name,
-                    footprintLevel = footprints[region.id],
-                    normalizedPath = emptyList(),
-                    bounds = RegionBounds(0f, 0f, 0f, 0f),
-                    childCoverageRate = coverage
-                )
-            }
-            _regions.value = updated
-            syncOverlaysToMap(boundaries)
-        }
     }
 
     private fun loadChildRegions(parentId: String) {
@@ -332,13 +435,14 @@ class MapViewModel(
                 val boundaryUpdates = childBoundaries.map { it.id to it.boundary }
                 regionRepository.updateBoundariesInTransaction(boundaryUpdates)
                 children = regionRepository.getChildRegions(parentId)
+                rebuildChildrenIndex()
             }
         }
 
         val footprints = getFootprintCache()
         val boundaries = regionRepository.getBoundariesByParentId(parentId)
+        lastBoundaries = boundaries
 
-        // Fast path
         _regions.value = children.map { region ->
             RegionFootprintUi(
                 regionId = region.id,
@@ -346,35 +450,74 @@ class MapViewModel(
                 footprintLevel = footprints[region.id],
                 normalizedPath = emptyList(),
                 bounds = RegionBounds(0f, 0f, 0f, 0f),
-                childCoverageRate = 0f
+                childCoverageRate = if (childrenIndexReady) {
+                    computeCoverageBatch(listOf(region.id), footprints)[region.id] ?: 0f
+                } else 0f
             )
         }
         syncOverlaysToMap(boundaries)
+    }
 
-        // Async: compute coverage
-        vmScope.launch {
-            val updated = children.map { region ->
-                val coverage = computeChildCoverageBatch(region.id, footprints)
-                RegionFootprintUi(
-                    regionId = region.id,
-                    name = region.name,
-                    footprintLevel = footprints[region.id],
-                    normalizedPath = emptyList(),
-                    bounds = RegionBounds(0f, 0f, 0f, 0f),
-                    childCoverageRate = coverage
-                )
-            }
-            _regions.value = updated
-            syncOverlaysToMap(boundaries)
+    private fun refreshCoverage() {
+        val footprints = getFootprintCache()
+        val currentRegions = _regions.value
+        if (currentRegions.isEmpty()) return
+
+        val coverageMap = computeCoverageBatch(currentRegions.map { it.regionId }, footprints)
+        _regions.value = currentRegions.map { region ->
+            region.copy(childCoverageRate = coverageMap[region.regionId] ?: 0f)
         }
+        val parentId = _currentPath.value.lastOrNull()?.id
+        val boundaries = if (parentId != null) {
+            regionRepository.getBoundariesByParentId(parentId)
+        } else {
+            regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
+        }
+        syncOverlaysToMap(boundaries)
     }
 
     private fun refreshRegions() {
         val parentId = _currentPath.value.lastOrNull()?.id
-        if (parentId != null) {
-            loadChildRegions(parentId)
-        } else {
-            loadTopLevelRegions()
+        vmScope.launch {
+            if (parentId != null) {
+                loadChildRegions(parentId)
+            } else {
+                loadTopLevelRegions()
+            }
+        }
+    }
+
+    private fun computeCoverageBatch(
+        parentIds: List<String>,
+        footprints: Map<String, FootprintLevel>
+    ): Map<String, Float> {
+        val result = mutableMapOf<String, Float>()
+        val visitedSet = footprints.keys
+
+        for (parentId in parentIds) {
+            val childIds = childrenIndex[parentId]
+            if (childIds.isNullOrEmpty()) {
+                result[parentId] = if (visitedSet.contains(parentId)) 1f else 0f
+                continue
+            }
+            val visitedCount = childIds.count { childId ->
+                visitedSet.contains(childId) || hasDescendantVisited(childId, visitedSet, mutableSetOf())
+            }
+            result[parentId] = visitedCount.toFloat() / childIds.size
+        }
+        return result
+    }
+
+    private fun hasDescendantVisited(
+        regionId: String,
+        visitedSet: Set<String>,
+        seen: MutableSet<String>
+    ): Boolean {
+        if (regionId in seen) return false
+        seen.add(regionId)
+        val childIds = childrenIndex[regionId] ?: return false
+        return childIds.any { childId ->
+            visitedSet.contains(childId) || hasDescendantVisited(childId, visitedSet, seen)
         }
     }
 
@@ -388,14 +531,18 @@ class MapViewModel(
                 RegionLevel.CITY -> MapZoomLevel.CITY
                 RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
             }
-            loadChildRegions(parent.id)
-            loadAttractionsForRegion(parent.id)
+            vmScope.launch {
+                loadChildRegions(parent.id)
+                loadAttractionsForRegion(parent.id)
+            }
         } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
-            loadTopLevelRegions()
-            _attractions.value = emptyList()
-            mapController?.clearMarkers()
+            vmScope.launch {
+                loadTopLevelRegions()
+                _attractions.value = emptyList()
+                mapController?.clearMarkers()
+            }
         }
     }
 
@@ -412,6 +559,7 @@ class MapViewModel(
             }
         }
         controller.removeOverlaysExcept(regionIds)
+        lastSyncedRegionIds = regionIds
     }
 
     private fun syncMarkersToMap() {
@@ -445,6 +593,8 @@ class MapViewModel(
             return
         }
 
+        if (_currentPath.value.isEmpty()) return
+
         val currentZoomLevel = _currentLevel.value
 
         val targetLevel = when {
@@ -456,14 +606,8 @@ class MapViewModel(
 
         if (targetLevel == currentZoomLevel) return
 
-        when {
-            targetLevel.ordinal > currentZoomLevel.ordinal -> {
-                val regionName = _currentPath.value.lastOrNull()?.name ?: "当前区域"
-                _drillDownHint.value = regionName
-            }
-            targetLevel.ordinal < currentZoomLevel.ordinal -> {
-                zoomOutToParent()
-            }
+        if (targetLevel.ordinal < currentZoomLevel.ordinal) {
+            zoomOutToParent()
         }
     }
 
@@ -503,25 +647,6 @@ class MapViewModel(
             strokeWidth = 2f,
             alpha = 0.6f
         )
-    }
-
-    private fun computeChildCoverageBatch(regionId: String, footprints: Map<String, FootprintLevel>): Float {
-        val children = regionRepository.getChildRegions(regionId)
-        if (children.isEmpty()) {
-            return if (footprints.containsKey(regionId)) 1f else 0f
-        }
-        val visited = children.count { child ->
-            footprints.containsKey(child.id) || hasDescendantInCache(child.id, footprints)
-        }
-        return visited.toFloat() / children.size
-    }
-
-    private fun hasDescendantInCache(regionId: String, footprints: Map<String, FootprintLevel>): Boolean {
-        val children = regionRepository.getChildRegions(regionId)
-        if (children.isEmpty()) return false
-        return children.any { child ->
-            footprints.containsKey(child.id) || hasDescendantInCache(child.id, footprints)
-        }
     }
 
     private fun buildPathTo(regionId: String): List<Region> {

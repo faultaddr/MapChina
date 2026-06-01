@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS journal (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    region_id TEXT,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS journal_photo (
+    id TEXT NOT NULL PRIMARY KEY,
+    journal_id TEXT NOT NULL,
+    local_path TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    taken_at INTEGER,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS journal_track_point (
+    id TEXT NOT NULL PRIMARY KEY,
+    journal_id TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    altitude REAL NOT NULL DEFAULT 0,
+    speed REAL NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);

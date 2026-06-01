@@ -24,12 +24,16 @@ import com.mapchina.ui.achievement.ProvinceDetailScreen as ProvinceDetailScreenC
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.attraction.AttractionDetailScreen
 import com.mapchina.ui.attraction.AttractionViewModel
+import com.mapchina.ui.journal.JournalViewModel
+import com.mapchina.ui.journal.JournalListScreen as JournalListScreenComposable
+import com.mapchina.ui.journal.JournalDetailScreen as JournalDetailScreenComposable
+import com.mapchina.ui.journal.JournalCreateScreen as JournalCreateScreenComposable
 import com.mapchina.ui.map.MapScreen as MapScreenComposable
 import com.mapchina.ui.map.RegionDetailScreen as RegionDetailScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
-import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
 import com.mapchina.ui.profile.LoginScreen as LoginScreenComposable
+import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AuthService
 import org.koin.compose.koinInject
 
@@ -46,13 +50,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable<AttractionsScreen> {
             AttractionsScreenComposable(navController = navController, viewModel = koinInject())
         }
-        composable<StatsScreen> {
-            StatsScreenComposable(viewModel = koinInject())
-        }
         composable<AchievementScreen> {
             val vm: AchievementViewModel = koinInject()
+            val statsVm: StatsViewModel = koinInject()
             AchievementScreen(
                 viewModel = vm,
+                statsViewModel = statsVm,
                 onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
                 onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
                 onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) }
@@ -75,7 +78,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable<ProfileScreen> {
             ProfileScreenComposable(
                 viewModel = koinInject(),
-                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) }
+                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) },
+                onNavigateToJournals = { navController.navigate(com.mapchina.ui.navigation.JournalListScreen) }
             )
         }
         composable<LoginScreen> {
@@ -143,6 +147,35 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onRemoveVisit = {
                     attraction?.let { viewModel.removeVisit(it.id) }
                 }
+            )
+        }
+        composable<com.mapchina.ui.navigation.JournalListScreen> {
+            val vm: JournalViewModel = koinInject()
+            JournalListScreenComposable(
+                viewModel = vm,
+                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) },
+                onCreateClick = { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen()) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<com.mapchina.ui.navigation.JournalDetailScreen> { backStackEntry ->
+            val vm: JournalViewModel = koinInject()
+            val journalId = backStackEntry.arguments?.getString("journalId") ?: ""
+            JournalDetailScreenComposable(
+                journalId = journalId,
+                viewModel = vm,
+                onBack = { navController.popBackStack() },
+                onDelete = { navController.popBackStack() }
+            )
+        }
+        composable<com.mapchina.ui.navigation.JournalCreateScreen> { backStackEntry ->
+            val vm: JournalViewModel = koinInject()
+            val regionId = backStackEntry.arguments?.getString("regionId")
+            JournalCreateScreenComposable(
+                viewModel = vm,
+                regionId = regionId,
+                onSave = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -46,6 +46,7 @@ fun RegionCard(
     onMarkFootprint: (String, FootprintLevel) -> Unit,
     onDrillDown: () -> Unit,
     onShowAttractions: () -> Unit,
+    onClose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var footprintExpanded by remember { mutableStateOf(false) }
@@ -70,26 +71,39 @@ fun RegionCard(
             .background(Color(0xDD0F1923))
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // Region name + status
+        // Region name + status + close
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = region.name,
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = statusText,
-                color = statusColor,
-                fontSize = 13.sp,
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = region.name,
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = statusText,
+                    color = statusColor,
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .background(statusColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+            Box(
                 modifier = Modifier
-                    .background(statusColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            )
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .clickable(onClick = onClose),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✕", color = Color.Gray, fontSize = 14.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
