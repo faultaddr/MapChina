@@ -24,17 +24,22 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,12 +62,13 @@ fun AttractionDetailScreen(
     attraction: AttractionUi?,
     detail: AttractionDetail?,
     onMarkVisit: (FootprintLevel) -> Unit = {},
+    onRemoveVisit: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text(attraction?.name ?: "景点详情", color = Color.White) },
@@ -71,7 +77,7 @@ fun AttractionDetailScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         if (attraction == null) {
@@ -90,7 +96,7 @@ fun AttractionDetailScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color(0xFF2D2D44)),
+                    .background(Color(0xFF1A2C3D)),
                 contentAlignment = Alignment.Center
             ) {
                 Text("暂无图片", color = Color.Gray)
@@ -111,7 +117,7 @@ fun AttractionDetailScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332200) else Color(0xFF0D2744),
+                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 3.dp)
@@ -142,7 +148,7 @@ fun AttractionDetailScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            VisitButton(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit)
+            VisitButton(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
         }
     }
 }
@@ -172,12 +178,12 @@ private fun ImageCarousel(imageUrls: List<String>) {
                 when (painterState) {
                     is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
                     is coil3.compose.AsyncImagePainter.State.Loading -> {
-                        Box(Modifier.fillMaxSize().background(Color(0xFF2D2D44)), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize().background(Color(0xFF1A2C3D)), contentAlignment = Alignment.Center) {
                             androidx.compose.material3.CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                         }
                     }
                     else -> {
-                        Box(Modifier.fillMaxSize().background(Color(0xFF2D2D44)), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize().background(Color(0xFF1A2C3D)), contentAlignment = Alignment.Center) {
                             Text("加载失败", color = Color.Gray, fontSize = 12.sp)
                         }
                     }
@@ -271,11 +277,11 @@ private fun InfoRow(icon: @Composable () -> Unit, label: String, value: String) 
 }
 
 @Composable
-private fun VisitButton(currentLevel: FootprintLevel?, onMarkVisit: (FootprintLevel) -> Unit) {
+private fun VisitButton(currentLevel: FootprintLevel?, onMarkVisit: (FootprintLevel) -> Unit, onRemoveVisit: (() -> Unit)? = null) {
     val visitLabel = when (currentLevel) {
-        FootprintLevel.DEEP -> "已深度游览"
-        FootprintLevel.SHORT_VISIT -> "已短时游玩"
-        FootprintLevel.PASS_BY -> "已路过"
+        FootprintLevel.DEEP -> "深度游览"
+        FootprintLevel.SHORT_VISIT -> "短时游玩"
+        FootprintLevel.PASS_BY -> "路过"
         null -> "标记到访"
     }
     val visitColor = when (currentLevel) {
@@ -285,41 +291,96 @@ private fun VisitButton(currentLevel: FootprintLevel?, onMarkVisit: (FootprintLe
         null -> MapChinaColors.Primary
     }
 
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        if (currentLevel == null) {
-            OutlinedButton(
-                onClick = { onMarkVisit(FootprintLevel.PASS_BY) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp)
+    var showRemoveDialog by remember { mutableStateOf(false) }
+
+    Column {
+        if (currentLevel != null) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("路过", color = MapChinaColors.FootprintPassBy)
+                Text(
+                    "当前: $visitLabel",
+                    color = visitColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            OutlinedButton(
-                onClick = { onMarkVisit(FootprintLevel.SHORT_VISIT) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("短玩", color = MapChinaColors.FootprintShortVisit)
-            }
-            OutlinedButton(
-                onClick = { onMarkVisit(FootprintLevel.DEEP) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("深度", color = MapChinaColors.FootprintDeep)
-            }
-        } else {
-            OutlinedButton(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                enabled = false
-            ) {
-                Text(visitLabel, color = visitColor)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (currentLevel == null) {
+                OutlinedButton(
+                    onClick = { onMarkVisit(FootprintLevel.PASS_BY) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("路过", color = MapChinaColors.FootprintPassBy)
+                }
+                OutlinedButton(
+                    onClick = { onMarkVisit(FootprintLevel.SHORT_VISIT) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("短玩", color = MapChinaColors.FootprintShortVisit)
+                }
+                OutlinedButton(
+                    onClick = { onMarkVisit(FootprintLevel.DEEP) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("深度", color = MapChinaColors.FootprintDeep)
+                }
+            } else {
+                if (currentLevel < FootprintLevel.SHORT_VISIT) {
+                    OutlinedButton(
+                        onClick = { onMarkVisit(FootprintLevel.SHORT_VISIT) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("升级短玩", color = MapChinaColors.FootprintShortVisit)
+                    }
+                }
+                if (currentLevel < FootprintLevel.DEEP) {
+                    OutlinedButton(
+                        onClick = { onMarkVisit(FootprintLevel.DEEP) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("升级深度", color = MapChinaColors.FootprintDeep)
+                    }
+                }
+                OutlinedButton(
+                    onClick = { showRemoveDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MapChinaColors.Error)
+                ) {
+                    Text("撤销到访")
+                }
             }
         }
+    }
+
+    if (showRemoveDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveDialog = false },
+            title = { Text("确认撤销", color = Color.White) },
+            text = { Text("确定要撤销「$visitLabel」的到访记录吗？", color = Color.Gray) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemoveDialog = false
+                    onRemoveVisit?.invoke()
+                }) { Text("撤销", color = MapChinaColors.Error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveDialog = false }) { Text("取消", color = Color.Gray) }
+            },
+            containerColor = Color(0xFF1A2C3D)
+        )
     }
 }

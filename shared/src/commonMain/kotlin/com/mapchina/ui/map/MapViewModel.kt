@@ -3,18 +3,23 @@ package com.mapchina.ui.map
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.data.remote.BoundaryLoader
-import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
+import com.mapchina.domain.service.AchievementService
+import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayStyle
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class AttractionUi(
     val id: String,
@@ -25,7 +30,21 @@ data class AttractionUi(
     val visitLevel: FootprintLevel?
 )
 
-enum class ViewMode { MAP, BLOCK }
+data class RegionFootprintUi(
+    val regionId: String,
+    val name: String,
+    val footprintLevel: FootprintLevel?,
+    val normalizedPath: List<androidx.compose.ui.geometry.Offset>,
+    val bounds: RegionBounds,
+    val childCoverageRate: Float = 0f
+)
+
+data class RegionBounds(
+    val minX: Float,
+    val minY: Float,
+    val maxX: Float,
+    val maxY: Float
+)
 
 class MapViewModel(
     private val footprintService: FootprintService,
@@ -35,14 +54,19 @@ class MapViewModel(
     private val boundaryLoader: BoundaryLoader? = null,
     private val userId: String = ""
 ) {
+    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     private val _currentLevel = MutableStateFlow(MapZoomLevel.NATIONAL)
     val currentLevel: StateFlow<MapZoomLevel> = _currentLevel.asStateFlow()
 
     private val _currentPath = MutableStateFlow<List<Region>>(emptyList())
     val currentPath: StateFlow<List<Region>> = _currentPath.asStateFlow()
 
-    private val _viewMode = MutableStateFlow(ViewMode.MAP)
-    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
+    private val _achievementUnlock = MutableStateFlow<AchievementUnlockResult?>(null)
+    val achievementUnlock: StateFlow<AchievementUnlockResult?> = _achievementUnlock.asStateFlow()
+
+    private val _drillDownHint = MutableStateFlow<String?>(null)
+    val drillDownHint: StateFlow<String?> = _drillDownHint.asStateFlow()
 
     private val _regions = MutableStateFlow<List<RegionFootprintUi>>(emptyList())
     val regions: StateFlow<List<RegionFootprintUi>> = _regions.asStateFlow()
@@ -53,8 +77,10 @@ class MapViewModel(
     private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val attractions: StateFlow<List<AttractionUi>> = _attractions.asStateFlow()
 
-    // 缓存：一次查出所有足迹，避免 N+1
-    private var footprintCache: Set<String>? = null
+    private val _selectedRegionAttractions = MutableStateFlow<List<AttractionUi>>(emptyList())
+    val selectedRegionAttractions: StateFlow<List<AttractionUi>> = _selectedRegionAttractions.asStateFlow()
+
+    private var footprintCache: Map<String, FootprintLevel>? = null
 
     private var _mapController: MapController? = null
     private var _programmaticCamera = false
@@ -72,12 +98,16 @@ class MapViewModel(
             }
         }
 
+    // Cache attraction counts per region to avoid repeated queries
+    private val attractionCountCache = mutableMapOf<String, Int>()
+
     init {
         loadTopLevelRegions()
     }
 
     fun reloadData() {
         footprintCache = null
+        attractionCountCache.clear()
         if (_currentPath.value.isEmpty()) {
             loadTopLevelRegions()
         } else {
@@ -85,9 +115,10 @@ class MapViewModel(
         }
     }
 
-    private fun getFootprintCache(): Set<String> {
+    private fun getFootprintCache(): Map<String, FootprintLevel> {
         if (footprintCache == null) {
-            footprintCache = footprintRepository.getAllFootprintRegionIds(userId)
+            footprintCache = footprintRepository.getFootprintsByUser(userId)
+                .associate { it.regionId to it.level }
         }
         return footprintCache!!
     }
@@ -124,7 +155,7 @@ class MapViewModel(
             _attractions.value = emptyList()
             mapController?.clearMarkers()
             _programmaticCamera = true
-            mapController?.setCamera(35.86, 104.19, 4f, true)
+            mapController?.setCamera(34.5, 106.0, 3.8f, true)
         }
     }
 
@@ -142,9 +173,6 @@ class MapViewModel(
         loadAttractionsForRegion(regionId)
     }
 
-    fun toggleViewMode() {
-        _viewMode.value = if (_viewMode.value == ViewMode.MAP) ViewMode.BLOCK else ViewMode.MAP
-    }
 
     fun selectRegion(regionId: String) {
         val fromList = _regions.value.find { it.regionId == regionId }
@@ -156,36 +184,64 @@ class MapViewModel(
             _selectedRegion.value = RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
-                footprintLevel = if (footprints.contains(region.id)) FootprintLevel.PASS_BY else null,
+                footprintLevel = footprints[region.id],
                 normalizedPath = emptyList(),
                 bounds = RegionBounds(0f, 0f, 0f, 0f)
             )
         }
+        loadAttractionsForSelectedRegion(regionId)
     }
 
     fun clearSelection() {
         _selectedRegion.value = null
+        _selectedRegionAttractions.value = emptyList()
+    }
+
+    fun dismissAchievementUnlock() {
+        _achievementUnlock.value = null
+    }
+
+    fun dismissDrillDownHint() {
+        _drillDownHint.value = null
+    }
+
+    fun getAttractionCountForRegion(regionId: String): Int {
+        return attractionCountCache.getOrPut(regionId) {
+            attractionService.getAttractionsByParentRegion(regionId).size
+        }
     }
 
     fun markFootprint(regionId: String, level: FootprintLevel) {
-        footprintService.markFootprint(userId, regionId, level)
-        footprintCache = null
-        refreshRegions()
-        updateOverlayColor(regionId, level)
+        vmScope.launch {
+            val result = footprintService.markFootprint(userId, regionId, level)
+            footprintCache = null
+            refreshRegions()
+            updateOverlayColor(regionId, level)
+            if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
+                _achievementUnlock.value = result.achievementResult
+            }
+        }
     }
 
     fun markAttractionVisit(attractionId: String, regionId: String, level: FootprintLevel) {
-        footprintService.markAttractionVisit(userId, attractionId, regionId, level)
-        footprintCache = null
-        refreshAttractions()
-        refreshRegions()
+        vmScope.launch {
+            val result = footprintService.markAttractionVisit(userId, attractionId, regionId, level)
+            footprintCache = null
+            refreshAttractions()
+            refreshRegions()
+            if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
+                _achievementUnlock.value = result.achievementResult
+            }
+        }
     }
 
     fun removeAttractionVisit(attractionId: String) {
-        footprintService.removeAttractionVisit(userId, attractionId)
-        footprintCache = null
-        refreshAttractions()
-        refreshRegions()
+        vmScope.launch {
+            footprintService.removeAttractionVisit(userId, attractionId)
+            footprintCache = null
+            refreshAttractions()
+            refreshRegions()
+        }
     }
 
     private fun refreshAttractions() {
@@ -211,23 +267,56 @@ class MapViewModel(
         syncMarkersToMap()
     }
 
+    private fun loadAttractionsForSelectedRegion(regionId: String) {
+        val list = attractionService.getAttractionsByParentRegion(regionId)
+        _selectedRegionAttractions.value = list.map { attraction ->
+            val visit = footprintRepository.getAttractionVisit(userId, attraction.id)
+            AttractionUi(
+                id = attraction.id,
+                name = attraction.name,
+                level = attraction.level.name,
+                regionId = attraction.regionId,
+                description = attraction.description,
+                visitLevel = visit?.level
+            )
+        }
+    }
+
     private fun loadTopLevelRegions() {
         val provinces = regionRepository.getRegionsByLevel(RegionLevel.PROVINCE)
         if (provinces.isEmpty()) return
         val footprints = getFootprintCache()
         val boundaries = regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
+
+        // Fast path: render with coverage = 0 first
         _regions.value = provinces.map { region ->
-            val coverage = computeChildCoverageBatch(region.id, footprints)
             RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
-                footprintLevel = if (footprints.contains(region.id)) FootprintLevel.PASS_BY else null,
+                footprintLevel = footprints[region.id],
                 normalizedPath = emptyList(),
                 bounds = RegionBounds(0f, 0f, 0f, 0f),
-                childCoverageRate = coverage
+                childCoverageRate = 0f
             )
         }
         syncOverlaysToMap(boundaries)
+
+        // Async: compute coverage and update overlays
+        vmScope.launch {
+            val updated = provinces.map { region ->
+                val coverage = computeChildCoverageBatch(region.id, footprints)
+                RegionFootprintUi(
+                    regionId = region.id,
+                    name = region.name,
+                    footprintLevel = footprints[region.id],
+                    normalizedPath = emptyList(),
+                    bounds = RegionBounds(0f, 0f, 0f, 0f),
+                    childCoverageRate = coverage
+                )
+            }
+            _regions.value = updated
+            syncOverlaysToMap(boundaries)
+        }
     }
 
     private fun loadChildRegions(parentId: String) {
@@ -248,18 +337,36 @@ class MapViewModel(
 
         val footprints = getFootprintCache()
         val boundaries = regionRepository.getBoundariesByParentId(parentId)
+
+        // Fast path
         _regions.value = children.map { region ->
-            val coverage = computeChildCoverageBatch(region.id, footprints)
             RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
-                footprintLevel = if (footprints.contains(region.id)) FootprintLevel.PASS_BY else null,
+                footprintLevel = footprints[region.id],
                 normalizedPath = emptyList(),
                 bounds = RegionBounds(0f, 0f, 0f, 0f),
-                childCoverageRate = coverage
+                childCoverageRate = 0f
             )
         }
         syncOverlaysToMap(boundaries)
+
+        // Async: compute coverage
+        vmScope.launch {
+            val updated = children.map { region ->
+                val coverage = computeChildCoverageBatch(region.id, footprints)
+                RegionFootprintUi(
+                    regionId = region.id,
+                    name = region.name,
+                    footprintLevel = footprints[region.id],
+                    normalizedPath = emptyList(),
+                    bounds = RegionBounds(0f, 0f, 0f, 0f),
+                    childCoverageRate = coverage
+                )
+            }
+            _regions.value = updated
+            syncOverlaysToMap(boundaries)
+        }
     }
 
     private fun refreshRegions() {
@@ -350,7 +457,10 @@ class MapViewModel(
         if (targetLevel == currentZoomLevel) return
 
         when {
-            targetLevel.ordinal > currentZoomLevel.ordinal -> { }
+            targetLevel.ordinal > currentZoomLevel.ordinal -> {
+                val regionName = _currentPath.value.lastOrNull()?.name ?: "当前区域"
+                _drillDownHint.value = regionName
+            }
             targetLevel.ordinal < currentZoomLevel.ordinal -> {
                 zoomOutToParent()
             }
@@ -376,41 +486,41 @@ class MapViewModel(
             val rate = childCoverageRate.coerceIn(0f, 1f)
             val alpha = 0.12f + rate * 0.48f
             return OverlayStyle(
-                fillColor = 0xFF4A90D9L,
-                strokeColor = 0xFF00CCFF,
+                fillColor = 0xFF2EC4B6L,
+                strokeColor = 0xFF1A8A7E,
                 strokeWidth = 2f,
                 alpha = alpha
             )
         }
         val baseColor = when (level) {
-            FootprintLevel.DEEP -> 0xFFE94560L
-            FootprintLevel.SHORT_VISIT -> 0xFFFF6B6BL
-            FootprintLevel.PASS_BY -> 0xFFFFA502L
+            FootprintLevel.DEEP -> 0xFFE76F51L
+            FootprintLevel.SHORT_VISIT -> 0xFFF4A261L
+            FootprintLevel.PASS_BY -> 0xFFE9C46AL
         }
         return OverlayStyle(
             fillColor = baseColor,
-            strokeColor = 0xFFFFFF00,
+            strokeColor = 0xFF264653L,
             strokeWidth = 2f,
             alpha = 0.6f
         )
     }
 
-    private fun computeChildCoverageBatch(regionId: String, footprints: Set<String>): Float {
+    private fun computeChildCoverageBatch(regionId: String, footprints: Map<String, FootprintLevel>): Float {
         val children = regionRepository.getChildRegions(regionId)
         if (children.isEmpty()) {
-            return if (footprints.contains(regionId)) 1f else 0f
+            return if (footprints.containsKey(regionId)) 1f else 0f
         }
         val visited = children.count { child ->
-            footprints.contains(child.id) || hasDescendantInCache(child.id, footprints)
+            footprints.containsKey(child.id) || hasDescendantInCache(child.id, footprints)
         }
         return visited.toFloat() / children.size
     }
 
-    private fun hasDescendantInCache(regionId: String, footprints: Set<String>): Boolean {
+    private fun hasDescendantInCache(regionId: String, footprints: Map<String, FootprintLevel>): Boolean {
         val children = regionRepository.getChildRegions(regionId)
         if (children.isEmpty()) return false
         return children.any { child ->
-            footprints.contains(child.id) || hasDescendantInCache(child.id, footprints)
+            footprints.containsKey(child.id) || hasDescendantInCache(child.id, footprints)
         }
     }
 

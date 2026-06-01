@@ -42,11 +42,11 @@ fun BadgeDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text("徽章详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         if (item == null) {
@@ -79,7 +79,7 @@ fun BadgeDetailScreen(
                 modifier = Modifier
                     .size(96.dp)
                     .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -105,7 +105,7 @@ fun BadgeDetailScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("描述", color = Color.Gray, fontSize = 12.sp)
@@ -129,7 +129,7 @@ fun BadgeDetailScreen(
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = MapChinaColors.Primary,
-                        trackColor = Color(0xFF1A1A2E)
+                        trackColor = Color(0xFF0F1923)
                     )
                     if (item.isUnlocked && item.unlockTime != null) {
                         Spacer(modifier = Modifier.height(12.dp))

@@ -14,19 +14,18 @@ object AtlasSeeder {
 
         val items = buildList {
             // 世界遗产
-            add(AtlasItem("world_heritage", "attr001", "故宫博物院", "北京", "东城区"))
-            add(AtlasItem("world_heritage", "attr002", "天坛", "北京", "东城区"))
-            add(AtlasItem("world_heritage", "attr006", "长城(八达岭)", "北京", "延庆区"))
-            add(AtlasItem("world_heritage", "attr008", "兵马俑", "陕西", "西安"))
-            add(AtlasItem("world_heritage", "attr009", "张家界", "湖南", "张家界"))
-            add(AtlasItem("world_heritage", "attr010", "黄山", "安徽", "黄山"))
+            add(AtlasItem("world_heritage", "attr_B000A8UIN8", "故宫博物院", "北京", "东城区"))
+            add(AtlasItem("world_heritage", "attr_B000A81CB2", "天坛公园", "北京", "东城区"))
+            add(AtlasItem("world_heritage", "attr_B000A45467", "八达岭长城", "北京", "延庆区"))
+            add(AtlasItem("world_heritage", "attr_B02E80N9BJ", "武陵源风景名胜区", "湖南", "张家界"))
+            add(AtlasItem("world_heritage", "attr_B022F0ML6Z", "黄山风景区", "安徽", "黄山"))
 
             // 博物馆
-            add(AtlasItem("museum", "attr001", "故宫博物院", "北京", "东城区"))
+            add(AtlasItem("museum", "attr_B000A8UIN8", "故宫博物院", "北京", "东城区"))
 
             // 名山
-            add(AtlasItem("mountain", "attr010", "黄山", "安徽", "黄山"))
-            add(AtlasItem("mountain", "attr009", "张家界", "湖南", "张家界"))
+            add(AtlasItem("mountain", "attr_B022F0ML6Z", "黄山风景区", "安徽", "黄山"))
+            add(AtlasItem("mountain", "attr_B02E80N9BJ", "武陵源风景名胜区", "湖南", "张家界"))
         }
 
         atlasRepo.insertItemsInTransaction(items)

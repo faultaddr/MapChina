@@ -9,9 +9,9 @@ expect class MapController() {
     fun removeMarker(attractionId: String)
     fun clearMarkers()
     fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean)
-    fun setOnRegionLongPressListener(listener: ((String) -> Unit)?)
-    fun setOnRegionDoubleTapListener(listener: ((String) -> Unit)?)
+    fun setOnRegionTapListener(listener: ((String) -> Unit)?)
     fun setOnMarkerTapListener(listener: ((String) -> Unit)?)
     fun setOnCameraZoomChangeListener(listener: ((Float) -> Unit)?)
+    fun pulseOverlay(regionId: String)
     fun dispose()
 }

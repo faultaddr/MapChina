@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,7 +50,15 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
 
-@OptIn(ExperimentalMaterial3Api::class)
+enum class AttractionFilter(val label: String) {
+    ALL("全部"),
+    A5("5A"),
+    A4("4A"),
+    VISITED("已到访"),
+    UNVISITED("未到访")
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AttractionsScreen(
     navController: NavHostController,
@@ -57,11 +67,22 @@ fun AttractionsScreen(
 ) {
     val attractions by (viewModel?.attractions?.collectAsState() ?: remember { mutableStateOf(emptyList<AttractionUi>()) })
     val searchQuery by (viewModel?.searchQuery?.collectAsState() ?: remember { mutableStateOf("") })
+    var selectedFilter by remember { mutableStateOf(AttractionFilter.ALL) }
+
+    val filteredAttractions = remember(attractions, selectedFilter) {
+        when (selectedFilter) {
+            AttractionFilter.ALL -> attractions
+            AttractionFilter.A5 -> attractions.filter { it.level == "A5" }
+            AttractionFilter.A4 -> attractions.filter { it.level == "A4" }
+            AttractionFilter.VISITED -> attractions.filter { it.visitLevel != null }
+            AttractionFilter.UNVISITED -> attractions.filter { it.visitLevel == null }
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         Text(
             "景点",
@@ -83,20 +104,46 @@ fun AttractionsScreen(
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White,
                 focusedBorderColor = MapChinaColors.Primary,
-                unfocusedBorderColor = Color(0xFF3D3D5C),
+                unfocusedBorderColor = Color(0xFF213647),
                 cursorColor = MapChinaColors.Primary
             )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (attractions.isEmpty()) {
+        FlowRow(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            AttractionFilter.values().forEach { filter ->
+                val isSelected = selectedFilter == filter
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) MapChinaColors.Primary else Color(0xFF1A2C3D))
+                        .clickable { selectedFilter = filter }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        filter.label,
+                        color = if (isSelected) Color.White else Color.Gray,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (filteredAttractions.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    if (searchQuery.isBlank()) "输入关键词搜索景点" else "未找到匹配景点",
+                    if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "输入关键词搜索景点" else "未找到匹配景点",
                     color = Color.Gray
                 )
             }
@@ -105,7 +152,7 @@ fun AttractionsScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(attractions, key = { it.id }) { attraction ->
+                items(filteredAttractions, key = { it.id }) { attraction ->
                     AttractionCard(
                         attraction = attraction,
                         onClick = {
@@ -134,7 +181,7 @@ private fun AttractionCard(
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep.copy(alpha = 0.15f)
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit.copy(alpha = 0.15f)
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy.copy(alpha = 0.15f)
-        null -> Color(0xFF2D2D44)
+        null -> Color(0xFF1A2C3D)
     }
 
     Card(
@@ -166,7 +213,7 @@ private fun AttractionCard(
                                 Modifier
                                     .size(64.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF3D3D5C)),
+                                    .background(Color(0xFF213647)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(attraction.name.take(1), color = Color.Gray, fontSize = 20.sp)
@@ -186,7 +233,7 @@ private fun AttractionCard(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .background(
-                                if (attraction.level == "A5") Color(0xFF332200) else Color(0xFF0D2744),
+                                if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
                                 RoundedCornerShape(4.dp)
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp)

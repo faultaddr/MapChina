@@ -62,16 +62,16 @@ fun BadgeWallScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text("徽章墙", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         TabRow(
             selectedTabIndex = selectedTab,
-            containerColor = Color(0xFF1A1A2E),
+            containerColor = Color(0xFF0F1923),
             contentColor = Color.White,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
@@ -122,7 +122,7 @@ private fun BadgeGridItem(
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF2D2D44))
+            .background(Color(0xFF1A2C3D))
             .clickable { onClick() }
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -132,7 +132,7 @@ private fun BadgeGridItem(
                 .size(56.dp)
                 .clip(CircleShape)
                 .background(
-                    if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF3D3D5C)
+                    if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)
                 ),
             contentAlignment = Alignment.Center
         ) {

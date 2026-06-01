@@ -61,11 +61,11 @@ fun ProvinceConquestScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text("省份征服", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         // 总览卡片
@@ -73,7 +73,7 @@ fun ProvinceConquestScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -118,19 +118,19 @@ private fun ProvinceConquestRow(
     onClick: () -> Unit
 ) {
     val progressColor = when (info.colorLevel) {
-        0 -> Color(0xFF3D3D5C)
+        0 -> Color(0xFF213647)
         1 -> Color(0xFF4A6FA5)
         2 -> MapChinaColors.Primary
         3 -> Color(0xFFFF6B6B)
         4 -> Color(0xFFFFD700)
-        else -> Color(0xFF3D3D5C)
+        else -> Color(0xFF213647)
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -167,7 +167,7 @@ private fun ProvinceConquestRow(
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = progressColor,
-                trackColor = Color(0xFF1A1A2E)
+                trackColor = Color(0xFF0F1923)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(

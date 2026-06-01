@@ -2,8 +2,7 @@ package com.mapchina.map
 
 actual class MapController actual constructor() {
 
-    private var regionLongPressListener: ((String) -> Unit)? = null
-    private var regionDoubleTapListener: ((String) -> Unit)? = null
+    private var regionTapListener: ((String) -> Unit)? = null
     private var markerTapListener: ((String) -> Unit)? = null
 
     actual fun addOverlay(regionId: String, boundary: String, style: OverlayStyle) {
@@ -38,12 +37,8 @@ actual class MapController actual constructor() {
         // TODO: Integrate with AMap SDK
     }
 
-    actual fun setOnRegionLongPressListener(listener: ((String) -> Unit)?) {
-        regionLongPressListener = listener
-    }
-
-    actual fun setOnRegionDoubleTapListener(listener: ((String) -> Unit)?) {
-        regionDoubleTapListener = listener
+    actual fun setOnRegionTapListener(listener: ((String) -> Unit)?) {
+        regionTapListener = listener
     }
 
     actual fun setOnMarkerTapListener(listener: ((String) -> Unit)?) {
@@ -54,9 +49,12 @@ actual class MapController actual constructor() {
         // TODO
     }
 
+    actual fun pulseOverlay(regionId: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
     actual fun dispose() {
-        regionLongPressListener = null
-        regionDoubleTapListener = null
+        regionTapListener = null
         markerTapListener = null
     }
 }

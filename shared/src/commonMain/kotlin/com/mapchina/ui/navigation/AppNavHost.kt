@@ -25,9 +25,12 @@ import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.attraction.AttractionDetailScreen
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.map.MapScreen as MapScreenComposable
+import com.mapchina.ui.map.RegionDetailScreen as RegionDetailScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
 import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
+import com.mapchina.ui.profile.LoginScreen as LoginScreenComposable
+import com.mapchina.domain.service.AuthService
 import org.koin.compose.koinInject
 
 @Composable
@@ -70,18 +73,30 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             BadgeDetailScreen(item = item)
         }
         composable<ProfileScreen> {
-            ProfileScreenComposable(viewModel = koinInject())
+            ProfileScreenComposable(
+                viewModel = koinInject(),
+                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) }
+            )
         }
         composable<LoginScreen> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("登录页（待实现）")
-            }
+            val authService: AuthService = koinInject()
+            LoginScreenComposable(
+                onLoginSuccess = { navController.popBackStack() },
+                onQuickStart = { nickname ->
+                    authService.quickStart(nickname)
+                    navController.popBackStack()
+                }
+            )
         }
         composable<RegionDetailScreen> { backStackEntry ->
             val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("区域详情: $regionId")
-            }
+            val mapViewModel: com.mapchina.ui.map.MapViewModel = koinInject()
+            RegionDetailScreenComposable(
+                regionId = regionId,
+                viewModel = mapViewModel,
+                onBack = { navController.popBackStack() },
+                onChildRegionClick = { id -> navController.navigate(RegionDetailScreen(id)) }
+            )
         }
         composable<ProvinceConquestScreen> {
             val vm: ProvinceConquestViewModel = koinInject()
@@ -124,6 +139,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 detail = detail,
                 onMarkVisit = { level ->
                     attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
+                },
+                onRemoveVisit = {
+                    attraction?.let { viewModel.removeVisit(it.id) }
                 }
             )
         }

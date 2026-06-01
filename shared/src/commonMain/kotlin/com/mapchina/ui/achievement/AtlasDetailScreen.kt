@@ -57,11 +57,11 @@ fun AtlasDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text(progress?.atlasName ?: "图鉴详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         if (progress == null) {
@@ -80,7 +80,7 @@ fun AtlasDetailScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(progress.atlasDescription, color = Color.Gray, fontSize = 13.sp)
@@ -100,7 +100,7 @@ fun AtlasDetailScreen(
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
                             color = MapChinaColors.Primary,
-                            trackColor = Color(0xFF1A1A2E)
+                            trackColor = Color(0xFF0F1923)
                         )
                     }
                 }
@@ -140,7 +140,7 @@ private fun AtlasAchievementRow(item: AchievementWithProgress) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = if (item.isUnlocked) Color(0xFF2D2D44) else Color(0xFF1F1F33))
+        colors = CardDefaults.cardColors(containerColor = if (item.isUnlocked) Color(0xFF1A2C3D) else Color(0xFF1F1F33))
     ) {
         Row(
             modifier = Modifier
@@ -152,7 +152,7 @@ private fun AtlasAchievementRow(item: AchievementWithProgress) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -187,7 +187,7 @@ private fun AtlasItemRow(item: AtlasItemVisitStatus) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Row(
             modifier = Modifier
@@ -199,7 +199,7 @@ private fun AtlasItemRow(item: AtlasItemVisitStatus) {
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(if (item.isVisited) MapChinaColors.Primary else Color(0xFF3D3D5C))
+                    .background(if (item.isVisited) MapChinaColors.Primary else Color(0xFF213647))
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {

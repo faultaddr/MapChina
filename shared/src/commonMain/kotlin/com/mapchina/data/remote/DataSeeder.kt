@@ -543,34 +543,18 @@ object DataSeeder {
     }
 
     fun seedAttractions(attractionRepo: AttractionRepository, boundaryLoader: BoundaryLoader? = null) {
-        val seeds = boundaryLoader?.loadAttractionSeeds()
-        if (seeds != null) {
-            val attractions = seeds.map { seed ->
-                Attraction(
-                    id = seed.id,
-                    name = seed.name,
-                    regionId = seed.regionId,
-                    level = AttractionLevel.valueOf(seed.level),
-                    latitude = seed.latitude,
-                    longitude = seed.longitude,
-                    description = seed.description
-                )
-            }
-            attractionRepo.insertAttractionsInTransaction(attractions)
-        } else {
-            val attractions = listOf(
-                Attraction("attr001", "故宫博物院", "110101", AttractionLevel.A5, 39.9163, 116.3972, "中国明清两代的皇家宫殿"),
-                Attraction("attr002", "天坛", "110101", AttractionLevel.A5, 39.8822, 116.4066, "明清两朝帝王祭天之地"),
-                Attraction("attr003", "西湖", "330102", AttractionLevel.A5, 30.2590, 120.1388, "中国最著名的湖泊之一"),
-                Attraction("attr004", "武侯祠", "510107", AttractionLevel.A4, 30.6460, 104.0478, "纪念诸葛亮的祠堂"),
-                Attraction("attr005", "锦里", "510107", AttractionLevel.A4, 30.6454, 104.0489, "成都历史文化街区"),
-                Attraction("attr006", "长城(八达岭)", "110100", AttractionLevel.A5, 40.3588, 116.0204, "世界文化遗产"),
-                Attraction("attr007", "外滩", "310100", AttractionLevel.A4, 31.2400, 121.4900, "上海标志性景点"),
-                Attraction("attr008", "兵马俑", "610100", AttractionLevel.A5, 34.3842, 109.2785, "秦始皇陵兵马俑"),
-                Attraction("attr009", "张家界", "430800", AttractionLevel.A5, 29.3249, 110.4343, "世界自然遗产"),
-                Attraction("attr010", "黄山", "341000", AttractionLevel.A5, 30.1375, 118.1694, "中国十大名山之一")
+        val seeds = boundaryLoader?.loadAttractionSeeds() ?: return
+        val attractions = seeds.map { seed ->
+            Attraction(
+                id = seed.id,
+                name = seed.name,
+                regionId = seed.regionId,
+                level = AttractionLevel.valueOf(seed.level),
+                latitude = seed.latitude,
+                longitude = seed.longitude,
+                description = seed.description
             )
-            attractionRepo.insertAttractionsInTransaction(attractions)
         }
+        attractionRepo.insertAttractionsInTransaction(attractions)
     }
 }

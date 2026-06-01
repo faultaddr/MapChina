@@ -78,6 +78,11 @@ class AttractionViewModel(
         refreshAttractions()
     }
 
+    fun removeVisit(attractionId: String) {
+        footprintService.removeAttractionVisit(userId, attractionId)
+        refreshAttractions()
+    }
+
     private fun refreshAttractions() {
         val query = _searchQuery.value
         if (query.isNotBlank()) {

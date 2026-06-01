@@ -46,7 +46,7 @@ fun AchievementUnlockDialog(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D)),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
@@ -85,7 +85,7 @@ fun AchievementUnlockDialog(
                     Button(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3D3D5C))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF213647))
                     ) { Text("继续探索") }
                     if (onShare != null) {
                         Button(
@@ -172,7 +172,7 @@ fun LevelUpDialog(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D)),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(

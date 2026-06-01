@@ -53,11 +53,11 @@ fun AtlasScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text("主题图鉴", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         if (ui.totalAtlas > 0) {
@@ -65,7 +65,7 @@ fun AtlasScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
             ) {
                 Row(
                     modifier = Modifier
@@ -109,7 +109,7 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -145,7 +145,7 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = progressColor,
-                trackColor = Color(0xFF1A1A2E)
+                trackColor = Color(0xFF0F1923)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text("${atlas.completionPercent}% 完成", color = Color.Gray, fontSize = 11.sp)

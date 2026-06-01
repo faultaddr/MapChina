@@ -17,9 +17,11 @@ private val LightColorScheme = lightColorScheme(
 private val DarkColorScheme = darkColorScheme(
     primary = MapChinaColors.Primary,
     onPrimary = MapChinaColors.OnPrimary,
-    surface = MapChinaColors.BlockViewBackground,
+    surface = MapChinaColors.CardBackground,
     onSurface = MapChinaColors.Surface,
     error = MapChinaColors.Error,
+    background = MapChinaColors.Background,
+    onBackground = MapChinaColors.Surface,
 )
 
 @Composable

@@ -40,6 +40,7 @@ import com.mapchina.ui.theme.MapChinaColors
 fun ProfileScreen(
     viewModel: ProfileViewModel? = null,
     onNavigateToLogin: (() -> Unit)? = null,
+    onLoginSuccess: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val profile by (viewModel?.profile?.collectAsState() ?: remember { androidx.compose.runtime.mutableStateOf(ProfileUi("未登录", null, null)) })
@@ -48,7 +49,7 @@ fun ProfileScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         Text(
             "我的",
@@ -66,7 +67,7 @@ fun ProfileScreen(
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
             ) {
                 Column(
                     modifier = Modifier
@@ -80,7 +81,7 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                            .background(if (isLoggedIn) MapChinaColors.Primary.copy(alpha = 0.2f) else Color(0xFF213647)),
                         tint = if (isLoggedIn) MapChinaColors.Primary else Color.Gray
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -126,7 +127,7 @@ fun ProfileScreen(
                                             .height(4.dp)
                                             .clip(RoundedCornerShape(2.dp)),
                                         color = MapChinaColors.Primary,
-                                        trackColor = Color(0xFF1A1A2E)
+                                        trackColor = Color(0xFF0F1923)
                                     )
                                 }
                             }

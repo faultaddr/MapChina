@@ -55,11 +55,11 @@ fun ProvinceDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         TopAppBar(
             title = { Text(info?.provinceName ?: "省份详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A2E))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
         )
 
         if (info == null) {
@@ -78,7 +78,7 @@ fun ProvinceDetailScreen(
             // 进度总览
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("完成进度", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -96,7 +96,7 @@ fun ProvinceDetailScreen(
             if (detailUi.provinceAchievements.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("省份徽章", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -112,7 +112,7 @@ fun ProvinceDetailScreen(
             if (!info.hasCompleteBadge && info.visitedCities > 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("继续探索", color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -136,7 +136,7 @@ private fun ProgressRow(label: String, visited: Int, total: Int) {
         percent >= 0.7f -> Color(0xFFFF6B6B)
         percent >= 0.3f -> MapChinaColors.Primary
         percent > 0f -> Color(0xFF4A6FA5)
-        else -> Color(0xFF3D3D5C)
+        else -> Color(0xFF213647)
     }
 
     Column {
@@ -155,7 +155,7 @@ private fun ProgressRow(label: String, visited: Int, total: Int) {
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp)),
             color = percentColor,
-            trackColor = Color(0xFF1A1A2E)
+            trackColor = Color(0xFF0F1923)
         )
     }
 }
@@ -179,7 +179,7 @@ private fun ProvinceBadgeRow(item: AchievementWithProgress) {
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
             contentAlignment = Alignment.Center
         ) {
             Box(

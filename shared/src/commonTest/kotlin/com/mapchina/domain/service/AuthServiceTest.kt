@@ -1,6 +1,7 @@
 package com.mapchina.domain.service
 
 import com.mapchina.data.model.UserDto
+import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,7 +20,7 @@ class AuthServiceTest {
     @Test
     fun `on_login_sets_current_user`() {
         val service = AuthService()
-        val user = UserDto("user1", "13800001111", "旅行者1111", null, System.currentTimeMillis())
+        val user = UserDto("user1", "13800001111", "旅行者1111", null, Clock.System.now().toEpochMilliseconds())
         service.onLogin(user)
         assertTrue(service.isLoggedIn())
         assertEquals("user1", service.getCurrentUser()?.id)

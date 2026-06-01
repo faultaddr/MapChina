@@ -52,7 +52,7 @@ fun AchievementScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A2E))
+            .background(Color(0xFF0F1923))
     ) {
         Text(
             "成就",
@@ -77,7 +77,7 @@ fun AchievementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onNavigateToProvinceConquest?.invoke() },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
                 ) {
                     Row(
                         modifier = Modifier
@@ -113,7 +113,7 @@ fun AchievementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onNavigateToAtlas?.invoke() },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
                 ) {
                     Row(
                         modifier = Modifier
@@ -149,7 +149,7 @@ fun AchievementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF2D2D44))
+                        .background(Color(0xFF1A2C3D))
                         .clickable { onNavigateToBadgeWall?.invoke() }
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.Center
@@ -166,7 +166,7 @@ private fun LevelCard(ui: AchievementUi) {
     val level = ui.levelInfo
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -216,7 +216,7 @@ private fun LevelCard(ui: AchievementUi) {
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = MapChinaColors.Primary,
-                    trackColor = Color(0xFF1A1A2E)
+                    trackColor = Color(0xFF0F1923)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -229,7 +229,7 @@ private fun LevelCard(ui: AchievementUi) {
 private fun NextTargetCard(target: AchievementWithProgress) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2D44))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("下一目标", color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -244,7 +244,7 @@ private fun NextTargetCard(target: AchievementWithProgress) {
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = MapChinaColors.Primary,
-                trackColor = Color(0xFF1A1A2E)
+                trackColor = Color(0xFF0F1923)
             )
             Spacer(modifier = Modifier.height(4.dp))
             val remaining = target.progressTarget - target.progressValue
@@ -283,7 +283,7 @@ private fun AchievementRow(item: AchievementWithProgress) {
         AchievementRarity.EPIC -> Color(0xFFCE93D8)
         AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
     }
-    val bgColor = if (item.isUnlocked) Color(0xFF2D2D44) else Color(0xFF1F1F33)
+    val bgColor = if (item.isUnlocked) Color(0xFF1A2C3D) else Color(0xFF1F1F33)
 
     Card(
         modifier = Modifier
@@ -301,7 +301,7 @@ private fun AchievementRow(item: AchievementWithProgress) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF3D3D5C)),
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
