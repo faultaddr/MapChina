@@ -73,7 +73,19 @@ actual class MapController actual constructor() {
         // TODO
     }
 
+    actual fun setOnCameraPositionListener(listener: ((Double, Double, Float) -> Unit)?) {
+        // TODO
+    }
+
+    actual fun setOnMapReadyListener(listener: (() -> Unit)?) {
+        // TODO
+    }
+
     actual fun pulseOverlay(regionId: String) {
+        // TODO: Integrate with AMap SDK
+    }
+
+    actual fun restorePulsedOverlay() {
         // TODO: Integrate with AMap SDK
     }
 

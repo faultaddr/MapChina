@@ -12,7 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.mapchina.ui.achievement.AchievementScreen
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AtlasScreen as AtlasScreenComposable
 import com.mapchina.ui.achievement.AtlasDetailScreen as AtlasDetailScreenComposable
@@ -24,6 +27,10 @@ import com.mapchina.ui.achievement.ProvinceDetailScreen as ProvinceDetailScreenC
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.attraction.AttractionDetailScreen
 import com.mapchina.ui.attraction.AttractionViewModel
+import com.mapchina.ui.attraction.CustomAttractionScreen as CustomAttractionScreenComposable
+import com.mapchina.ui.community.CommunityScreen as CommunityScreenComposable
+import com.mapchina.ui.community.PostDetailScreen as PostDetailScreenComposable
+import com.mapchina.ui.community.CommunityViewModel
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.journal.JournalListScreen as JournalListScreenComposable
 import com.mapchina.ui.journal.JournalDetailScreen as JournalDetailScreenComposable
@@ -50,12 +57,16 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable<AttractionsScreen> {
             AttractionsScreenComposable(navController = navController, viewModel = koinInject())
         }
-        composable<AchievementScreen> {
-            val vm: AchievementViewModel = koinInject()
+        composable<ProfileScreen> {
+            val profileVm: com.mapchina.ui.profile.ProfileViewModel = koinInject()
+            val achievementVm: AchievementViewModel = koinInject()
             val statsVm: StatsViewModel = koinInject()
-            AchievementScreen(
-                viewModel = vm,
+            ProfileScreenComposable(
+                viewModel = profileVm,
+                achievementViewModel = achievementVm,
                 statsViewModel = statsVm,
+                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) },
+                onNavigateToJournals = { navController.navigate(com.mapchina.ui.navigation.JournalListScreen) },
                 onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
                 onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
                 onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) }
@@ -74,13 +85,6 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val achievementId = backStackEntry.arguments?.getString("achievementId") ?: ""
             val item = ui.allAchievements.find { it.definition.id == achievementId }
             BadgeDetailScreen(item = item)
-        }
-        composable<ProfileScreen> {
-            ProfileScreenComposable(
-                viewModel = koinInject(),
-                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) },
-                onNavigateToJournals = { navController.navigate(com.mapchina.ui.navigation.JournalListScreen) }
-            )
         }
         composable<LoginScreen> {
             val authService: AuthService = koinInject()
@@ -132,7 +136,20 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 atlasId = atlasId
             )
         }
-        composable<AttractionDetailScreen> { backStackEntry ->
+        composable<AttractionDetailScreen>(
+            enterTransition = {
+                fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(200))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(250))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(200))
+            }
+        ) { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
             val viewModel: AttractionViewModel = koinInject()
             val attraction = remember(attractionId) { viewModel.getAttractionById(attractionId) }
@@ -146,6 +163,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 },
                 onRemoveVisit = {
                     attraction?.let { viewModel.removeVisit(it.id) }
+                },
+                onWriteJournal = {
+                    attraction?.let { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen(attractionId = it.id)) }
                 }
             )
         }
@@ -171,10 +191,53 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable<com.mapchina.ui.navigation.JournalCreateScreen> { backStackEntry ->
             val vm: JournalViewModel = koinInject()
             val regionId = backStackEntry.arguments?.getString("regionId")
+            val attractionId = backStackEntry.arguments?.getString("attractionId")
             JournalCreateScreenComposable(
                 viewModel = vm,
                 regionId = regionId,
+                attractionId = attractionId,
                 onSave = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<com.mapchina.ui.navigation.CarvingScreen> { backStackEntry ->
+            val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
+            val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
+            val regionName = backStackEntry.arguments?.getString("regionName") ?: ""
+            com.mapchina.ui.carving.CarvingScreen(
+                regionId = regionId,
+                regionName = regionName,
+                viewModel = vm,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<CustomAttractionScreen> { backStackEntry ->
+            val vm: AttractionViewModel = koinInject()
+            val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
+            val latitude = backStackEntry.arguments?.getString("latitude")?.toDoubleOrNull() ?: 0.0
+            val longitude = backStackEntry.arguments?.getString("longitude")?.toDoubleOrNull() ?: 0.0
+            CustomAttractionScreenComposable(
+                regionId = regionId,
+                latitude = latitude,
+                longitude = longitude,
+                viewModel = vm,
+                onSave = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<CommunityScreen> {
+            val vm: CommunityViewModel = koinInject()
+            CommunityScreenComposable(
+                viewModel = vm,
+                onPostClick = { postId -> navController.navigate(PostDetailScreen(postId)) }
+            )
+        }
+        composable<PostDetailScreen> { backStackEntry ->
+            val vm: CommunityViewModel = koinInject()
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            PostDetailScreenComposable(
+                postId = postId,
+                viewModel = vm,
                 onBack = { navController.popBackStack() }
             )
         }

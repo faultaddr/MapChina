@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AtlasProgress
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +54,11 @@ fun AtlasScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text("主题图鉴", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text("主题图鉴", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (ui.totalAtlas > 0) {
@@ -65,7 +66,9 @@ fun AtlasScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -73,11 +76,11 @@ fun AtlasScreen(
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("图鉴总数", color = Color.Gray, fontSize = 13.sp)
-                    Text("${ui.totalAtlas}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("图鉴总数", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                    Text("${ui.totalAtlas}", color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.width(24.dp))
-                    Text("已完成", color = Color.Gray, fontSize = 13.sp)
-                    Text("${ui.completedAtlas}", color = Color(0xFFFFD700), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("已完成", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                    Text("${ui.completedAtlas}", color = MapChinaColors.AccentGold, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -99,17 +102,19 @@ fun AtlasScreen(
 @Composable
 private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
     val progressColor = when {
-        atlas.completionPercent >= 100 -> Color(0xFFFFD700)
-        atlas.completionPercent >= 50 -> Color(0xFFFF6B6B)
+        atlas.completionPercent >= 100 -> MapChinaColors.AccentGold
+        atlas.completionPercent >= 50 -> MapChinaColors.Error
         atlas.completionPercent > 0 -> MapChinaColors.Primary
-        else -> Color(0xFF4A6FA5)
+        else -> MapChinaColors.AccentBlue.copy(alpha = 0.7f)
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -132,8 +137,8 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(atlas.atlasName, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text(atlas.atlasDescription, color = Color.Gray, fontSize = 12.sp)
+                    Text(atlas.atlasName, color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(atlas.atlasDescription, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                 }
                 Text("${atlas.visitedItems}/${atlas.totalItems}", color = progressColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
@@ -145,10 +150,10 @@ private fun AtlasCard(atlas: AtlasProgress, onClick: () -> Unit) {
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = progressColor,
-                trackColor = Color(0xFF0F1923)
+                trackColor = MapChinaColors.Background
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text("${atlas.completionPercent}% 完成", color = Color.Gray, fontSize = 11.sp)
+            Text("${atlas.completionPercent}% 完成", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
         }
     }
 }

@@ -76,11 +76,11 @@ fun JournalDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
             }
             Text(
                 detail?.journal?.title ?: "游记详情",
-                color = Color.White,
+                color = MapChinaColors.TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
@@ -91,7 +91,7 @@ fun JournalDetailScreen(
                     viewModel.deleteJournal(journalId)
                     onDelete()
                 }) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = Color(0xFFE76F51).copy(alpha = 0.7f))
+                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = MapChinaColors.FootprintDeep.copy(alpha = 0.7f))
                 }
             }
         }
@@ -127,7 +127,7 @@ private fun JournalDetailContent(detail: JournalDetail) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     detail.journal.title,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -135,7 +135,7 @@ private fun JournalDetailContent(detail: JournalDetail) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         detail.journal.description,
-                        color = Color(0xFFB0C4D0),
+                        color = MapChinaColors.TextSecondary,
                         fontSize = 15.sp,
                         lineHeight = 24.sp
                     )
@@ -151,7 +151,7 @@ private fun JournalDetailContent(detail: JournalDetail) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(formatDate(detail.journal.startTime), color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     detail.journal.endTime?.let { end ->
-                        Text(" — ", color = Color(0xFF5A7080), fontSize = 13.sp)
+                        Text(" — ", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                         Text(formatDate(end), color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
@@ -162,11 +162,11 @@ private fun JournalDetailContent(detail: JournalDetail) {
                             Icons.Default.LocationOn,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = Color(0xFFF4A261)
+                            tint = MapChinaColors.FootprintShortVisit
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         val locationText = listOfNotNull(detail.regionName, detail.attractionName).joinToString(" · ")
-                        Text(locationText, color = Color(0xFFF4A261), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(locationText, color = MapChinaColors.FootprintShortVisit, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -206,8 +206,8 @@ private fun JournalDetailContent(detail: JournalDetail) {
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text("行动轨迹", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text("${detail.trackPoints.size} 个轨迹点", color = Color(0xFF5A7080), fontSize = 13.sp)
+                        Text("行动轨迹", color = MapChinaColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${detail.trackPoints.size} 个轨迹点", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                     }
                 }
             }
@@ -220,9 +220,9 @@ private fun JournalDetailContent(detail: JournalDetail) {
 @Composable
 private fun SectionHeader(title: String, count: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(title, color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.width(8.dp))
-        Text("($count)", color = Color(0xFF5A7080), fontSize = 13.sp)
+        Text("($count)", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
     }
 }
 

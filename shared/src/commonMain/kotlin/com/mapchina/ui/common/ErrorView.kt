@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.mapchina.ui.theme.MapChinaColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -33,10 +34,10 @@ fun ErrorView(
             Icons.Default.Warning,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = Color(0xFFB00020)
+            tint = MapChinaColors.Error
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text(message, fontSize = 16.sp, color = Color.Gray)
+        Text(message, fontSize = 16.sp, color = MapChinaColors.TextTertiary)
         if (onRetry != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onRetry) {

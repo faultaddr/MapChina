@@ -24,6 +24,8 @@ actual class MapController actual constructor() {
     private var regionTapListener: ((String) -> Unit)? = null
     private var markerTapListener: ((String) -> Unit)? = null
     private var cameraZoomChangeListener: ((Float) -> Unit)? = null
+    private var cameraPositionListener: ((Double, Double, Float) -> Unit)? = null
+    private var mapReadyListener: (() -> Unit)? = null
 
     private data class PendingOverlay(val regionId: String, val boundary: String, val style: OverlayStyle)
     private val pendingOverlays = mutableListOf<PendingOverlay>()
@@ -38,6 +40,11 @@ actual class MapController actual constructor() {
     // Touch state
     private var touchDownPoint: android.graphics.Point? = null
     private var touchDownRegionId: String? = null
+    private var touchDownTime: Long = 0
+    private var longPressRunnable: Runnable? = null
+    private var longPressMarkerId: String? = null
+    private val longPressHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val LONG_PRESS_TIMEOUT = 500L
 
     // Pulse animation
     private var pulseAnimator: ValueAnimator? = null
@@ -50,8 +57,23 @@ actual class MapController actual constructor() {
             appContext = context
         }
 
-        // Set initial camera before listeners to avoid spurious zoom change events
-        amap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(34.5, 106.0), 3.8f))
+        // Clear stale references from previous AMap instance
+        overlays.clear()
+        markers.clear()
+        polylines.clear()
+        imageMarkers.clear()
+        pulseTargetId = null
+        pulseOriginalStyle = null
+        pulseAnimator?.cancel()
+        pulseAnimator = null
+
+        // Hide AMap built-in zoom controls
+        amap.uiSettings.isZoomControlsEnabled = false
+
+        // Re-sync overlays after map is fully loaded (camera restored by mapReadyListener)
+        amap.setOnMapLoadedListener {
+            mapReadyListener?.invoke()
+        }
 
         amap.setOnMapTouchListener { motionEvent ->
             when (motionEvent.action) {
@@ -59,37 +81,55 @@ actual class MapController actual constructor() {
                     val map = aMap ?: return@setOnMapTouchListener
                     val screenPoint = android.graphics.Point(motionEvent.x.toInt(), motionEvent.y.toInt())
                     val latLng = map.projection.fromScreenLocation(screenPoint)
-                    val regionId = findRegionAt(latLng)
                     touchDownPoint = screenPoint
+                    touchDownTime = System.currentTimeMillis()
+
+                    // Check if touch is on a marker (long press candidate)
+                    val markerId = findMarkerNear(screenPoint, map)
+                    if (markerId != null) {
+                        longPressMarkerId = markerId
+                        val runnable = Runnable {
+                            if (longPressMarkerId != null) {
+                                markerTapListener?.invoke(longPressMarkerId!!)
+                                longPressMarkerId = null
+                                touchDownRegionId = null
+                            }
+                        }
+                        longPressRunnable = runnable
+                        longPressHandler.postDelayed(runnable, LONG_PRESS_TIMEOUT)
+                    }
+
+                    val regionId = findRegionAt(latLng)
                     touchDownRegionId = regionId
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (touchDownPoint != null && touchDownRegionId != null) {
+                    if (touchDownPoint != null) {
                         val dx = motionEvent.x.toInt() - touchDownPoint!!.x
                         val dy = motionEvent.y.toInt() - touchDownPoint!!.y
                         if (dx * dx + dy * dy > 25) {
                             touchDownRegionId = null
+                            cancelLongPress()
                         }
                     }
                 }
                 MotionEvent.ACTION_UP -> {
+                    // Short tap → select region (same as tapping blank area)
+                    // Long press already fired markerTapListener and cleared touchDownRegionId
                     touchDownRegionId?.let { regionTapListener?.invoke(it) }
+                    cancelLongPress()
                     touchDownRegionId = null
                     touchDownPoint = null
                 }
                 MotionEvent.ACTION_CANCEL -> {
+                    cancelLongPress()
                     touchDownRegionId = null
                     touchDownPoint = null
                 }
             }
         }
 
-        amap.setOnMarkerClickListener { marker ->
-            val id = markers.entries.find { it.value == marker }?.key
-                ?: imageMarkers.entries.find { it.value == marker }?.key
-            if (id != null) {
-                markerTapListener?.invoke(id)
-            }
+        amap.setOnMarkerClickListener { _ ->
+            // Consume event to prevent AMap default info window; marker taps handled via long press
             true
         }
 
@@ -97,6 +137,7 @@ actual class MapController actual constructor() {
             override fun onCameraChange(position: com.amap.api.maps.model.CameraPosition) {}
             override fun onCameraChangeFinish(position: com.amap.api.maps.model.CameraPosition) {
                 cameraZoomChangeListener?.invoke(position.zoom)
+                cameraPositionListener?.invoke(position.target.latitude, position.target.longitude, position.zoom)
             }
         })
 
@@ -136,6 +177,7 @@ actual class MapController actual constructor() {
 
     fun unbindMap() {
         pulseAnimator?.cancel()
+        cancelLongPress()
         aMap = null
     }
 
@@ -155,7 +197,7 @@ actual class MapController actual constructor() {
     }
 
     actual fun clearOverlays() {
-        overlays.values.forEach { it.remove() }
+        overlays.values.toList().forEach { it.remove() }
         overlays.clear()
         pendingOverlays.clear()
     }
@@ -184,7 +226,7 @@ actual class MapController actual constructor() {
     }
 
     actual fun clearMarkers() {
-        markers.values.forEach { it.remove() }
+        markers.values.toList().forEach { it.remove() }
         markers.clear()
         pendingMarkers.clear()
     }
@@ -205,7 +247,7 @@ actual class MapController actual constructor() {
     }
 
     actual fun clearPolylines() {
-        polylines.values.forEach { it.remove() }
+        polylines.values.toList().forEach { it.remove() }
         polylines.clear()
         pendingPolylines.clear()
     }
@@ -226,7 +268,7 @@ actual class MapController actual constructor() {
     }
 
     actual fun clearImageMarkers() {
-        imageMarkers.values.forEach { it.remove() }
+        imageMarkers.values.toList().forEach { it.remove() }
         imageMarkers.clear()
         pendingImageMarkers.clear()
     }
@@ -253,38 +295,75 @@ actual class MapController actual constructor() {
         cameraZoomChangeListener = listener
     }
 
+    actual fun setOnCameraPositionListener(listener: ((Double, Double, Float) -> Unit)?) {
+        cameraPositionListener = listener
+    }
+
+    actual fun setOnMapReadyListener(listener: (() -> Unit)?) {
+        mapReadyListener = listener
+    }
+
     actual fun pulseOverlay(regionId: String) {
+        // Restore previously pulsed overlay to its original color
+        pulseTargetId?.let { prevId ->
+            if (prevId != regionId) {
+                pulseAnimator?.cancel()
+                val prevPolygon = overlays[prevId]
+                if (prevPolygon != null && pulseOriginalStyle != null) {
+                    prevPolygon.fillColor = applyAlpha(pulseOriginalStyle!!.fillColor, pulseOriginalStyle!!.alpha)
+                }
+            }
+        }
+
         val polygon = overlays[regionId] ?: return
-        val originalFill = polygon.fillColor
-        val originalAlpha = 0.6f
+        pulseOriginalStyle = OverlayStyle(
+            fillColor = polygon.fillColor.toLong() and 0xFF_FFFFFF,
+            strokeColor = polygon.strokeColor.toLong(),
+            strokeWidth = polygon.strokeWidth,
+            alpha = (polygon.fillColor ushr 24) / 255f
+        )
 
         pulseAnimator?.cancel()
         pulseTargetId = regionId
 
+        val baseAlpha = (polygon.fillColor ushr 24) / 255f
+        val peakAlpha = 0.95f
+
         val animator = ValueAnimator.ofFloat(0f, 1f)
-        animator.duration = 200
+        animator.duration = 300
         animator.addUpdateListener { anim ->
             val fraction = anim.animatedValue as Float
-            val alpha = if (fraction < 0.5f) {
-                originalAlpha + (0.95f - originalAlpha) * (fraction / 0.5f)
+            val alpha = if (fraction < 0.4f) {
+                baseAlpha + (peakAlpha - baseAlpha) * (fraction / 0.4f)
             } else {
-                0.95f - (0.95f - originalAlpha) * ((fraction - 0.5f) / 0.5f)
+                peakAlpha - (peakAlpha - baseAlpha) * ((fraction - 0.4f) / 0.6f)
             }
-            polygon.fillColor = applyAlpha(originalFill.toLong(), alpha)
+            polygon.fillColor = applyAlpha(polygon.fillColor.toLong() and 0xFF_FFFFFF, alpha)
         }
         animator.start()
         pulseAnimator = animator
     }
 
+    actual fun restorePulsedOverlay() {
+        pulseAnimator?.cancel()
+        val id = pulseTargetId ?: return
+        val polygon = overlays[id] ?: return
+        val style = pulseOriginalStyle ?: return
+        polygon.fillColor = applyAlpha(style.fillColor, style.alpha)
+        pulseTargetId = null
+        pulseOriginalStyle = null
+    }
+
     actual fun dispose() {
         pulseAnimator?.cancel()
-        overlays.values.forEach { it.remove() }
+        cancelLongPress()
+        overlays.values.toList().forEach { it.remove() }
         overlays.clear()
-        markers.values.forEach { it.remove() }
+        markers.values.toList().forEach { it.remove() }
         markers.clear()
-        polylines.values.forEach { it.remove() }
+        polylines.values.toList().forEach { it.remove() }
         polylines.clear()
-        imageMarkers.values.forEach { it.remove() }
+        imageMarkers.values.toList().forEach { it.remove() }
         imageMarkers.clear()
         pendingOverlays.clear()
         pendingMarkers.clear()
@@ -293,6 +372,8 @@ actual class MapController actual constructor() {
         regionTapListener = null
         markerTapListener = null
         cameraZoomChangeListener = null
+        cameraPositionListener = null
+        mapReadyListener = null
         aMap = null
     }
 
@@ -331,19 +412,24 @@ actual class MapController actual constructor() {
 
     private fun addImageMarkerToMap(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {
         val map = aMap ?: return
-        removeImageMarker(id)
         val context = appContext ?: return
+
         val bitmap = PhotoMarkerRenderer.render(context, imagePath, count) ?: return
         val descriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
-        val marker = map.addMarker(MarkerOptions()
-            .position(LatLng(lat, lng))
-            .icon(descriptor)
-            .anchor(0.5f, 1f)
-            .zIndex(3f)
-        )
-        marker.title = "photo_marker_$id"
-        imageMarkers[id] = marker
-        bitmap.recycle()
+
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (aMap == null) { bitmap.recycle(); return@post }
+            removeImageMarker(id)
+            val marker = map.addMarker(MarkerOptions()
+                .position(LatLng(lat, lng))
+                .icon(descriptor)
+                .anchor(0.5f, 1f)
+                .zIndex(3f)
+            )
+            marker.title = "photo_marker_$id"
+            imageMarkers[id] = marker
+            bitmap.recycle()
+        }
     }
 
     private fun addPolylineToMap(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float) {
@@ -367,6 +453,31 @@ actual class MapController actual constructor() {
             if (polygon.contains(latLng)) return id
         }
         return null
+    }
+
+    private fun findMarkerNear(screenPoint: android.graphics.Point, map: AMap): String? {
+        val density = appContext?.resources?.displayMetrics?.density ?: 2f
+        val radiusPx = (24 * density).toInt() // 24dp touch slop for markers
+
+        for ((id, marker) in markers) {
+            val markerScreen = map.projection.toScreenLocation(marker.position)
+            val dx = screenPoint.x - markerScreen.x
+            val dy = screenPoint.y - markerScreen.y
+            if (dx * dx + dy * dy <= radiusPx * radiusPx) return id
+        }
+        for ((id, marker) in imageMarkers) {
+            val markerScreen = map.projection.toScreenLocation(marker.position)
+            val dx = screenPoint.x - markerScreen.x
+            val dy = screenPoint.y - markerScreen.y
+            if (dx * dx + dy * dy <= radiusPx * radiusPx) return id
+        }
+        return null
+    }
+
+    private fun cancelLongPress() {
+        longPressRunnable?.let { longPressHandler.removeCallbacks(it) }
+        longPressRunnable = null
+        longPressMarkerId = null
     }
 
     private fun parseBoundary(boundary: String): List<LatLng>? {

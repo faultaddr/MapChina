@@ -27,4 +27,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("io.insert-koin:koin-android:4.0.4")
     implementation("com.amap.api:3dmap:10.0.600")
+    implementation("io.coil-kt.coil3:coil:3.1.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

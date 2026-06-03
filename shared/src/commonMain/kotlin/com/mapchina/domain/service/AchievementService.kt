@@ -41,7 +41,7 @@ class AchievementService(
         var totalScoreFromAchievements = 0
 
         for (def in allDefs) {
-            val (progress, target) = computeProgressAndTarget(def, stats, provinceStats, atlasStats)
+            val (progress, target) = computeProgressAndTarget(def, stats, provinceStats, atlasStats, userId)
             val wasUnlocked = existingMap[def.id]?.isUnlocked == true
 
             achievementRepository.updateProgress(userId, def.id, progress, target)
@@ -142,13 +142,14 @@ class AchievementService(
         return result
     }
 
-    private fun computeProgressAndTarget(def: Achievement, stats: UserStats, provinceStats: Map<String, ProvinceStat>, atlasStats: Map<String, Int>): ProgressResult {
+    private fun computeProgressAndTarget(def: Achievement, stats: UserStats, provinceStats: Map<String, ProvinceStat>, atlasStats: Map<String, Int>, userId: String): ProgressResult {
         val cond = def.triggerCondition
         val key = cond.substringBefore(":")
 
         return when (def.category) {
             AchievementCategory.PROVINCE -> computeProvinceProgress(def, cond, key, provinceStats)
             AchievementCategory.ATLAS -> computeAtlasProgress(cond, key, atlasStats)
+            AchievementCategory.GEOGRAPHY -> computeGeographyProgress(cond, key, provinceStats, userId)
             else -> computeRegionScenicProgress(cond, key, stats)
         }
     }
@@ -204,6 +205,56 @@ class AchievementService(
         return ProgressResult(progress, target)
     }
 
+    private val northProvinces = setOf("23") // 黑龙江
+    private val southProvinces = setOf("46") // 海南
+    private val silkRoadProvinces = setOf("62", "61") // 甘肃, 陕西
+    private val coastalProvinces = setOf("13", "21", "33", "35", "37", "44", "45", "46") // 河北, 辽宁, 浙江, 福建, 山东, 广东, 广西, 海南
+    private val northOfYangtze = setOf("11", "12", "13", "14", "15", "21", "22", "23", "61", "62", "63", "64", "65") // 北京,天津,河北,山西,内蒙,辽宁,吉林,黑龙江,陕西,甘肃,青海,宁夏,新疆
+    private val southOfYangtze = setOf("31", "32", "33", "34", "35", "36", "37", "41", "42", "43", "44", "45", "46", "50", "51", "52", "53", "54") // 上海,江苏,浙江,安徽,福建,江西,山东,河南,湖北,湖南,广东,广西,海南,重庆,四川,贵州,云南,西藏
+
+    private fun computeGeographyProgress(cond: String, key: String, provinceStats: Map<String, ProvinceStat>, userId: String): ProgressResult {
+        val allProvinces = regionRepository.getRegionsByLevel(RegionLevel.PROVINCE)
+        val visitedProvinceCodes = allProvinces
+            .filter { provinceStats.containsKey(it.id.substring(0, 2)) && (provinceStats[it.id.substring(0, 2)]?.visitedCities ?: 0) > 0 }
+            .map { it.id.substring(0, 2) }
+            .toSet()
+
+        return when (key) {
+            "geo" -> {
+                val parts = cond.split(":")
+                if (parts.size < 3) return ProgressResult(0, 1)
+                val geoType = parts[1]
+                val target = parts[2].toIntOrNull() ?: 1
+                val progress = when (geoType) {
+                    "north" -> visitedProvinceCodes.count { it in northProvinces }
+                    "south" -> visitedProvinceCodes.count { it in southProvinces }
+                    "silk_road" -> visitedProvinceCodes.count { it in silkRoadProvinces }
+                    "coast" -> visitedProvinceCodes.count { it in coastalProvinces }
+                    "cross_river" -> {
+                        val hasNorth = visitedProvinceCodes.any { it in northOfYangtze }
+                        val hasSouth = visitedProvinceCodes.any { it in southOfYangtze }
+                        (if (hasNorth) 1 else 0) + (if (hasSouth) 1 else 0)
+                    }
+                    "same_day_3" -> computeSameDayProvinceCount(footprintRepository.getFootprintsByUser(userId))
+                    else -> 0
+                }
+                ProgressResult(progress, target)
+            }
+            else -> ProgressResult(0, 1)
+        }
+    }
+
+    private fun computeSameDayProvinceCount(footprints: List<Footprint>): Int {
+        if (footprints.isEmpty()) return 0
+        val byDay = footprints.groupBy { fp ->
+            fp.timestamp.toEpochMilliseconds() / (24 * 60 * 60 * 1000L)
+        }
+        val maxProvincesInDay = byDay.values.maxOfOrNull { dayFootprints ->
+            dayFootprints.map { it.regionId.substring(0, 2) }.distinct().size
+        } ?: 0
+        return if (maxProvincesInDay >= 3) 3 else maxProvincesInDay
+    }
+
     fun addFootprintScore(userId: String, footprintLevel: FootprintLevel) {
         val delta = when (footprintLevel) {
             FootprintLevel.PASS_BY -> 10
@@ -220,32 +271,39 @@ class AchievementService(
         val visitedRegionIds = footprints.map { it.regionId }.toSet()
         val visits = footprintRepository.getAttractionVisitsByUser(userId)
 
+        val allCities = regionRepository.getRegionsByLevel(RegionLevel.CITY)
+        val allDistricts = regionRepository.getRegionsByLevel(RegionLevel.DISTRICT)
+        val allAttractions = attractionRepository.getAllAttractions()
+        val userAchievements = achievementRepository.getUserAchievements(userId)
+        val unlockedIds = userAchievements.filter { it.isUnlocked }.map { it.achievementId }.toSet()
+
+        val attractionsByProvince = allAttractions.groupBy { it.regionId.substring(0, 2) }
+        val citiesByProvince = allCities.groupBy { it.id.substring(0, 2) }
+        val districtsByProvince = allDistricts.groupBy { it.id.substring(0, 2) }
+        val visitAttractionIds = visits.map { it.attractionId }.toSet()
+
         return allProvinces.mapNotNull { province ->
             val code = province.id.substring(0, 2)
             val stat = provinceStats[code] ?: return@mapNotNull null
 
-            val allAttractions = attractionRepository.getAttractionsByRegionPrefix("$code%")
-            val visitedAttrCount = visits.count { v -> allAttractions.any { it.id == v.attractionId } }
-            val allCities = regionRepository.getRegionsByLevel(RegionLevel.CITY).filter { it.id.startsWith(code) && it.id != province.id }
-            val visitedCityCount = allCities.count { it.id in visitedRegionIds }
-            val allDistricts = regionRepository.getRegionsByLevel(RegionLevel.DISTRICT).filter { it.id.startsWith(code) }
-            val visitedDistrictCount = allDistricts.count { it.id in visitedRegionIds }
-
-            val userAchievements = achievementRepository.getUserAchievements(userId)
-            val hasVisitBadge = userAchievements.any { it.achievementId == "province_visit_$code" && it.isUnlocked }
-            val hasCompleteBadge = userAchievements.any { it.achievementId == "province_complete_$code" && it.isUnlocked }
+            val provinceAttractions = attractionsByProvince[code] ?: emptyList()
+            val visitedAttrCount = provinceAttractions.count { it.id in visitAttractionIds }
+            val provinceCities = (citiesByProvince[code] ?: emptyList()).filter { it.id != province.id }
+            val visitedCityCount = provinceCities.count { it.id in visitedRegionIds }
+            val provinceDistricts = districtsByProvince[code] ?: emptyList()
+            val visitedDistrictCount = provinceDistricts.count { it.id in visitedRegionIds }
 
             ProvinceConquestInfo(
                 provinceId = province.id,
                 provinceName = province.name,
                 visitedAttractions = visitedAttrCount,
-                totalAttractions = allAttractions.size,
+                totalAttractions = provinceAttractions.size,
                 visitedCities = visitedCityCount,
-                totalCities = allCities.size,
+                totalCities = provinceCities.size,
                 visitedDistricts = visitedDistrictCount,
-                totalDistricts = allDistricts.size,
-                hasVisitBadge = hasVisitBadge,
-                hasCompleteBadge = hasCompleteBadge
+                totalDistricts = provinceDistricts.size,
+                hasVisitBadge = "province_visit_$code" in unlockedIds,
+                hasCompleteBadge = "province_complete_$code" in unlockedIds
             )
         }
     }

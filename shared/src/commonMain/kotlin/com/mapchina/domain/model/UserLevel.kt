@@ -17,19 +17,19 @@ data class UserLevelInfo(
     val isMaxLevel: Boolean get() = currentLevel >= LEVEL_DEFINITIONS.last().level
 }
 
-data class LevelDef(val level: Int, val title: String, val scoreThreshold: Int)
+data class LevelDef(val level: Int, val title: String, val scoreThreshold: Int, val badgeIconName: String)
 
 val LEVEL_DEFINITIONS = listOf(
-    LevelDef(1, "初行者", 0),
-    LevelDef(2, "识途者", 100),
-    LevelDef(3, "远游者", 300),
-    LevelDef(4, "山河行者", 800),
-    LevelDef(5, "九州旅人", 1500),
-    LevelDef(6, "华境探索家", 3000),
-    LevelDef(7, "山海征途者", 6000),
-    LevelDef(8, "大地巡礼者", 10000),
-    LevelDef(9, "中华丈量师", 16000),
-    LevelDef(10, "MapChina 宗师", 25000)
+    LevelDef(1, "初行者", 0, "DirectionsWalk"),
+    LevelDef(2, "识途者", 100, "NearMe"),
+    LevelDef(3, "远游者", 300, "Terrain"),
+    LevelDef(4, "山河行者", 800, "Landscape"),
+    LevelDef(5, "九州旅人", 1500, "Map"),
+    LevelDef(6, "华境探索家", 3000, "Explore"),
+    LevelDef(7, "山海征途者", 6000, "EmojiEvents"),
+    LevelDef(8, "大地巡礼者", 10000, "Star"),
+    LevelDef(9, "中华丈量师", 16000, "MilitaryTech"),
+    LevelDef(10, "MapChina 宗师", 25000, "WorkspacePremium")
 )
 
 val LEVEL_THRESHOLDS = LEVEL_DEFINITIONS.associate { it.level to it.scoreThreshold }

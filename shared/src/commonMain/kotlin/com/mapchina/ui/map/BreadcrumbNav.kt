@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mapchina.ui.theme.MapChinaColors
 
 data class BreadcrumbItem(val id: String, val name: String)
 
@@ -41,7 +42,7 @@ fun BreadcrumbNav(
         }
         path.forEachIndexed { index, item ->
             if (index > 0) {
-                Text(" > ", color = Color.Gray, fontSize = 14.sp)
+                Text(" > ", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
             }
             TextButton(onClick = { onNavigateTo(item.id) }) {
                 Text(item.name, fontSize = 14.sp)

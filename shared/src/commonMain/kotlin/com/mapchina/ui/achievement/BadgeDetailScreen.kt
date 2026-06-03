@@ -1,5 +1,6 @@
 package com.mapchina.ui.achievement
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -25,12 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
+import org.jetbrains.compose.resources.painterResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,25 +44,25 @@ fun BadgeDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text("徽章详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text("徽章详情", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (item == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("未找到成就", color = Color.Gray)
+                Text("未找到成就", color = MapChinaColors.TextTertiary)
             }
             return
         }
 
         val rarityColor = when (item.definition.rarity) {
-            AchievementRarity.COMMON -> Color(0xFF90CAF9)
-            AchievementRarity.RARE -> Color(0xFF69F0AE)
-            AchievementRarity.EPIC -> Color(0xFFCE93D8)
-            AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
+            AchievementRarity.COMMON -> MapChinaColors.AccentBlue
+            AchievementRarity.RARE -> MapChinaColors.RarityRare
+            AchievementRarity.EPIC -> MapChinaColors.RarityEpic
+            AchievementRarity.LEGENDARY -> MapChinaColors.AccentGold
         }
         val rarityLabel = when (item.definition.rarity) {
             AchievementRarity.COMMON -> "普通"
@@ -68,6 +70,7 @@ fun BadgeDetailScreen(
             AchievementRarity.EPIC -> "稀有"
             AchievementRarity.LEGENDARY -> "传奇"
         }
+        val alpha = if (item.isUnlocked) 1f else 0.3f
 
         Column(
             modifier = Modifier
@@ -77,20 +80,21 @@ fun BadgeDetailScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(120.dp)
                     .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else MapChinaColors.CardBackgroundLight),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(if (item.isUnlocked) rarityColor else Color.Gray)
+                Image(
+                    painter = painterResource(badgeDrawable(item.definition.icon)),
+                    contentDescription = item.definition.name,
+                    modifier = Modifier.size(88.dp),
+                    alpha = alpha,
+                    contentScale = ContentScale.Fit
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(item.definition.name, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(item.definition.name, color = MapChinaColors.TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 rarityLabel,
@@ -105,20 +109,22 @@ fun BadgeDetailScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("描述", color = Color.Gray, fontSize = 12.sp)
-                    Text(item.definition.description, color = Color.White, fontSize = 14.sp)
+                    Text("描述", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
+                    Text(item.definition.description, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("解锁条件", color = Color.Gray, fontSize = 12.sp)
-                    Text(item.definition.description, color = Color.White, fontSize = 14.sp)
+                    Text("解锁条件", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
+                    Text(item.definition.description, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("进度", color = Color.Gray, fontSize = 12.sp)
+                        Text("进度", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                         Text("${item.progressValue}/${item.progressTarget}", color = MapChinaColors.Primary, fontSize = 13.sp)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -129,18 +135,18 @@ fun BadgeDetailScreen(
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = MapChinaColors.Primary,
-                        trackColor = Color(0xFF0F1923)
+                        trackColor = MapChinaColors.Background
                     )
                     if (item.isUnlocked && item.unlockTime != null) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("解锁时间：${item.unlockTime}", color = Color.Gray, fontSize = 12.sp)
+                        Text("解锁时间：${item.unlockTime}", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("山河值奖励", color = Color.Gray, fontSize = 12.sp)
+                        Text("山河值奖励", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                         Text("+${item.definition.rewardScore}", color = MapChinaColors.Primary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }

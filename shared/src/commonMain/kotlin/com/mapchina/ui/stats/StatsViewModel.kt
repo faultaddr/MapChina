@@ -12,6 +12,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 data class VisitedAttractionUi(
@@ -63,6 +64,10 @@ class StatsViewModel(
     private val userId: String = ""
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    fun onCleared() {
+        vmScope.cancel()
+    }
 
     private val _stats = MutableStateFlow(StatsUi())
     val stats: StateFlow<StatsUi> = _stats.asStateFlow()

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,11 +62,11 @@ fun StatsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         Text(
             "统计",
-            color = Color.White,
+            color = MapChinaColors.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
@@ -99,7 +100,7 @@ fun StatsScreen(
                 item {
                     Text(
                         "已到访景点",
-                        color = Color.White,
+                        color = MapChinaColors.TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -118,10 +119,10 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("景点等级分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("景点等级分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -141,7 +142,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
 
                 // 背景环
                 drawArc(
-                    color = Color(0xFF0F1923),
+                    color = MapChinaColors.Background,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,
@@ -153,7 +154,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
                 // 5A 已到访
                 val a5Sweep = if (dist.a5Total > 0) (dist.a5Visited.toFloat() / dist.a5Total) * 180f else 0f
                 drawArc(
-                    color = Color(0xFFFFD700),
+                    color = MapChinaColors.AccentGold,
                     startAngle = -90f,
                     sweepAngle = a5Sweep,
                     useCenter = false,
@@ -165,7 +166,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
                 // 4A 已到访
                 val a4Sweep = if (dist.a4Total > 0) (dist.a4Visited.toFloat() / dist.a4Total) * 180f else 0f
                 drawArc(
-                    color = Color(0xFF90CAF9),
+                    color = MapChinaColors.AccentBlue,
                     startAngle = 90f,
                     sweepAngle = a4Sweep,
                     useCenter = false,
@@ -174,15 +175,25 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
                     style = Stroke(width = strokeWidth)
                 )
 
-                // 中心数字
+                // 中心数字 + 单位
                 val centerText = "$visitedTotal"
+                val unitText = "处"
                 val textResult = measurer.measure(centerText)
                 drawText(
                     textLayoutResult = textResult,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     topLeft = Offset(
                         (size.width - textResult.size.width) / 2f,
-                        (size.height - textResult.size.height) / 2f
+                        (size.height - textResult.size.height) / 2f - 6.dp.toPx()
+                    )
+                )
+                val unitResult = measurer.measure(unitText)
+                drawText(
+                    textLayoutResult = unitResult,
+                    color = MapChinaColors.TextTertiary,
+                    topLeft = Offset(
+                        (size.width - unitResult.size.width) / 2f,
+                        (size.height - textResult.size.height) / 2f + textResult.size.height - 6.dp.toPx()
                     )
                 )
             }
@@ -190,8 +201,8 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
             Spacer(modifier = Modifier.width(24.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendItem(Color(0xFFFFD700), "5A", dist.a5Visited, dist.a5Total)
-                LegendItem(Color(0xFF90CAF9), "4A", dist.a4Visited, dist.a4Total)
+                LegendItem(MapChinaColors.AccentGold, "5A", dist.a5Visited, dist.a5Total)
+                LegendItem(MapChinaColors.AccentBlue, "4A", dist.a4Visited, dist.a4Total)
             }
         }
     }
@@ -202,14 +213,14 @@ private fun LegendItem(color: Color, label: String, visited: Int, total: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(16.dp)
                 .clip(RoundedCornerShape(2.dp))
                 .background(color)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
-            Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Text("$visited / $total", color = Color.Gray, fontSize = 12.sp)
+            Text(label, color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("$visited / $total", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
         }
     }
 }
@@ -223,10 +234,10 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("到访级别分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("到访级别分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -243,9 +254,9 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
 
                 var startAngle = -90f
                 val segments = listOf(
-                    FootprintLevel.DEEP to Color(0xFFE94560),
-                    FootprintLevel.SHORT_VISIT to Color(0xFFFF6B6B),
-                    FootprintLevel.PASS_BY to Color(0xFFFFA502)
+                    FootprintLevel.DEEP to MapChinaColors.BadgeRed,
+                    FootprintLevel.SHORT_VISIT to MapChinaColors.Error,
+                    FootprintLevel.PASS_BY to MapChinaColors.FootprintShortVisit
                 )
                 for ((level, color) in segments) {
                     val count = levelCounts[level] ?: 0
@@ -264,18 +275,28 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
 
                 // 中心挖空
                 drawCircle(
-                    color = Color(0xFF1A2C3D),
+                    color = MapChinaColors.SurfaceElevated,
                     radius = diameter / 2f - strokeWidth
                 )
 
                 val centerText = "$total"
+                val unitText = "次"
                 val textResult = measurer.measure(centerText)
                 drawText(
                     textLayoutResult = textResult,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     topLeft = Offset(
                         (size.width - textResult.size.width) / 2f,
-                        (size.height - textResult.size.height) / 2f
+                        (size.height - textResult.size.height) / 2f - 6.dp.toPx()
+                    )
+                )
+                val unitResult = measurer.measure(unitText)
+                drawText(
+                    textLayoutResult = unitResult,
+                    color = MapChinaColors.TextTertiary,
+                    topLeft = Offset(
+                        (size.width - unitResult.size.width) / 2f,
+                        (size.height - textResult.size.height) / 2f + textResult.size.height - 6.dp.toPx()
                     )
                 )
             }
@@ -283,9 +304,9 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
             Spacer(modifier = Modifier.width(20.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                LevelLegend(FootprintLevel.DEEP, "深度游览", Color(0xFFE94560), levelCounts[FootprintLevel.DEEP] ?: 0, total)
-                LevelLegend(FootprintLevel.SHORT_VISIT, "短玩", Color(0xFFFF6B6B), levelCounts[FootprintLevel.SHORT_VISIT] ?: 0, total)
-                LevelLegend(FootprintLevel.PASS_BY, "路过", Color(0xFFFFA502), levelCounts[FootprintLevel.PASS_BY] ?: 0, total)
+                LevelLegend(FootprintLevel.DEEP, "深度游览", MapChinaColors.BadgeRed, levelCounts[FootprintLevel.DEEP] ?: 0, total)
+                LevelLegend(FootprintLevel.SHORT_VISIT, "短玩", MapChinaColors.Error, levelCounts[FootprintLevel.SHORT_VISIT] ?: 0, total)
+                LevelLegend(FootprintLevel.PASS_BY, "路过", MapChinaColors.FootprintShortVisit, levelCounts[FootprintLevel.PASS_BY] ?: 0, total)
             }
         }
     }
@@ -296,15 +317,15 @@ private fun LevelLegend(level: FootprintLevel, label: String, color: Color, coun
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(16.dp)
                 .clip(RoundedCornerShape(2.dp))
                 .background(color)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
-            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(label, color = MapChinaColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             val pct = if (total > 0) count * 100 / total else 0
-            Text("$count ($pct%)", color = Color.Gray, fontSize = 12.sp)
+            Text("$count ($pct%)", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
         }
     }
 }
@@ -317,11 +338,13 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("造访景点省份分布", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(12.dp))
+        Text("造访景点省份分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("最多 ${maxCount} 个", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(8.dp))
 
         provinceVisits.take(10).forEach { pv ->
             Row(
@@ -332,7 +355,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
             ) {
                 Text(
                     text = pv.provinceName,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 12.sp,
                     modifier = Modifier.width(64.dp)
                 )
@@ -341,7 +364,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
                         .weight(1f)
                         .height(18.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF0F1923))
+                        .background(MapChinaColors.Background)
                 ) {
                     // 总量背景条
                     val totalWidth = pv.attractionCount.toFloat() / maxCount
@@ -350,7 +373,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
                             .height(12.dp)
                             .fillMaxWidth(totalWidth)
                             .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFF213647))
+                            .background(MapChinaColors.CardBackgroundLight)
                     )
                     // 已到访前景条
                     val visitedWidth = if (pv.attractionCount > 0) pv.visitedCount.toFloat() / pv.attractionCount else 0f
@@ -365,7 +388,7 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "${pv.visitedCount}/${pv.attractionCount}",
-                    color = Color.Gray,
+                    color = MapChinaColors.TextTertiary,
                     fontSize = 11.sp,
                     modifier = Modifier.width(48.dp)
                 )
@@ -394,7 +417,9 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Row(
             modifier = Modifier
@@ -406,12 +431,12 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = levelBadge,
-                    color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
+                    color = if (attraction.level == "A5") MapChinaColors.AccentGold else MapChinaColors.AccentBlue,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                            if (attraction.level == "A5") MapChinaColors.AccentGold.copy(alpha = 0.2f) else MapChinaColors.AccentBlue.copy(alpha = 0.2f),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -419,7 +444,7 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
                 Spacer(modifier = Modifier.padding(horizontal = 6.dp))
                 Text(
                     text = attraction.name,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -444,14 +469,14 @@ private fun CoverageSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            Text(label, color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Medium, fontSize = 16.sp)
             Text(
                 "$visited / $total",
                 color = MapChinaColors.Primary,
@@ -466,13 +491,13 @@ private fun CoverageSection(
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = MapChinaColors.Primary,
-            trackColor = Color(0xFF0F1923)
+            trackColor = MapChinaColors.Background
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "${(percent * 100).toInt()}%",
             fontSize = 12.sp,
-            color = Color.Gray
+            color = MapChinaColors.TextTertiary
         )
     }
 }

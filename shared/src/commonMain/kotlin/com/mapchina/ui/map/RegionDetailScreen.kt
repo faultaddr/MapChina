@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 data class RegionDetailUi(
     val regionId: String,
@@ -65,21 +66,21 @@ fun RegionDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text(region?.name ?: "区域详情", color = Color.White) },
+            title = { Text(region?.name ?: "区域详情", color = MapChinaColors.TextPrimary) },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (region == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("区域信息不可用", color = Color.Gray)
+                Text("区域信息不可用", color = MapChinaColors.TextTertiary)
             }
             return
         }
@@ -95,7 +96,7 @@ fun RegionDetailScreen(
 
             if (region.childCoverageRate > 0f || region.footprintLevel != null) {
                 item {
-                    Text("下级区域", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("下级区域", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
             }
 
@@ -118,12 +119,14 @@ private fun RegionSummaryCard(region: RegionFootprintUi) {
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy
-        null -> Color.Gray
+        null -> MapChinaColors.TextTertiary
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -131,7 +134,7 @@ private fun RegionSummaryCard(region: RegionFootprintUi) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(region.name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(region.name, color = MapChinaColors.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(
                     statusText,
                     color = statusColor,
@@ -146,7 +149,7 @@ private fun RegionSummaryCard(region: RegionFootprintUi) {
                 Spacer(modifier = Modifier.height(12.dp))
                 val coveragePercent = (region.childCoverageRate * 100).toInt()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("覆盖率", color = Color.Gray, fontSize = 12.sp)
+                    Text("覆盖率", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                     Spacer(modifier = Modifier.width(8.dp))
                     LinearProgressIndicator(
                         progress = { region.childCoverageRate.coerceIn(0f, 1f) },
@@ -155,7 +158,7 @@ private fun RegionSummaryCard(region: RegionFootprintUi) {
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
                         color = MapChinaColors.Primary,
-                        trackColor = Color(0xFF0F1923)
+                        trackColor = MapChinaColors.Background
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("$coveragePercent%", color = MapChinaColors.Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -171,14 +174,16 @@ private fun ChildRegionCard(region: RegionFootprintUi, onClick: () -> Unit) {
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy
-        null -> Color(0xFF213647)
+        null -> MapChinaColors.CardBackgroundLight
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Row(
             modifier = Modifier
@@ -195,14 +200,14 @@ private fun ChildRegionCard(region: RegionFootprintUi, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 region.name,
-                color = Color.White,
+                color = MapChinaColors.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             Text(
                 "${(region.childCoverageRate * 100).toInt()}%",
-                color = if (region.childCoverageRate > 0f) MapChinaColors.Primary else Color.Gray,
+                color = if (region.childCoverageRate > 0f) MapChinaColors.Primary else MapChinaColors.TextTertiary,
                 fontSize = 13.sp
             )
         }

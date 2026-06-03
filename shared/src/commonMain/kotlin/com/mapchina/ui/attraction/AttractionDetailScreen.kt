@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Language
@@ -49,11 +50,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil3.compose.SubcomposeAsyncImage
-import coil3.compose.SubcomposeAsyncImageContent
+import coil3.compose.AsyncImage
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,26 +64,27 @@ fun AttractionDetailScreen(
     detail: AttractionDetail?,
     onMarkVisit: (FootprintLevel) -> Unit = {},
     onRemoveVisit: (() -> Unit)? = null,
+    onWriteJournal: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text(attraction?.name ?: "景点详情", color = Color.White) },
+            title = { Text(attraction?.name ?: "景点详情", color = MapChinaColors.TextPrimary) },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (attraction == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("景点信息不可用", color = Color.Gray)
+                Text("景点信息不可用", color = MapChinaColors.TextTertiary)
             }
             return
         }
@@ -96,10 +98,10 @@ fun AttractionDetailScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color(0xFF1A2C3D)),
+                    .background(MapChinaColors.SurfaceElevated),
                 contentAlignment = Alignment.Center
             ) {
-                Text("暂无图片", color = Color.Gray)
+                Text("暂无图片", color = MapChinaColors.TextTertiary)
             }
         }
 
@@ -112,12 +114,12 @@ fun AttractionDetailScreen(
                 }
                 Text(
                     text = levelBadge,
-                    color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
+                    color = if (attraction.level == "A5") MapChinaColors.AccentGold else MapChinaColors.AccentBlue,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                            if (attraction.level == "A5") MapChinaColors.AccentGold.copy(alpha = 0.2f) else MapChinaColors.AccentBlue.copy(alpha = 0.2f),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 3.dp)
@@ -127,7 +129,7 @@ fun AttractionDetailScreen(
                     text = attraction.name,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MapChinaColors.TextPrimary
                 )
             }
 
@@ -143,12 +145,25 @@ fun AttractionDetailScreen(
             }
 
             if (detail == null && attraction.description != null) {
-                InfoRow(icon = { Icon(Icons.Default.LocationOn, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) }, label = "地址", value = attraction.description)
+                InfoRow(icon = { Icon(Icons.Default.LocationOn, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) }, label = "地址", value = attraction.description)
             }
 
             Spacer(Modifier.height(24.dp))
 
             VisitButton(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
+
+            if (onWriteJournal != null) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { onWriteJournal?.invoke() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MapChinaColors.Primary)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Article, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("写游记")
+                }
+            }
         }
     }
 }
@@ -166,36 +181,25 @@ private fun ImageCarousel(imageUrls: List<String>) {
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            SubcomposeAsyncImage(
+            coil3.compose.AsyncImage(
                 model = imageUrls[page],
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-            ) {
-                val painterState = painter.state.value
-                when (painterState) {
-                    is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                    is coil3.compose.AsyncImagePainter.State.Loading -> {
-                        Box(Modifier.fillMaxSize().background(Color(0xFF1A2C3D)), contentAlignment = Alignment.Center) {
-                            androidx.compose.material3.CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        }
-                    }
-                    else -> {
-                        Box(Modifier.fillMaxSize().background(Color(0xFF1A2C3D)), contentAlignment = Alignment.Center) {
-                            Text("加载失败", color = Color.Gray, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
+                    .background(MapChinaColors.SurfaceElevated)
+            )
         }
 
         if (imageUrls.size > 1) {
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = 0.25f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(imageUrls.size) { index ->
@@ -205,7 +209,7 @@ private fun ImageCarousel(imageUrls: List<String>) {
                             .padding(horizontal = 3.dp)
                             .size(if (selected) 8.dp else 6.dp)
                             .clip(CircleShape)
-                            .background(if (selected) Color.White else Color.White.copy(alpha = 0.4f))
+                            .background(if (selected) Color.White else Color.White.copy(alpha = 0.5f))
                     )
                 }
             }
@@ -216,10 +220,10 @@ private fun ImageCarousel(imageUrls: List<String>) {
 @Composable
 private fun RatingRow(rating: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
+        Icon(Icons.Default.Star, contentDescription = null, tint = MapChinaColors.AccentGold, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(4.dp))
-        Text(rating, color = Color(0xFFFFD700), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text(" / 5.0", color = Color.Gray, fontSize = 14.sp)
+        Text(rating, color = MapChinaColors.AccentGold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(" / 5.0", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
     }
 }
 
@@ -227,7 +231,7 @@ private fun RatingRow(rating: String) {
 private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     if (detail.openTime != null) {
         InfoRow(
-            icon = { Icon(Icons.Default.AccessTime, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) },
+            icon = { Icon(Icons.Default.AccessTime, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) },
             label = "营业",
             value = detail.openTime
         )
@@ -235,7 +239,7 @@ private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     }
     if (detail.cost != null) {
         InfoRow(
-            icon = { Icon(Icons.Default.Payments, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) },
+            icon = { Icon(Icons.Default.Payments, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) },
             label = "门票",
             value = detail.cost
         )
@@ -243,7 +247,7 @@ private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     }
     if (detail.tel != null) {
         InfoRow(
-            icon = { Icon(Icons.Default.Call, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) },
+            icon = { Icon(Icons.Default.Call, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) },
             label = "电话",
             value = detail.tel
         )
@@ -251,7 +255,7 @@ private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     }
     if (detail.website != null) {
         InfoRow(
-            icon = { Icon(Icons.Default.Language, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) },
+            icon = { Icon(Icons.Default.Language, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) },
             label = "官网",
             value = detail.website
         )
@@ -259,7 +263,7 @@ private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     }
     if (attraction.description != null) {
         InfoRow(
-            icon = { Icon(Icons.Default.LocationOn, null, tint = Color(0xFF90CAF9), modifier = Modifier.size(18.dp)) },
+            icon = { Icon(Icons.Default.LocationOn, null, tint = MapChinaColors.AccentBlue, modifier = Modifier.size(18.dp)) },
             label = "地址",
             value = attraction.description
         )
@@ -271,8 +275,8 @@ private fun InfoRow(icon: @Composable () -> Unit, label: String, value: String) 
     Row(verticalAlignment = Alignment.Top) {
         icon()
         Spacer(Modifier.width(8.dp))
-        Text("$label: ", color = Color.Gray, fontSize = 14.sp)
-        Text(value, color = Color.White, fontSize = 14.sp)
+        Text("$label: ", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
+        Text(value, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
     }
 }
 
@@ -369,8 +373,8 @@ private fun VisitButton(currentLevel: FootprintLevel?, onMarkVisit: (FootprintLe
     if (showRemoveDialog) {
         AlertDialog(
             onDismissRequest = { showRemoveDialog = false },
-            title = { Text("确认撤销", color = Color.White) },
-            text = { Text("确定要撤销「$visitLabel」的到访记录吗？", color = Color.Gray) },
+            title = { Text("确认撤销", color = MapChinaColors.TextPrimary) },
+            text = { Text("确定要撤销「$visitLabel」的到访记录吗？", color = MapChinaColors.TextTertiary) },
             confirmButton = {
                 TextButton(onClick = {
                     showRemoveDialog = false
@@ -378,9 +382,9 @@ private fun VisitButton(currentLevel: FootprintLevel?, onMarkVisit: (FootprintLe
                 }) { Text("撤销", color = MapChinaColors.Error) }
             },
             dismissButton = {
-                TextButton(onClick = { showRemoveDialog = false }) { Text("取消", color = Color.Gray) }
+                TextButton(onClick = { showRemoveDialog = false }) { Text("取消", color = MapChinaColors.TextTertiary) }
             },
-            containerColor = Color(0xFF1A2C3D)
+            containerColor = MapChinaColors.SurfaceElevated
         )
     }
 }

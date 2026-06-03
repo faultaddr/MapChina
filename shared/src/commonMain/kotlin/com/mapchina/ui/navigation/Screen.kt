@@ -6,8 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object MapScreen : Screen()
 @Serializable data object AttractionsScreen : Screen()
-@Serializable data object StatsScreen : Screen()
-@Serializable data object AchievementScreen : Screen()
 @Serializable data object BadgeWallScreen : Screen()
 @Serializable data class BadgeDetailScreen(val achievementId: String) : Screen()
 @Serializable data object ProvinceConquestScreen : Screen()
@@ -20,4 +18,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class AtlasDetailScreen(val atlasId: String) : Screen()
 @Serializable data object JournalListScreen : Screen()
 @Serializable data class JournalDetailScreen(val journalId: String) : Screen()
-@Serializable data class JournalCreateScreen(val regionId: String? = null) : Screen()
+@Serializable data class JournalCreateScreen(val regionId: String? = null, val attractionId: String? = null) : Screen()
+@Serializable data class CarvingScreen(val regionId: String, val regionName: String) : Screen()
+@Serializable data class CustomAttractionScreen(val regionId: String, val latitude: String = "0.0", val longitude: String = "0.0") : Screen()
+@Serializable data object CommunityScreen : Screen()
+@Serializable data class PostDetailScreen(val postId: String) : Screen()

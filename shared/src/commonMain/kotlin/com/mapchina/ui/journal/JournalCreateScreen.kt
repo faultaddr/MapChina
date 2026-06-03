@@ -66,6 +66,7 @@ import kotlinx.datetime.toLocalDateTime
 fun JournalCreateScreen(
     viewModel: JournalViewModel,
     regionId: String? = null,
+    attractionId: String? = null,
     onSave: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -86,11 +87,11 @@ fun JournalCreateScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
             }
             Text(
                 "写游记",
-                color = Color.White,
+                color = MapChinaColors.TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
@@ -108,7 +109,7 @@ fun JournalCreateScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = { Text("给这次旅行取个名字", color = Color(0xFF5A7080)) },
+                placeholder = { Text("给这次旅行取个名字", color = MapChinaColors.TextTertiary) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = outLinedTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
@@ -122,7 +123,7 @@ fun JournalCreateScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                placeholder = { Text("记录旅途中的故事…", color = Color(0xFF5A7080)) },
+                placeholder = { Text("记录旅途中的故事…", color = MapChinaColors.TextTertiary) },
                 modifier = Modifier.fillMaxWidth().height(110.dp),
                 colors = outLinedTextFieldColors(),
                 shape = RoundedCornerShape(12.dp)
@@ -152,10 +153,10 @@ fun JournalCreateScreen(
                             Icons.Default.Search,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
-                            tint = Color(0xFF5A7080)
+                            tint = MapChinaColors.TextTertiary
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text("搜索省/市/县/景点", color = Color(0xFF5A7080), fontSize = 15.sp)
+                        Text("搜索省/市/县/景点", color = MapChinaColors.TextTertiary, fontSize = 15.sp)
                     }
                 }
             }
@@ -203,7 +204,7 @@ fun JournalCreateScreen(
                                     Icons.Default.Close,
                                     contentDescription = "移除",
                                     modifier = Modifier.size(14.dp),
-                                    tint = Color.White.copy(alpha = 0.8f)
+                                    tint = MapChinaColors.TextPrimary.copy(alpha = 0.8f)
                                 )
                             }
                         }
@@ -241,10 +242,10 @@ fun JournalCreateScreen(
                     Icons.Default.CalendarToday,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
-                    tint = Color(0xFF5A7080)
+                    tint = MapChinaColors.TextTertiary
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(formatDate(Clock.System.now().toEpochMilliseconds()), color = Color(0xFF5A7080), fontSize = 13.sp)
+                Text(formatDate(Clock.System.now().toEpochMilliseconds()), color = MapChinaColors.TextTertiary, fontSize = 13.sp)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -270,7 +271,7 @@ fun JournalCreateScreen(
             ) {
                 Text(
                     if (title.isBlank()) "请输入标题" else "保存游记",
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -283,20 +284,20 @@ fun JournalCreateScreen(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, color = Color(0xFF8AA0B0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+    Text(text, color = MapChinaColors.TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
 }
 
 @Composable
 private fun outLinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MapChinaColors.Primary,
-    unfocusedBorderColor = Color(0xFF2A3A4A),
+    unfocusedBorderColor = MapChinaColors.BorderSubtle,
     focusedLabelColor = MapChinaColors.Primary,
-    unfocusedLabelColor = Color.Gray,
+    unfocusedLabelColor = MapChinaColors.TextTertiary,
     cursorColor = MapChinaColors.Primary,
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White,
-    focusedContainerColor = Color(0xFF152028),
-    unfocusedContainerColor = Color(0xFF152028)
+    focusedTextColor = MapChinaColors.TextPrimary,
+    unfocusedTextColor = MapChinaColors.TextSecondary,
+    focusedContainerColor = MapChinaColors.Background,
+    unfocusedContainerColor = MapChinaColors.Background
 )
 
 @Composable
@@ -329,11 +330,11 @@ private fun SelectedLocationChip(item: LocationItem, onRemove: () -> Unit) {
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(locationTypeLabel(item), color = Color(0xFF5A7080), fontSize = 12.sp)
+                Text(item.name, color = MapChinaColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(locationTypeLabel(item), color = MapChinaColors.TextTertiary, fontSize = 12.sp)
             }
             IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "移除", modifier = Modifier.size(16.dp), tint = Color(0xFF5A7080))
+                Icon(Icons.Default.Close, contentDescription = "移除", modifier = Modifier.size(16.dp), tint = MapChinaColors.TextTertiary)
             }
         }
     }
@@ -350,13 +351,13 @@ private fun LocationSearchPanel(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            placeholder = { Text("输入省/市/县/景点名称", color = Color(0xFF5A7080)) },
+            placeholder = { Text("输入省/市/县/景点名称", color = MapChinaColors.TextTertiary) },
             modifier = Modifier.fillMaxWidth(),
             colors = outLinedTextFieldColors(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF5A7080), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Search, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
             }
         )
         if (results.isNotEmpty()) {
@@ -385,18 +386,18 @@ private fun LocationSearchPanel(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(item.name, color = Color.White, fontSize = 14.sp)
-                            Text(locationTypeLabel(item), color = Color(0xFF5A7080), fontSize = 12.sp)
+                            Text(item.name, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
+                            Text(locationTypeLabel(item), color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                         }
                     }
                     if (item != results.last()) {
-                        HorizontalDivider(color = Color(0xFF2A3A4A), thickness = 0.5.dp)
+                        HorizontalDivider(color = MapChinaColors.BorderSubtle, thickness = 0.5.dp)
                     }
                 }
             }
         } else if (query.isNotBlank()) {
             Spacer(modifier = Modifier.height(12.dp))
-            Text("未找到匹配结果", color = Color(0xFF5A7080), fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
+            Text("未找到匹配结果", color = MapChinaColors.TextTertiary, fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -409,10 +410,10 @@ private fun locationTypeIcon(type: LocationType): ImageVector = when (type) {
 }
 
 private fun locationTypeColor(type: LocationType): Color = when (type) {
-    LocationType.PROVINCE -> Color(0xFF2EC4B6)
-    LocationType.CITY -> Color(0xFFF4A261)
-    LocationType.DISTRICT -> Color(0xFFE9C46A)
-    LocationType.ATTRACTION -> Color(0xFFE76F51)
+    LocationType.PROVINCE -> MapChinaColors.Primary
+    LocationType.CITY -> MapChinaColors.FootprintShortVisit
+    LocationType.DISTRICT -> MapChinaColors.FootprintPassBy
+    LocationType.ATTRACTION -> MapChinaColors.FootprintDeep
 }
 
 private fun locationTypeLabel(item: LocationItem): String = when (item.type) {

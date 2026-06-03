@@ -31,6 +31,7 @@ import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.UserAchievement
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @Composable
 fun AchievementUnlockDialog(
@@ -46,7 +47,9 @@ fun AchievementUnlockDialog(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D)),
+            colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
@@ -85,7 +88,7 @@ fun AchievementUnlockDialog(
                     Button(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF213647))
+                        colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.CardBackgroundLight)
                     ) { Text("继续探索") }
                     if (onShare != null) {
                         Button(
@@ -121,8 +124,8 @@ private fun SingleUnlockContent(
         )
     }
     Spacer(modifier = Modifier.height(12.dp))
-    Text("解锁新成就", color = Color.Gray, fontSize = 13.sp)
-    Text(name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+    Text("解锁新成就", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+    Text(name, color = MapChinaColors.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
 }
 
 @Composable
@@ -145,15 +148,15 @@ private fun MultiUnlockContent(
         )
     }
     Spacer(modifier = Modifier.height(12.dp))
-    Text("本次共解锁", color = Color.Gray, fontSize = 13.sp)
-    Text("${achievements.size} 个成就", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    Text("本次共解锁", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+    Text("${achievements.size} 个成就", color = MapChinaColors.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     Spacer(modifier = Modifier.height(8.dp))
     achievements.take(5).forEach { a ->
         val name = definitions[a.achievementId] ?: "成就"
-        Text(name, color = Color.Gray, fontSize = 13.sp)
+        Text(name, color = MapChinaColors.TextTertiary, fontSize = 13.sp)
     }
     if (achievements.size > 5) {
-        Text("...等 ${achievements.size} 个", color = Color.Gray, fontSize = 12.sp)
+        Text("...等 ${achievements.size} 个", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
     }
 }
 
@@ -172,7 +175,9 @@ fun LevelUpDialog(
         contentAlignment = Alignment.Center
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D)),
+            colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
@@ -189,10 +194,10 @@ fun LevelUpDialog(
                     Text("Lv$newLevel", color = MapChinaColors.Primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("恭喜升级为", color = Color.Gray, fontSize = 13.sp)
-                Text("「$newTitle」", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("恭喜升级为", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                Text("「$newTitle」", color = MapChinaColors.TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("你已累计获得 $score 山河值", color = Color.Gray, fontSize = 13.sp)
+                Text("你已累计获得 $score 山河值", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                 Text("下一站是「$nextTitle」", color = MapChinaColors.Primary, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(

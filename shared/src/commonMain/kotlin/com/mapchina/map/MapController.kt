@@ -18,6 +18,9 @@ expect class MapController() {
     fun setOnRegionTapListener(listener: ((String) -> Unit)?)
     fun setOnMarkerTapListener(listener: ((String) -> Unit)?)
     fun setOnCameraZoomChangeListener(listener: ((Float) -> Unit)?)
+    fun setOnCameraPositionListener(listener: ((Double, Double, Float) -> Unit)?)
+    fun setOnMapReadyListener(listener: (() -> Unit)?)
     fun pulseOverlay(regionId: String)
+    fun restorePulsedOverlay()
     fun dispose()
 }

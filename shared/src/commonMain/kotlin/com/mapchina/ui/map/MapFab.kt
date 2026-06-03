@@ -52,7 +52,7 @@ fun MapFab(
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
     val ringColor by animateColorAsState(
-        targetValue = if (photoMarkersVisible) Color(0xFFE9C46A) else MapChinaColors.Primary,
+        targetValue = if (photoMarkersVisible) MapChinaColors.FootprintPassBy else MapChinaColors.Primary,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
 
@@ -60,7 +60,7 @@ fun MapFab(
         // Main circular FAB
         Surface(
             shape = CircleShape,
-            color = Color(0xDD0F1923),
+            color = MapChinaColors.SurfaceOverlay,
             shadowElevation = 8.dp,
             modifier = Modifier
                 .size(76.dp)
@@ -78,7 +78,7 @@ fun MapFab(
                     )
 
                     drawCircle(
-                        color = Color(0xFF1A2C3D),
+                        color = MapChinaColors.SurfaceElevated,
                         radius = radius,
                         center = center,
                         style = Stroke(width = strokeWidth)
@@ -97,23 +97,38 @@ fun MapFab(
 
                 // Center text
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (visitedCount == 0) {
+                        Text(
+                            "出发",
+                            color = ringColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 16.sp
+                        )
+                    } else {
+                        Text(
+                            "$coveragePercent",
+                            color = MapChinaColors.TextPrimary,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 19.sp
+                        )
+                        Text(
+                            "%",
+                            color = ringColor,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 10.sp
+                        )
+                    }
                     Text(
-                        "$coveragePercent",
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 19.sp
-                    )
-                    Text(
-                        "%",
-                        color = ringColor,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 10.sp
-                    )
-                    Text(
-                        "$visitedCount/$totalCount$currentLevel",
-                        color = Color(0xFF7A909E),
+                        when {
+                            visitedCount == 0 -> "开始旅程"
+                            coveragePercent < 5 -> "探索起步"
+                            coveragePercent < 20 -> "渐入佳境"
+                            else -> "$visitedCount/$totalCount$currentLevel"
+                        },
+                        color = MapChinaColors.TextTertiary,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Medium,
                         lineHeight = 10.sp
@@ -125,7 +140,7 @@ fun MapFab(
         // Camera toggle badge
         Surface(
             shape = CircleShape,
-            color = if (photoMarkersVisible) Color(0xFFE9C46A) else Color(0xFF1A2C3D),
+            color = if (photoMarkersVisible) MapChinaColors.FootprintPassBy else MapChinaColors.SurfaceElevated,
             shadowElevation = 4.dp,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -138,7 +153,7 @@ fun MapFab(
                 Icon(
                     imageVector = if (photoMarkersVisible) Icons.Filled.PhotoCamera else Icons.Outlined.PhotoCamera,
                     contentDescription = if (photoMarkersVisible) "隐藏照片" else "显示照片",
-                    tint = if (photoMarkersVisible) Color(0xFF0F1923) else Color(0xFF7A909E),
+                    tint = if (photoMarkersVisible) MapChinaColors.Background else MapChinaColors.TextTertiary,
                     modifier = Modifier.size(16.dp)
                 )
             }

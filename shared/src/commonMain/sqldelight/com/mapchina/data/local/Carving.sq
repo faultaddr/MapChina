@@ -1,0 +1,25 @@
+CREATE TABLE carving (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    region_id TEXT NOT NULL,
+    region_name TEXT NOT NULL,
+    image_path TEXT,
+    stroke_data TEXT,
+    created_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT * FROM carving WHERE id = ?;
+
+selectByRegionId:
+SELECT * FROM carving WHERE region_id = ?;
+
+selectByUserId:
+SELECT * FROM carving WHERE user_id = ? ORDER BY created_at DESC;
+
+insertCarving:
+INSERT OR REPLACE INTO carving(id, user_id, region_id, region_name, image_path, stroke_data, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM carving WHERE id = ?;

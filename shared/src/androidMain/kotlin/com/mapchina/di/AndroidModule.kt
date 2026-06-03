@@ -7,6 +7,7 @@ import com.mapchina.data.remote.AttractionDetailProvider
 import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
+import com.mapchina.platform.LocationProvider
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -16,4 +17,5 @@ actual val platformModule: Module = module {
     single { AttractionDetailProvider(get<Context>()) }
     single { PhotoPicker() }
     single { DevicePhotoProvider().apply { context = get<Context>() } }
+    single { LocationProvider().apply { context = get<Context>() } }
 }

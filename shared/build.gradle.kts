@@ -48,6 +48,16 @@ kotlin {
             implementation("io.insert-koin:koin-android:4.0.4")
             implementation("com.amap.api:3dmap:10.0.600")
             implementation("androidx.exifinterface:exifinterface:1.3.7")
+            implementation("androidx.ink:ink-authoring-compose:1.0.0")
+            implementation("androidx.ink:ink-authoring:1.0.0")
+            implementation("androidx.ink:ink-brush:1.0.0")
+            implementation("androidx.ink:ink-brush-compose:1.0.0")
+            implementation("androidx.ink:ink-geometry:1.0.0")
+            implementation("androidx.ink:ink-geometry-compose:1.0.0")
+            implementation("androidx.ink:ink-rendering:1.0.0")
+            implementation("androidx.ink:ink-storage:1.0.0")
+            implementation("androidx.ink:ink-strokes:1.0.0")
+            implementation("androidx.ink:ink-nativeloader:1.0.0")
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:3.1.3")

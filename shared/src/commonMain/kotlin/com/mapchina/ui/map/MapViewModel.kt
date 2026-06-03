@@ -1,6 +1,7 @@
 package com.mapchina.ui.map
 
 import com.mapchina.data.repository.FootprintRepository
+import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.remote.BoundaryLoader
@@ -12,6 +13,8 @@ import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapController
 import com.mapchina.platform.DevicePhotoProvider
+import com.mapchina.platform.LocationProvider
+import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayStyle
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 data class AttractionUi(
@@ -55,9 +59,16 @@ class MapViewModel(
     private val boundaryLoader: BoundaryLoader? = null,
     private val settingsRepository: SettingsRepository? = null,
     private val devicePhotoProvider: DevicePhotoProvider? = null,
+    private val locationProvider: LocationProvider? = null,
+    private val regionMatcher: RegionMatcher? = null,
+    private val achievementRepository: AchievementRepository? = null,
     private val userId: String = ""
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    fun onCleared() {
+        vmScope.cancel()
+    }
 
     private val _currentLevel = MutableStateFlow(MapZoomLevel.NATIONAL)
     val currentLevel: StateFlow<MapZoomLevel> = _currentLevel.asStateFlow()
@@ -92,15 +103,29 @@ class MapViewModel(
     private val _photoMarkersVisible = MutableStateFlow(false)
     val photoMarkersVisible: StateFlow<Boolean> = _photoMarkersVisible.asStateFlow()
 
+    private val _autoMarkMessage = MutableStateFlow<String?>(null)
+    val autoMarkMessage: StateFlow<String?> = _autoMarkMessage.asStateFlow()
+
     private var footprintCache: Map<String, FootprintLevel>? = null
 
     private var childrenIndex: Map<String, List<String>> = emptyMap()
     private var childrenIndexReady = false
 
+    private fun invalidateCaches() {
+        footprintCache = null
+        attractionVisitsCache = null
+        attractionCountCache.clear()
+    }
+
     private var _mapController: MapController? = null
     private var _programmaticCamera = false
     private var lastBoundaries: Map<String, String>? = null
     private var lastSyncedRegionIds: Set<String> = emptySet()
+
+    // Persisted camera state (survives MapController recreation)
+    private var savedCameraLat: Double = 34.5
+    private var savedCameraLng: Double = 106.0
+    private var savedCameraZoom: Float = 3.8f
     var mapController: MapController?
         get() = _mapController
         set(value) {
@@ -112,7 +137,13 @@ class MapViewModel(
                     syncOverlaysToMap(lastBoundaries)
                 }
                 value.setOnCameraZoomChangeListener { zoom ->
+                    savedCameraZoom = zoom
                     onCameraZoomChanged(zoom)
+                }
+                value.setOnCameraPositionListener { lat, lng, zoom ->
+                    savedCameraLat = lat
+                    savedCameraLng = lng
+                    savedCameraZoom = zoom
                 }
             }
         }
@@ -141,9 +172,8 @@ class MapViewModel(
     }
 
     fun reloadData() {
-        footprintCache = null
-        attractionVisitsCache = null
-        attractionCountCache.clear()
+        invalidateCaches()
+        _programmaticCamera = true
         vmScope.launch {
             if (_currentPath.value.isEmpty()) {
                 loadTopLevelRegions()
@@ -225,6 +255,9 @@ class MapViewModel(
         } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
+            savedCameraLat = 34.5
+            savedCameraLng = 106.0
+            savedCameraZoom = 3.8f
             _programmaticCamera = true
             mapController?.setCamera(34.5, 106.0, 3.8f, true)
 
@@ -280,6 +313,18 @@ class MapViewModel(
         _achievementUnlock.value = null
     }
 
+    fun getAchievementName(id: String): String =
+        achievementRepository?.getDefinitionById(id)?.name ?: id
+
+    fun getAchievementDescription(id: String): String =
+        achievementRepository?.getDefinitionById(id)?.description ?: ""
+
+    fun getAchievementRarity(id: String): String =
+        achievementRepository?.getDefinitionById(id)?.rarity?.name ?: "COMMON"
+
+    fun getSavedCameraState(): Triple<Double, Double, Float> =
+        Triple(savedCameraLat, savedCameraLng, savedCameraZoom)
+
     fun dismissDrillDownHint() {
         _drillDownHint.value = null
     }
@@ -299,10 +344,69 @@ class MapViewModel(
         _photoMarkersVisible.value = newValue
         if (newValue) {
             syncPhotoMarkersToMap()
+            autoMarkFromPhotos()
         } else {
             _mapController?.clearImageMarkers()
             _photoClusters.value = emptyList()
         }
+    }
+
+    fun autoMarkFromGps() {
+        val provider = locationProvider ?: return
+        val matcher = regionMatcher ?: return
+        if (!provider.isAvailable()) return
+        vmScope.launch {
+            val location = provider.getCurrentLocation() ?: return@launch
+            val match = matcher.match(location.first, location.second)
+            val newRegions = mutableListOf<String>()
+            val footprints = getFootprintCache()
+
+            for (region in listOfNotNull(match.province, match.city, match.district)) {
+                if (footprints[region.id] == null) {
+                    footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
+                    newRegions.add(region.name)
+                }
+            }
+
+            if (newRegions.isNotEmpty()) {
+                invalidateCaches()
+                refreshRegions()
+                _autoMarkMessage.value = "从你的位置发现了 ${newRegions.size} 个新足迹"
+            }
+        }
+    }
+
+    private fun autoMarkFromPhotos() {
+        val provider = devicePhotoProvider ?: return
+        val matcher = regionMatcher ?: return
+        if (!provider.isAvailable()) return
+        vmScope.launch {
+            val photos = provider.getPhotosWithLocation()
+            if (photos.isEmpty()) return@launch
+
+            val footprints = getFootprintCache()
+            val newRegionIds = mutableSetOf<String>()
+
+            for (photo in photos) {
+                val match = matcher.match(photo.latitude, photo.longitude)
+                for (region in listOfNotNull(match.province, match.city, match.district)) {
+                    if (footprints[region.id] == null && region.id !in newRegionIds) {
+                        footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
+                        newRegionIds.add(region.id)
+                    }
+                }
+            }
+
+            if (newRegionIds.isNotEmpty()) {
+                invalidateCaches()
+                refreshRegions()
+                _autoMarkMessage.value = "从相册发现了 ${newRegionIds.size} 个新足迹"
+            }
+        }
+    }
+
+    fun dismissAutoMarkMessage() {
+        _autoMarkMessage.value = null
     }
 
     fun syncPhotoMarkersToMap() {
@@ -314,6 +418,7 @@ class MapViewModel(
             if (photos.isEmpty()) {
                 controller.clearImageMarkers()
                 _photoClusters.value = emptyList()
+                _autoMarkMessage.value = "未找到带位置信息的照片（请确认已授予相册权限，且照片包含GPS信息）"
                 return@launch
             }
             val clusters = PhotoClusterer.cluster(photos)
@@ -328,8 +433,7 @@ class MapViewModel(
     fun markFootprint(regionId: String, level: FootprintLevel) {
         vmScope.launch {
             val result = footprintService.markFootprint(userId, regionId, level)
-            footprintCache = null
-            attractionVisitsCache = null
+            invalidateCaches()
             refreshRegions()
             updateOverlayColor(regionId, level)
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
@@ -341,9 +445,7 @@ class MapViewModel(
     fun markAttractionVisit(attractionId: String, regionId: String, level: FootprintLevel) {
         vmScope.launch {
             val result = footprintService.markAttractionVisit(userId, attractionId, regionId, level)
-            footprintCache = null
-            attractionVisitsCache = null
-            attractionCountCache.clear()
+            invalidateCaches()
             refreshAttractions()
             refreshRegions()
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
@@ -355,8 +457,7 @@ class MapViewModel(
     fun removeAttractionVisit(attractionId: String) {
         vmScope.launch {
             footprintService.removeAttractionVisit(userId, attractionId)
-            footprintCache = null
-            attractionVisitsCache = null
+            invalidateCaches()
             refreshAttractions()
             refreshRegions()
         }
@@ -620,6 +721,9 @@ class MapViewModel(
         }
         val center = regionRepository.getRegionCenter(region.id)
         if (center != null) {
+            savedCameraLat = center.first
+            savedCameraLng = center.second
+            savedCameraZoom = zoom
             _programmaticCamera = true
             controller.setCamera(center.first, center.second, zoom, true)
         }
@@ -628,24 +732,32 @@ class MapViewModel(
     private fun footprintOverlayStyle(level: FootprintLevel?, childCoverageRate: Float = 0f): OverlayStyle {
         if (level == null) {
             val rate = childCoverageRate.coerceIn(0f, 1f)
-            val alpha = 0.12f + rate * 0.48f
+            if (rate == 0f) {
+                return OverlayStyle(
+                    fillColor = 0xFF1A2C3DL,
+                    strokeColor = 0xFF2A3E52,
+                    strokeWidth = 1f,
+                    alpha = 0.15f
+                )
+            }
+            val alpha = 0.12f + rate * 0.25f
             return OverlayStyle(
                 fillColor = 0xFF2EC4B6L,
                 strokeColor = 0xFF1A8A7E,
-                strokeWidth = 2f,
+                strokeWidth = 1.5f,
                 alpha = alpha
             )
         }
-        val baseColor = when (level) {
-            FootprintLevel.DEEP -> 0xFFE76F51L
-            FootprintLevel.SHORT_VISIT -> 0xFFF4A261L
-            FootprintLevel.PASS_BY -> 0xFFE9C46AL
+        val (baseColor, alpha) = when (level) {
+            FootprintLevel.DEEP -> 0xFFE76F51L to 0.60f
+            FootprintLevel.SHORT_VISIT -> 0xFFF4A261L to 0.50f
+            FootprintLevel.PASS_BY -> 0xFFE9C46AL to 0.40f
         }
         return OverlayStyle(
             fillColor = baseColor,
             strokeColor = 0xFF264653L,
             strokeWidth = 2f,
-            alpha = 0.6f
+            alpha = alpha
         )
     }
 

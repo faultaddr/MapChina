@@ -1,6 +1,15 @@
 package com.mapchina.ui.map
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -14,9 +23,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -36,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,9 +59,15 @@ import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
+import com.mapchina.ui.navigation.CarvingScreen
 import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +79,7 @@ fun MapScreen(
 ) {
     if (viewModel == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("足迹地图（初始化中）", color = Color.White)
+            Text("足迹地图（初始化中）", color = MapChinaColors.TextPrimary)
         }
         return
     }
@@ -79,12 +97,17 @@ fun MapScreen(
     val showOnboarding by viewModel.showOnboarding.collectAsState()
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
+    val autoMarkMessage by viewModel.autoMarkMessage.collectAsState()
 
     LaunchedEffect(regions) {
         if (regions.isEmpty()) {
             kotlinx.coroutines.delay(500)
             viewModel.reloadData()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.autoMarkFromGps()
     }
 
     var showRegionCard by remember { mutableStateOf(false) }
@@ -108,6 +131,13 @@ fun MapScreen(
         viewModel.selectRegion(regionId)
         showRegionCard = true
     }
+
+    // Close region card → restore overlay
+    LaunchedEffect(showRegionCard) {
+        if (!showRegionCard) {
+            mapController.restorePulsedOverlay()
+        }
+    }
     mapController.setOnMarkerTapListener { markerId ->
         val cluster = photoClusters.find { it.id == markerId }
         if (cluster != null) {
@@ -115,6 +145,13 @@ fun MapScreen(
         } else {
             navController.navigate(AttractionDetailScreen(markerId))
         }
+    }
+
+    // Re-sync map state when AMap view is recreated (e.g. after navigation back)
+    mapController.setOnMapReadyListener {
+        val (lat, lng, zoom) = viewModel.getSavedCameraState()
+        mapController.setCamera(lat, lng, zoom, false)
+        viewModel.reloadData()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -173,6 +210,11 @@ fun MapScreen(
                     onShowAttractions = {
                         showAttractionsSheet = true
                     },
+                    onOpenCarving = {
+                        val region = selectedRegion!!
+                        showRegionCard = false
+                        navController.navigate(CarvingScreen(region.regionId, region.name))
+                    },
                     onClose = {
                         showRegionCard = false
                         viewModel.clearSelection()
@@ -180,8 +222,40 @@ fun MapScreen(
                 )
             }
         }
-    }
 
+        // Auto-mark snackbar
+        if (autoMarkMessage != null) {
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MapChinaColors.SurfaceElevated,
+                    border = MapChinaCard.border,
+                    modifier = Modifier.clickable { viewModel.dismissAutoMarkMessage() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            autoMarkMessage!!,
+                            color = MapChinaColors.Primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("点击关闭", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+    }
     // Photo preview overlay
     if (photoPreviewCluster != null) {
         PhotoPreviewOverlay(
@@ -217,24 +291,155 @@ fun MapScreen(
         )
     }
 
-    // Achievement unlock dialog
+    // Achievement unlock dialog with animation
     if (achievementResult != null) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissAchievementUnlock() },
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissAchievementUnlock() }) {
-                    Text("继续探索", color = MapChinaColors.Primary)
-                }
-            },
-            title = { Text("成就解锁！", color = Color.White) },
-            text = {
-                Text(
-                    "恭喜获得 ${achievementResult!!.newlyUnlocked.size} 个新成就，+${achievementResult!!.scoreAdded} 山河值",
-                    color = Color.Gray
-                )
-            },
-            containerColor = Color(0xFF1A2C3D)
+        val animatedScale by animateFloatAsState(
+            targetValue = 1f,
+            animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow),
+            label = "achievementScale"
         )
+        val animatedScore by animateIntAsState(
+            targetValue = achievementResult!!.scoreAdded,
+            animationSpec = spring(stiffness = Spring.StiffnessMedium),
+            label = "score"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MapChinaColors.TextPrimary.copy(alpha = 0.6f))
+                .clickable { viewModel.dismissAchievementUnlock() },
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .clickable(enabled = false) { },
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Glow badge
+                    val glowAlpha by animateFloatAsState(
+                        targetValue = 0.6f,
+                        animationSpec = tween(800),
+                        label = "glow"
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(MapChinaColors.AccentGold.copy(alpha = glowAlpha * 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            MapChinaColors.AccentGold,
+                                            MapChinaColors.AccentGold.copy(alpha = 0.7f)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = MapChinaColors.SurfaceElevated, modifier = Modifier.size(24.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "成就解锁",
+                        color = MapChinaColors.AccentGold,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 4.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Score counter
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("+", color = MapChinaColors.AccentGold, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "$animatedScore",
+                            color = MapChinaColors.AccentGold,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("山河值", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Achievement list
+                    achievementResult!!.newlyUnlocked.take(3).forEach { achievement ->
+                        val rarity = viewModel.getAchievementRarity(achievement.achievementId)
+                        val name = viewModel.getAchievementName(achievement.achievementId)
+                        val desc = viewModel.getAchievementDescription(achievement.achievementId)
+                        val rarityColor = when (rarity) {
+                            "LEGENDARY" -> MapChinaColors.RarityLegendary
+                            "EPIC" -> MapChinaColors.RarityEpic
+                            "RARE" -> MapChinaColors.RarityRare
+                            else -> MapChinaColors.RarityCommon
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(rarityColor)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(name, color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                if (desc.isNotEmpty()) {
+                                    Text(desc, color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+                    if (achievementResult!!.newlyUnlocked.size > 3) {
+                        Text(
+                            "…等 ${achievementResult!!.newlyUnlocked.size} 个成就",
+                            color = MapChinaColors.TextTertiary,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    if (achievementResult!!.levelChanged) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "等级提升！Lv${achievementResult!!.newLevel}",
+                            color = MapChinaColors.Primary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "继续探索",
+                        color = MapChinaColors.TextTertiary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.clickable { viewModel.dismissAchievementUnlock() }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -252,7 +457,7 @@ private fun AttractionsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
-        containerColor = Color(0xFF0F1923)
+        containerColor = MapChinaColors.Background
     ) {
         Column(
             modifier = modifier
@@ -262,7 +467,7 @@ private fun AttractionsBottomSheet(
         ) {
             Text(
                 text = "4A/5A 景点",
-                color = Color.White,
+                color = MapChinaColors.TextPrimary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -275,7 +480,7 @@ private fun AttractionsBottomSheet(
                         .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("暂无景点数据", color = Color.Gray)
+                    Text("暂无景点数据", color = MapChinaColors.TextTertiary)
                 }
             } else {
                 LazyColumn(
@@ -314,7 +519,7 @@ private fun AttractionSheetCard(
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep.copy(alpha = 0.2f)
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit.copy(alpha = 0.2f)
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy.copy(alpha = 0.2f)
-        null -> Color(0xFF1A2C3D)
+        null -> MapChinaColors.SurfaceElevated
     }
 
     Card(
@@ -332,12 +537,12 @@ private fun AttractionSheetCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = levelBadge,
-                    color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
+                    color = if (attraction.level == "A5") MapChinaColors.AccentGold else MapChinaColors.AccentBlue,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                            if (attraction.level == "A5") MapChinaColors.AccentGold.copy(alpha = 0.2f) else MapChinaColors.AccentBlue.copy(alpha = 0.2f),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -345,7 +550,7 @@ private fun AttractionSheetCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = attraction.name,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -353,11 +558,11 @@ private fun AttractionSheetCard(
 
             Text(
                 text = if (isVisited) "已玩过" else "未到访",
-                color = if (isVisited) MapChinaColors.FootprintDeep else Color.Gray,
+                color = if (isVisited) MapChinaColors.FootprintDeep else MapChinaColors.TextTertiary,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(if (isVisited) Color(0x332EC4B6) else Color(0x33888888))
+                    .background(if (isVisited) MapChinaColors.Primary.copy(alpha = 0.2f) else MapChinaColors.BorderSubtle)
                     .clickable {
                         if (isVisited) {
                             onRemoveVisit(attraction.id)
@@ -381,7 +586,7 @@ private fun PhotoPreviewOverlay(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xDD0F1923))
+            .background(MapChinaColors.SurfaceOverlay)
             .clickable(onClick = onDismiss)
             .padding(16.dp)
     ) {
@@ -393,16 +598,16 @@ private fun PhotoPreviewOverlay(
             ) {
                 Text(
                     "${cluster.count} 张照片",
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text("点击空白关闭", color = Color(0xFF5A7080), fontSize = 12.sp)
+                Text("点击空白关闭", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "%.4f, %.4f".format(cluster.latitude, cluster.longitude),
-                color = Color(0xFF5A7080),
+                color = MapChinaColors.TextTertiary,
                 fontSize = 11.sp
             )
         }

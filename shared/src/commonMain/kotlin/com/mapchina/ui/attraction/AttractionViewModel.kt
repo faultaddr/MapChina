@@ -5,6 +5,7 @@ import com.mapchina.data.remote.AttractionDetailProvider
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.domain.model.Attraction
+import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
@@ -14,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 data class AttractionUi(
@@ -25,7 +27,8 @@ data class AttractionUi(
     val longitude: Double,
     val description: String?,
     val imageUrl: String?,
-    val visitLevel: FootprintLevel?
+    val visitLevel: FootprintLevel?,
+    val isCustom: Boolean = false
 )
 
 class AttractionViewModel(
@@ -37,6 +40,10 @@ class AttractionViewModel(
     private val userId: String = ""
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    fun onCleared() {
+        vmScope.cancel()
+    }
 
     private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val attractions: StateFlow<List<AttractionUi>> = _attractions.asStateFlow()
@@ -53,6 +60,24 @@ class AttractionViewModel(
 
     private fun loadAllAttractions() {
         vmScope.launch {
+            val all = attractionRepository.getAllAttractions()
+            _attractions.value = all.map { it.toUi() }
+            cacheImageUrls(all.filter { it.imageUrl == null })
+        }
+    }
+
+    private fun cacheImageUrls(attractionsWithoutImage: List<Attraction>) {
+        if (detailProvider == null || attractionsWithoutImage.isEmpty()) return
+        vmScope.launch {
+            attractionsWithoutImage.forEach { attraction ->
+                try {
+                    val detail = detailProvider.getAttractionDetail(attraction.id)
+                    val url = detail?.imageUrls?.firstOrNull()
+                    if (url != null) {
+                        attractionRepository.updateImageUrl(attraction.id, url)
+                    }
+                } catch (_: Exception) { }
+            }
             val all = attractionRepository.getAllAttractions()
             _attractions.value = all.map { it.toUi() }
         }
@@ -111,6 +136,26 @@ class AttractionViewModel(
         }
     }
 
+    fun createCustomAttraction(name: String, description: String?, regionId: String, latitude: Double, longitude: Double, imageUrl: String? = null) {
+        vmScope.launch {
+            val id = "custom_${System.currentTimeMillis()}"
+            val attraction = Attraction(
+                id = id,
+                name = name,
+                regionId = regionId,
+                level = AttractionLevel.CUSTOM,
+                latitude = latitude,
+                longitude = longitude,
+                description = description,
+                imageUrl = imageUrl,
+                isCustom = true,
+                userId = if (userId.isNotBlank()) userId else "local"
+            )
+            attractionRepository.insertAttraction(attraction)
+            loadAllAttractions()
+        }
+    }
+
     private fun refreshAttractions() {
         val query = _searchQuery.value
         if (query.isNotBlank()) {
@@ -119,8 +164,7 @@ class AttractionViewModel(
     }
 
     private fun Attraction.toUi(): AttractionUi {
-        val visit = footprintRepository.getAttractionVisit(userId, id)
-        val detail = detailProvider?.getAttractionDetail(id)
+        val visit = footprintRepository.getAttractionVisit(this@AttractionViewModel.userId, id)
         return AttractionUi(
             id = id,
             name = name,
@@ -129,8 +173,9 @@ class AttractionViewModel(
             latitude = latitude,
             longitude = longitude,
             description = description,
-            imageUrl = detail?.imageUrls?.firstOrNull(),
-            visitLevel = visit?.level
+            imageUrl = imageUrl ?: detailProvider?.getAttractionDetail(id)?.imageUrls?.firstOrNull(),
+            visitLevel = visit?.level,
+            isCustom = isCustom
         )
     }
 }

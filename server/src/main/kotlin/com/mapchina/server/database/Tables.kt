@@ -61,3 +61,34 @@ object RefreshTokenBlacklist : Table("refresh_token_blacklist") {
 
     override val primaryKey = PrimaryKey(token)
 }
+
+object CommunityPosts : IdTable<String>("community_posts") {
+    override val id = varchar("id", 50).entityId()
+    val userId = varchar("user_id", 36).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val title = varchar("title", 200)
+    val content = text("content")
+    val coverImage = varchar("cover_image", 500).nullable()
+    val regionId = varchar("region_id", 10).nullable()
+    val attractionId = varchar("attraction_id", 20).nullable()
+    val likeCount = integer("like_count").default(0)
+    val commentCount = integer("comment_count").default(0)
+    val createdAt = long("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+object PostLikes : Table("post_likes") {
+    val userId = varchar("user_id", 36).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val postId = varchar("post_id", 50).references(CommunityPosts.id, onDelete = ReferenceOption.CASCADE)
+    val createdAt = long("created_at")
+
+    override val primaryKey = PrimaryKey(userId, postId)
+}
+
+object PostComments : IdTable<Long>("post_comments") {
+    override val id = long("id").autoIncrement().entityId()
+    val postId = varchar("post_id", 50).references(CommunityPosts.id, onDelete = ReferenceOption.CASCADE)
+    val userId = varchar("user_id", 36).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val content = text("content")
+    val createdAt = long("created_at")
+}

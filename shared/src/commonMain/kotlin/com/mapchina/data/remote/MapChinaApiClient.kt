@@ -92,6 +92,76 @@ class MapChinaApiClient(
         }
     }
 
+    suspend fun getCommunityFeed(page: Int = 1, size: Int = 20): List<CommunityPostDto> {
+        return try {
+            val response: List<CommunityPostDto> = client.get("$baseUrl/community/feed") {
+                accessToken?.let { bearerAuth(it) }
+                header("page", page.toString())
+                header("size", size.toString())
+            }.body()
+            response
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getCommunityPost(postId: String): CommunityPostDto? {
+        return try {
+            client.get("$baseUrl/community/posts/$postId") {
+                accessToken?.let { bearerAuth(it) }
+            }.body()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    suspend fun createCommunityPost(title: String, content: String, coverImage: String? = null, regionId: String? = null, attractionId: String? = null): Boolean {
+        return try {
+            client.post("$baseUrl/community/posts") {
+                contentType(ContentType.Application.Json)
+                accessToken?.let { bearerAuth(it) }
+                setBody(mapOf("title" to title, "content" to content, "coverImage" to coverImage, "regionId" to regionId, "attractionId" to attractionId))
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun likePost(postId: String): Boolean {
+        return try {
+            client.post("$baseUrl/community/posts/$postId/like") {
+                accessToken?.let { bearerAuth(it) }
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun getComments(postId: String): List<CommentDto> {
+        return try {
+            client.get("$baseUrl/community/posts/$postId/comments") {
+                accessToken?.let { bearerAuth(it) }
+            }.body()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun createComment(postId: String, content: String): Boolean {
+        return try {
+            client.post("$baseUrl/community/posts/$postId/comments") {
+                contentType(ContentType.Application.Json)
+                accessToken?.let { bearerAuth(it) }
+                setBody(mapOf("content" to content))
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     override suspend fun pullDelta(sinceTimestamp: Long): SyncDelta {
         val response: ApiResponse<SyncDeltaResponse> = client.get("$baseUrl/sync/delta") {
             accessToken?.let { bearerAuth(it) }
@@ -111,4 +181,32 @@ data class SyncDeltaResponse(
     val footprints: List<FootprintDto> = emptyList(),
     val attractionVisits: List<com.mapchina.data.model.AttractionVisitDto> = emptyList(),
     val timestamp: Long = 0L
+)
+
+@kotlinx.serialization.Serializable
+data class CommunityPostDto(
+    val id: String,
+    val userId: String,
+    val nickname: String,
+    val avatarUrl: String? = null,
+    val title: String,
+    val content: String,
+    val coverImage: String? = null,
+    val regionId: String? = null,
+    val attractionId: String? = null,
+    val likeCount: Int = 0,
+    val commentCount: Int = 0,
+    val createdAt: Long = 0L,
+    val likedByMe: Boolean = false
+)
+
+@kotlinx.serialization.Serializable
+data class CommentDto(
+    val id: Long,
+    val postId: String,
+    val userId: String,
+    val nickname: String,
+    val avatarUrl: String? = null,
+    val content: String,
+    val createdAt: Long = 0L
 )

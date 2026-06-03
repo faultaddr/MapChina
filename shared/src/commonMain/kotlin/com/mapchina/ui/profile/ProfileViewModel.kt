@@ -1,5 +1,6 @@
 package com.mapchina.ui.profile
 
+import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.UserLevelInfo
 import com.mapchina.domain.service.AuthService
@@ -17,7 +18,8 @@ data class ProfileUi(
 
 class ProfileViewModel(
     private val authService: AuthService,
-    private val userScoreRepository: UserScoreRepository
+    private val userScoreRepository: UserScoreRepository,
+    val settingsRepository: SettingsRepository? = null
 ) {
     private val _profile = MutableStateFlow(ProfileUi("", null, null))
     val profile: StateFlow<ProfileUi> = _profile.asStateFlow()

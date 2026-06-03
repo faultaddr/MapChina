@@ -7,9 +7,12 @@ data class Attraction(
     val level: AttractionLevel,
     val latitude: Double,
     val longitude: Double,
-    val description: String? = null
+    val description: String? = null,
+    val imageUrl: String? = null,
+    val isCustom: Boolean = false,
+    val userId: String? = null
 )
 
 enum class AttractionLevel {
-    A5, A4
+    A5, A4, CUSTOM
 }

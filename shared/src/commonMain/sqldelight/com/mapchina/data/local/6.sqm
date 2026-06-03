@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS carving (
+    id TEXT NOT NULL PRIMARY KEY,
+    region_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    image_data BLOB NOT NULL,
+    stroke_data BLOB,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);

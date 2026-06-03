@@ -2,6 +2,7 @@ package com.mapchina.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,10 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -28,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,32 +53,47 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            Icons.Default.Person,
-            contentDescription = null,
+        // Gradient icon background
+        Box(
             modifier = Modifier
-                .size(80.dp)
-                .clip(RoundedCornerShape(40.dp))
-                .background(MapChinaColors.Primary.copy(alpha = 0.2f)),
-            tint = MapChinaColors.Primary
-        )
+                .size(88.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MapChinaColors.Primary,
+                            MapChinaColors.PrimaryVariant
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Explore,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(44.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             "MapChina",
-            color = Color.White,
+            color = MapChinaColors.TextPrimary,
             fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
         )
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             "用地图点亮你的中国足迹",
-            color = Color.Gray,
+            color = MapChinaColors.TextSecondary,
             fontSize = 14.sp
         )
 
@@ -85,14 +103,15 @@ fun LoginScreen(
             OutlinedTextField(
                 value = nickname,
                 onValueChange = { nickname = it },
-                label = { Text("输入昵称快速开始", color = Color.Gray) },
+                label = { Text("输入昵称快速开始", color = MapChinaColors.TextTertiary) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MapChinaColors.TextPrimary,
+                    unfocusedTextColor = MapChinaColors.TextSecondary,
                     focusedBorderColor = MapChinaColors.Primary,
-                    unfocusedBorderColor = Color(0xFF213647),
+                    unfocusedBorderColor = MapChinaColors.BorderSubtle,
                     cursorColor = MapChinaColors.Primary
                 )
             )
@@ -107,9 +126,10 @@ fun LoginScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = nickname.isNotBlank(),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
             ) {
-                Text("快速开始")
+                Text("快速开始", fontWeight = FontWeight.Medium)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -117,6 +137,7 @@ fun LoginScreen(
             OutlinedButton(
                 onClick = { isPhoneMode = true },
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MapChinaColors.Primary)
             ) {
                 Text("手机号登录")
@@ -125,15 +146,16 @@ fun LoginScreen(
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("手机号", color = Color.Gray) },
+                label = { Text("手机号", color = MapChinaColors.TextTertiary) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MapChinaColors.TextPrimary,
+                    unfocusedTextColor = MapChinaColors.TextSecondary,
                     focusedBorderColor = MapChinaColors.Primary,
-                    unfocusedBorderColor = Color(0xFF213647),
+                    unfocusedBorderColor = MapChinaColors.BorderSubtle,
                     cursorColor = MapChinaColors.Primary
                 )
             )
@@ -144,15 +166,16 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it },
-                    label = { Text("验证码", color = Color.Gray) },
+                    label = { Text("验证码", color = MapChinaColors.TextTertiary) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MapChinaColors.TextPrimary,
+                        unfocusedTextColor = MapChinaColors.TextSecondary,
                         focusedBorderColor = MapChinaColors.Primary,
-                        unfocusedBorderColor = Color(0xFF213647),
+                        unfocusedBorderColor = MapChinaColors.BorderSubtle,
                         cursorColor = MapChinaColors.Primary
                     )
                 )
@@ -163,18 +186,20 @@ fun LoginScreen(
                     onClick = onLoginSuccess,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = code.length >= 4 && phone.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                 ) {
-                    Text("登录")
+                    Text("登录", fontWeight = FontWeight.Medium)
                 }
             } else {
                 Button(
                     onClick = { codeSent = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = phone.length >= 11,
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                 ) {
-                    Text("获取验证码")
+                    Text("获取验证码", fontWeight = FontWeight.Medium)
                 }
             }
 
@@ -187,7 +212,8 @@ fun LoginScreen(
                     code = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MapChinaColors.TextTertiary)
             ) {
                 Text("返回昵称登录")
             }

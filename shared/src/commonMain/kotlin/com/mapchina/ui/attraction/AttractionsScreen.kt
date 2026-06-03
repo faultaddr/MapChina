@@ -20,10 +20,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -48,12 +50,15 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.navigation.AttractionDetailScreen
+import com.mapchina.ui.navigation.CustomAttractionScreen
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 enum class AttractionFilter(val label: String) {
     ALL("全部"),
     A5("5A"),
     A4("4A"),
+    CUSTOM("自定义"),
     VISITED("已到访"),
     UNVISITED("未到访")
 }
@@ -74,19 +79,21 @@ fun AttractionsScreen(
             AttractionFilter.ALL -> attractions
             AttractionFilter.A5 -> attractions.filter { it.level == "A5" }
             AttractionFilter.A4 -> attractions.filter { it.level == "A4" }
+            AttractionFilter.CUSTOM -> attractions.filter { it.isCustom }
             AttractionFilter.VISITED -> attractions.filter { it.visitLevel != null }
             AttractionFilter.UNVISITED -> attractions.filter { it.visitLevel == null }
         }
     }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         Text(
             "景点",
-            color = Color.White,
+            color = MapChinaColors.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
@@ -95,16 +102,16 @@ fun AttractionsScreen(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { viewModel?.searchAttractions(it) },
-            label = { Text("搜索景点", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+            label = { Text("搜索景点", color = MapChinaColors.TextTertiary) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MapChinaColors.TextTertiary) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                focusedTextColor = MapChinaColors.TextPrimary,
+                unfocusedTextColor = MapChinaColors.TextSecondary,
                 focusedBorderColor = MapChinaColors.Primary,
-                unfocusedBorderColor = Color(0xFF213647),
+                unfocusedBorderColor = MapChinaColors.CardBackgroundLight,
                 cursorColor = MapChinaColors.Primary
             )
         )
@@ -121,13 +128,13 @@ fun AttractionsScreen(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) MapChinaColors.Primary else Color(0xFF1A2C3D))
+                        .background(if (isSelected) MapChinaColors.Primary else MapChinaColors.SurfaceElevated)
                         .clickable { selectedFilter = filter }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         filter.label,
-                        color = if (isSelected) Color.White else Color.Gray,
+                        color = if (isSelected) MapChinaColors.SurfaceElevated else MapChinaColors.TextTertiary,
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
@@ -144,7 +151,7 @@ fun AttractionsScreen(
             ) {
                 Text(
                     if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "输入关键词搜索景点" else "未找到匹配景点",
-                    color = Color.Gray
+                    color = MapChinaColors.TextTertiary
                 )
             }
         } else {
@@ -163,6 +170,17 @@ fun AttractionsScreen(
             }
         }
     }
+
+    FloatingActionButton(
+        onClick = { navController.navigate(CustomAttractionScreen(regionId = "")) },
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(16.dp),
+        containerColor = MapChinaColors.Primary
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "添加景点", tint = MapChinaColors.TextPrimary)
+    }
+    }
 }
 
 @Composable
@@ -175,13 +193,14 @@ private fun AttractionCard(
     val levelBadge = when (attraction.level) {
         "A5" -> "5A"
         "A4" -> "4A"
+        "CUSTOM" -> "自定义"
         else -> attraction.level
     }
     val bgColor = when (attraction.visitLevel) {
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep.copy(alpha = 0.15f)
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit.copy(alpha = 0.15f)
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy.copy(alpha = 0.15f)
-        null -> Color(0xFF1A2C3D)
+        null -> MapChinaColors.SurfaceElevated
     }
 
     Card(
@@ -205,18 +224,18 @@ private fun AttractionCard(
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp))
                 ) {
-                    val painterState = painter.state.value
-                    when (painterState) {
+                    val state = painter.state.collectAsState().value
+                    when (state) {
                         is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
                         else -> {
                             Box(
                                 Modifier
                                     .size(64.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF213647)),
+                                    .background(MapChinaColors.CardBackgroundLight),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(attraction.name.take(1), color = Color.Gray, fontSize = 20.sp)
+                                Text(attraction.name.take(1), color = MapChinaColors.TextTertiary, fontSize = 20.sp)
                             }
                         }
                     }
@@ -228,12 +247,12 @@ private fun AttractionCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = levelBadge,
-                        color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
+                        color = if (attraction.level == "A5") MapChinaColors.AccentGold else MapChinaColors.AccentBlue,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .background(
-                                if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                                if (attraction.level == "A5") MapChinaColors.AccentGold.copy(alpha = 0.2f) else MapChinaColors.AccentBlue.copy(alpha = 0.2f),
                                 RoundedCornerShape(4.dp)
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -243,7 +262,7 @@ private fun AttractionCard(
                         text = attraction.name,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White,
+                        color = MapChinaColors.TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -252,7 +271,7 @@ private fun AttractionCard(
                     Text(
                         text = attraction.description,
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MapChinaColors.TextTertiary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp)
@@ -272,7 +291,7 @@ private fun AttractionCard(
                     FootprintLevel.DEEP -> MapChinaColors.FootprintDeep
                     FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit
                     FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy
-                    null -> Color.Gray
+                    null -> MapChinaColors.TextTertiary
                 }
             )
         }

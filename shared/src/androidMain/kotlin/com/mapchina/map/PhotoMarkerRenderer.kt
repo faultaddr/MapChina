@@ -6,15 +6,19 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.net.Uri
+import android.util.Log
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.size.Size
 import coil3.toBitmap
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import kotlin.math.roundToInt
 
 object PhotoMarkerRenderer {
+    private const val TAG = "PhotoMarkerRenderer"
     private const val SIZE_DP = 56
     private const val RADIUS_DP = 8
     private const val BADGE_SIZE_DP = 20
@@ -33,7 +37,11 @@ object PhotoMarkerRenderer {
         val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val image = loadImage(context, imagePath, size) ?: return renderPlaceholder(size, radius, count, density)
+        val image = loadImage(context, imagePath, size)
+        if (image == null) {
+            Log.w(TAG, "Failed to load image: $imagePath, using placeholder")
+            return renderPlaceholder(size, radius, count, density)
+        }
 
         val layers = count.coerceAtMost(2)
         for (i in (layers - 1) downTo 0) {
@@ -52,9 +60,9 @@ object PhotoMarkerRenderer {
                 val borderPaint = Paint().apply { color = 0xFFFFFFFF.toInt(); style = Paint.Style.STROKE; strokeWidth = 2f * density; isAntiAlias = true }
                 canvas.drawRoundRect(rect, radius, radius, borderPaint)
             } else {
-                val bgPaint = Paint().apply { color = 0xFF2A3A4A.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
+                val bgPaint = Paint().apply { color = 0xFFE8E5DD.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
                 canvas.drawRoundRect(rect, radius, radius, bgPaint)
-                val borderPaint = Paint().apply { color = 0xFF3A4A5A.toInt(); style = Paint.Style.STROKE; strokeWidth = 1f * density; isAntiAlias = true }
+                val borderPaint = Paint().apply { color = 0xFFD0CCC4.toInt(); style = Paint.Style.STROKE; strokeWidth = 1f * density; isAntiAlias = true }
                 canvas.drawRoundRect(rect, radius, radius, borderPaint)
             }
         }
@@ -75,9 +83,14 @@ object PhotoMarkerRenderer {
 
     private fun loadImage(context: Context, path: String, size: Int): Bitmap? {
         return try {
+            val data = if (File(path).exists()) {
+                Uri.fromFile(File(path))
+            } else {
+                path
+            }
             val loader = ImageLoader(context)
             val request = ImageRequest.Builder(context)
-                .data(path)
+                .data(data)
                 .size(size, size)
                 .allowHardware(false)
                 .build()
@@ -89,7 +102,8 @@ object PhotoMarkerRenderer {
                     scaled2
                 } else scaled
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading image $path", e)
             null
         }
     }
@@ -97,10 +111,21 @@ object PhotoMarkerRenderer {
     private fun renderPlaceholder(size: Int, radius: Float, count: Int, density: Float): Bitmap? {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        val paint = Paint().apply { color = 0xFF1A2C3D.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
-        canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), radius, radius, paint)
-        val iconPaint = Paint().apply { color = 0xFF5A7080.toInt(); textSize = 20f * density; isAntiAlias = true; textAlign = Paint.Align.CENTER }
-        canvas.drawText("📷", size / 2f, size / 2f + 7f * density, iconPaint)
+        val bgPaint = Paint().apply { color = 0xFFE8E5DD.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
+        canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), radius, radius, bgPaint)
+        // Draw a simple camera-like geometric icon
+        val iconPaint = Paint().apply { color = 0xFF9E9E9E.toInt(); style = Paint.Style.STROKE; strokeWidth = 2f * density; isAntiAlias = true }
+        val cx = size / 2f
+        val cy = size / 2f
+        val bodyW = 16f * density
+        val bodyH = 12f * density
+        canvas.drawRoundRect(RectF(cx - bodyW, cy - bodyH, cx + bodyW, cy + bodyH), 3f * density, 3f * density, iconPaint)
+        val lensR = 6f * density
+        iconPaint.style = Paint.Style.STROKE
+        canvas.drawCircle(cx, cy, lensR, iconPaint)
+        // Small bump on top (flash)
+        val flashPaint = Paint().apply { color = 0xFF9E9E9E.toInt(); style = Paint.Style.FILL; isAntiAlias = true }
+        canvas.drawRoundRect(RectF(cx - 4f * density, cy - bodyH - 4f * density, cx + 2f * density, cy - bodyH), 1f * density, 1f * density, flashPaint)
         return bitmap
     }
 }

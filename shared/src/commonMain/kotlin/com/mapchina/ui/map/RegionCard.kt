@@ -18,9 +18,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @Composable
 fun RegionCard(
@@ -46,6 +52,7 @@ fun RegionCard(
     onMarkFootprint: (String, FootprintLevel) -> Unit,
     onDrillDown: () -> Unit,
     onShowAttractions: () -> Unit,
+    onOpenCarving: () -> Unit = {},
     onClose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -61,14 +68,14 @@ fun RegionCard(
         FootprintLevel.DEEP -> MapChinaColors.FootprintDeep
         FootprintLevel.SHORT_VISIT -> MapChinaColors.FootprintShortVisit
         FootprintLevel.PASS_BY -> MapChinaColors.FootprintPassBy
-        null -> Color.Gray
+        null -> MapChinaColors.TextTertiary
     }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-            .background(Color(0xDD0F1923))
+            .background(MapChinaColors.SurfaceOverlay)
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         // Region name + status + close
@@ -80,7 +87,7 @@ fun RegionCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = region.name,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -97,12 +104,12 @@ fun RegionCard(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color.White.copy(alpha = 0.1f))
+                    .clip(CircleShape)
+                    .background(MapChinaColors.TextTertiary.copy(alpha = 0.08f))
                     .clickable(onClick = onClose),
                 contentAlignment = Alignment.Center
             ) {
-                Text("✕", color = Color.Gray, fontSize = 14.sp)
+                Icon(Icons.Default.Close, contentDescription = "关闭", tint = MapChinaColors.TextTertiary, modifier = Modifier.size(16.dp))
             }
         }
 
@@ -115,7 +122,7 @@ fun RegionCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("覆盖率", color = Color.Gray, fontSize = 12.sp)
+                Text("覆盖率", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                 Spacer(modifier = Modifier.width(8.dp))
                 LinearProgressIndicator(
                     progress = { region.childCoverageRate.coerceIn(0f, 1f) },
@@ -124,7 +131,7 @@ fun RegionCard(
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
                     color = MapChinaColors.Primary,
-                    trackColor = Color(0xFF1A2C3D)
+                    trackColor = MapChinaColors.SurfaceElevated
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("$coveragePercent%", color = MapChinaColors.Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -148,7 +155,7 @@ fun RegionCard(
             if (canDrillDown) {
                 ActionChip(
                     label = "查看下级",
-                    color = Color(0xFF4A90D9),
+                    color = MapChinaColors.AccentBlue,
                     onClick = onDrillDown
                 )
             }
@@ -157,10 +164,17 @@ fun RegionCard(
             if (attractionCount > 0) {
                 ActionChip(
                     label = "${attractionCount}个景点",
-                    color = Color(0xFFFFA502),
+                    color = MapChinaColors.FootprintShortVisit,
                     onClick = onShowAttractions
                 )
             }
+
+            // Carving
+            ActionChip(
+                label = "题刻",
+                color = Color(0xFF8B7355),
+                onClick = onOpenCarving
+            )
         }
 
         // Inline footprint selection

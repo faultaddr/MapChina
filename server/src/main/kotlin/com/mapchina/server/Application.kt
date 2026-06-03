@@ -7,6 +7,7 @@ import com.mapchina.server.auth.logoutRoutes
 import com.mapchina.server.auth.startBlacklistCleanup
 import com.mapchina.server.database.configureDatabase
 import com.mapchina.server.routes.authRoutes
+import com.mapchina.server.routes.communityRoutes
 import com.mapchina.server.routes.dataRoutes
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -62,5 +63,6 @@ fun Application.configureRouting(jwtProvider: com.mapchina.server.auth.JwtProvid
         authRoutes(jwtProvider)
         logoutRoutes()
         dataRoutes(jwtProvider)
+        communityRoutes(jwtProvider)
     }
 }

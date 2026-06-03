@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.ProvinceConquestInfo
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,16 +56,16 @@ fun ProvinceDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text(info?.provinceName ?: "省份详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text(info?.provinceName ?: "省份详情", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (info == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("加载中...", color = Color.Gray)
+                Text("加载中...", color = MapChinaColors.TextTertiary)
             }
             return
         }
@@ -78,10 +79,12 @@ fun ProvinceDetailScreen(
             // 进度总览
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("完成进度", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("完成进度", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(12.dp))
 
                     ProgressRow("城市", info.visitedCities, info.totalCities)
@@ -96,10 +99,12 @@ fun ProvinceDetailScreen(
             if (detailUi.provinceAchievements.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("省份徽章", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("省份徽章", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(12.dp))
                         detailUi.provinceAchievements.forEach { badge ->
                             ProvinceBadgeRow(badge)
@@ -112,14 +117,16 @@ fun ProvinceDetailScreen(
             if (!info.hasCompleteBadge && info.visitedCities > 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("继续探索", color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
                         val remaining = info.totalCities - info.visitedCities
                         if (remaining > 0) {
-                            Text("再点亮 $remaining 个城市即可获得「${info.provinceName}通行者」徽章", color = Color.Gray, fontSize = 13.sp)
+                            Text("再点亮 $remaining 个城市即可获得「${info.provinceName}通行者」徽章", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                         }
                     }
                 }
@@ -132,11 +139,11 @@ fun ProvinceDetailScreen(
 private fun ProgressRow(label: String, visited: Int, total: Int) {
     val percent = if (total > 0) visited.toFloat() / total else 0f
     val percentColor = when {
-        percent >= 1f -> Color(0xFFFFD700)
-        percent >= 0.7f -> Color(0xFFFF6B6B)
+        percent >= 1f -> MapChinaColors.AccentGold
+        percent >= 0.7f -> MapChinaColors.Error
         percent >= 0.3f -> MapChinaColors.Primary
-        percent > 0f -> Color(0xFF4A6FA5)
-        else -> Color(0xFF213647)
+        percent > 0f -> MapChinaColors.AccentBlue.copy(alpha = 0.7f)
+        else -> MapChinaColors.CardBackgroundLight
     }
 
     Column {
@@ -144,7 +151,7 @@ private fun ProgressRow(label: String, visited: Int, total: Int) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label, color = Color.Gray, fontSize = 13.sp)
+            Text(label, color = MapChinaColors.TextTertiary, fontSize = 13.sp)
             Text("$visited/$total", color = percentColor, fontSize = 13.sp)
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -155,7 +162,7 @@ private fun ProgressRow(label: String, visited: Int, total: Int) {
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp)),
             color = percentColor,
-            trackColor = Color(0xFF0F1923)
+            trackColor = MapChinaColors.Background
         )
     }
 }
@@ -163,10 +170,10 @@ private fun ProgressRow(label: String, visited: Int, total: Int) {
 @Composable
 private fun ProvinceBadgeRow(item: AchievementWithProgress) {
     val rarityColor = when (item.definition.rarity) {
-        AchievementRarity.COMMON -> Color(0xFF90CAF9)
-        AchievementRarity.RARE -> Color(0xFF69F0AE)
-        AchievementRarity.EPIC -> Color(0xFFCE93D8)
-        AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
+        AchievementRarity.COMMON -> MapChinaColors.AccentBlue
+        AchievementRarity.RARE -> MapChinaColors.RarityRare
+        AchievementRarity.EPIC -> MapChinaColors.RarityEpic
+        AchievementRarity.LEGENDARY -> MapChinaColors.AccentGold
     }
 
     Row(
@@ -179,25 +186,25 @@ private fun ProvinceBadgeRow(item: AchievementWithProgress) {
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
+                .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else MapChinaColors.CardBackgroundLight),
             contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
                     .size(18.dp)
                     .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor else Color.Gray)
+                    .background(if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary)
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 item.definition.name,
-                color = if (item.isUnlocked) Color.White else Color.Gray,
+                color = if (item.isUnlocked) MapChinaColors.TextPrimary else MapChinaColors.TextTertiary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
-            Text(item.definition.description, color = Color.Gray, fontSize = 12.sp)
+            Text(item.definition.description, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
         }
         if (item.isUnlocked) {
             Text("已解锁", color = rarityColor, fontSize = 12.sp)

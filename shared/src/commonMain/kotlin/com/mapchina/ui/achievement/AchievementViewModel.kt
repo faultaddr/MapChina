@@ -3,9 +3,14 @@ package com.mapchina.ui.achievement
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 
 data class AchievementUi(
     val levelInfo: UserLevelInfo? = null,
@@ -33,42 +38,49 @@ class AchievementViewModel(
     private val userScoreRepository: UserScoreRepository,
     private val userId: String = ""
 ) {
+    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _ui = MutableStateFlow(AchievementUi())
     val ui: StateFlow<AchievementUi> = _ui.asStateFlow()
 
     fun refresh() {
-        val levelInfo = userScoreRepository.getScore(userId)
-        val allDefs = achievementRepository.getAllDefinitions()
-        val userAchievements = achievementRepository.getUserAchievements(userId)
-        val userMap = userAchievements.associateBy { it.achievementId }
+        vmScope.launch {
+            val levelInfo = userScoreRepository.getScore(userId)
+            val allDefs = achievementRepository.getAllDefinitions()
+            val userAchievements = achievementRepository.getUserAchievements(userId)
+            val userMap = userAchievements.associateBy { it.achievementId }
 
-        val allWithProgress = allDefs.map { def ->
-            val ua = userMap[def.id]
-            AchievementWithProgress(
-                definition = def,
-                progressValue = ua?.progressValue ?: 0,
-                progressTarget = ua?.progressTarget ?: def.triggerCondition.substringAfterLast(":").toIntOrNull() ?: 0,
-                isUnlocked = ua?.isUnlocked == true,
-                unlockTime = ua?.unlockTime
+            val allWithProgress = allDefs.map { def ->
+                val ua = userMap[def.id]
+                AchievementWithProgress(
+                    definition = def,
+                    progressValue = ua?.progressValue ?: 0,
+                    progressTarget = ua?.progressTarget ?: def.triggerCondition.substringAfterLast(":").toIntOrNull() ?: 0,
+                    isUnlocked = ua?.isUnlocked == true,
+                    unlockTime = ua?.unlockTime
+                )
+            }
+
+            val unlocked = allWithProgress.filter { it.isUnlocked }
+            val locked = allWithProgress.filter { !it.isUnlocked }
+
+            val nextTarget = locked.minByOrNull {
+                if (it.progressTarget > 0) it.progressTarget - it.progressValue else Int.MAX_VALUE
+            }
+
+            _ui.value = AchievementUi(
+                levelInfo = levelInfo,
+                unlockedCount = unlocked.size,
+                totalCount = allWithProgress.size,
+                recentUnlocked = unlocked.sortedByDescending { it.unlockTime }.take(3),
+                nextTarget = nextTarget,
+                regionAchievements = allWithProgress.filter { it.definition.category == AchievementCategory.REGION },
+                scenicAchievements = allWithProgress.filter { it.definition.category == AchievementCategory.SCENIC },
+                allAchievements = allWithProgress
             )
         }
+    }
 
-        val unlocked = allWithProgress.filter { it.isUnlocked }
-        val locked = allWithProgress.filter { !it.isUnlocked }
-
-        val nextTarget = locked.minByOrNull {
-            if (it.progressTarget > 0) it.progressTarget - it.progressValue else Int.MAX_VALUE
-        }
-
-        _ui.value = AchievementUi(
-            levelInfo = levelInfo,
-            unlockedCount = unlocked.size,
-            totalCount = allWithProgress.size,
-            recentUnlocked = unlocked.sortedByDescending { it.unlockTime }.take(3),
-            nextTarget = nextTarget,
-            regionAchievements = allWithProgress.filter { it.definition.category == AchievementCategory.REGION },
-            scenicAchievements = allWithProgress.filter { it.definition.category == AchievementCategory.SCENIC },
-            allAchievements = allWithProgress
-        )
+    fun onCleared() {
+        vmScope.cancel()
     }
 }

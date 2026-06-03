@@ -17,8 +17,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -45,6 +54,7 @@ import com.mapchina.ui.stats.StatsUi
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.ui.stats.VisitedAttractionUi
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @Composable
 fun AchievementScreen(
@@ -67,11 +77,11 @@ fun AchievementScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         Text(
             "成就",
-            color = Color.White,
+            color = MapChinaColors.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
@@ -80,7 +90,7 @@ fun AchievementScreen(
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.Transparent,
-            contentColor = Color.White,
+            contentColor = MapChinaColors.TextPrimary,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
@@ -96,7 +106,7 @@ fun AchievementScreen(
                     text = {
                         Text(
                             title,
-                            color = if (selectedTab == index) MapChinaColors.Primary else Color.Gray,
+                            color = if (selectedTab == index) MapChinaColors.Primary else MapChinaColors.TextTertiary,
                             fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 14.sp
                         )
@@ -139,7 +149,9 @@ private fun AchievementTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onNavigateToProvinceConquest?.invoke() },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -150,23 +162,18 @@ private fun AchievementTab(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFFF6B6B).copy(alpha = 0.2f)),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MapChinaColors.FootprintDeep.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF6B6B))
-                        )
+                        Icon(Icons.Default.Map, contentDescription = null, tint = MapChinaColors.FootprintDeep, modifier = Modifier.size(22.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("省份征服", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("征服每个省份，点亮你的中国版图", color = Color.Gray, fontSize = 13.sp)
+                        Text("省份征服", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("征服每个省份，点亮你的中国版图", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                     }
-                    Text("→", color = Color.Gray, fontSize = 18.sp)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -175,7 +182,9 @@ private fun AchievementTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onNavigateToAtlas?.invoke() },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -186,23 +195,18 @@ private fun AchievementTab(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFCE93D8).copy(alpha = 0.2f)),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MapChinaColors.RarityEpic.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFCE93D8))
-                        )
+                        Icon(Icons.Default.AutoStories, contentDescription = null, tint = MapChinaColors.RarityEpic, modifier = Modifier.size(22.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("主题图鉴", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("按主题收集中国之美", color = Color.Gray, fontSize = 13.sp)
+                        Text("主题图鉴", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("按主题收集中国之美", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                     }
-                    Text("→", color = Color.Gray, fontSize = 18.sp)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -211,7 +215,7 @@ private fun AchievementTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF1A2C3D))
+                    .background(MapChinaColors.SurfaceElevated)
                     .clickable { onNavigateToBadgeWall?.invoke() }
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.Center
@@ -237,7 +241,7 @@ private fun StatsTab(stats: StatsUi) {
             item {
                 Text(
                     "已到访景点 (${stats.visitedAttractionList.size})",
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -255,7 +259,7 @@ private fun StatsTab(stats: StatsUi) {
                         .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("暂无统计数据，开始探索吧", color = Color.Gray, fontSize = 14.sp)
+                    Text("暂无统计数据，开始探索吧", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
                 }
             }
         }
@@ -267,7 +271,9 @@ private fun LevelCard(ui: AchievementUi) {
     val level = ui.levelInfo
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -280,7 +286,7 @@ private fun LevelCard(ui: AchievementUi) {
                 ) {
                     Text(
                         "Lv${level?.currentLevel ?: 1}",
-                        color = Color.White,
+                        color = MapChinaColors.TextPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -289,13 +295,13 @@ private fun LevelCard(ui: AchievementUi) {
                 Column {
                     Text(
                         level?.currentTitle ?: "初行者",
-                        color = Color.White,
+                        color = MapChinaColors.TextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         "${level?.currentScore ?: 0} 山河值",
-                        color = Color.Gray,
+                        color = MapChinaColors.TextTertiary,
                         fontSize = 13.sp
                     )
                 }
@@ -306,7 +312,7 @@ private fun LevelCard(ui: AchievementUi) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("下一级：${level.nextTitle}", color = Color.Gray, fontSize = 12.sp)
+                    Text("下一级：${level.nextTitle}", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
                     Text("${level.nextLevelScore - level.currentScore} 山河值", color = MapChinaColors.Primary, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
@@ -317,11 +323,11 @@ private fun LevelCard(ui: AchievementUi) {
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = MapChinaColors.Primary,
-                    trackColor = Color(0xFF0F1923)
+                    trackColor = MapChinaColors.Background
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text("已解锁 ${ui.unlockedCount}/${ui.totalCount} 个成就", color = Color.Gray, fontSize = 12.sp)
+            Text("已解锁 ${ui.unlockedCount}/${ui.totalCount} 个成就", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
         }
     }
 }
@@ -330,13 +336,15 @@ private fun LevelCard(ui: AchievementUi) {
 private fun NextTargetCard(target: AchievementWithProgress) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("下一目标", color = MapChinaColors.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(6.dp))
-            Text(target.definition.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(target.definition.description, color = Color.Gray, fontSize = 13.sp)
+            Text(target.definition.name, color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(target.definition.description, color = MapChinaColors.TextTertiary, fontSize = 13.sp)
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
                 progress = { target.progressPercent.coerceIn(0f, 1f) },
@@ -345,12 +353,12 @@ private fun NextTargetCard(target: AchievementWithProgress) {
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = MapChinaColors.Primary,
-                trackColor = Color(0xFF0F1923)
+                trackColor = MapChinaColors.Background
             )
             Spacer(modifier = Modifier.height(4.dp))
             val remaining = target.progressTarget - target.progressValue
             if (remaining > 0) {
-                Text("再点亮 $remaining 个即可获得", color = Color.Gray, fontSize = 12.sp)
+                Text("再点亮 $remaining 个即可获得", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
             }
         }
     }
@@ -359,7 +367,7 @@ private fun NextTargetCard(target: AchievementWithProgress) {
 @Composable
 private fun RecentUnlockedSection(recent: List<AchievementWithProgress>) {
     Column {
-        Text("最近获得", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("最近获得", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
         recent.forEach { item ->
             AchievementRow(item)
@@ -370,7 +378,7 @@ private fun RecentUnlockedSection(recent: List<AchievementWithProgress>) {
 @Composable
 private fun AchievementSection(title: String, achievements: List<AchievementWithProgress>) {
     Column {
-        Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(title, color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
         achievements.forEach { item -> AchievementRow(item) }
     }
@@ -379,12 +387,12 @@ private fun AchievementSection(title: String, achievements: List<AchievementWith
 @Composable
 private fun AchievementRow(item: AchievementWithProgress) {
     val rarityColor = when (item.definition.rarity) {
-        AchievementRarity.COMMON -> Color(0xFF90CAF9)
-        AchievementRarity.RARE -> Color(0xFF69F0AE)
-        AchievementRarity.EPIC -> Color(0xFFCE93D8)
-        AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
+        AchievementRarity.COMMON -> MapChinaColors.AccentBlue
+        AchievementRarity.RARE -> MapChinaColors.RarityRare
+        AchievementRarity.EPIC -> MapChinaColors.RarityEpic
+        AchievementRarity.LEGENDARY -> MapChinaColors.AccentGold
     }
-    val bgColor = if (item.isUnlocked) Color(0xFF1A2C3D) else Color(0xFF1F1F33)
+    val bgColor = if (item.isUnlocked) MapChinaColors.SurfaceElevated else MapChinaColors.CardBackgroundLight
 
     Card(
         modifier = Modifier
@@ -401,31 +409,36 @@ private fun AchievementRow(item: AchievementWithProgress) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.12f) else MapChinaColors.CardBackgroundLight),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clip(CircleShape)
-                        .background(if (item.isUnlocked) rarityColor else Color.Gray)
+                Icon(
+                    when (item.definition.rarity) {
+                        AchievementRarity.LEGENDARY -> Icons.Default.WorkspacePremium
+                        AchievementRarity.EPIC -> Icons.Default.EmojiEvents
+                        AchievementRarity.RARE -> Icons.Default.Star
+                        AchievementRarity.COMMON -> Icons.Default.MilitaryTech
+                    },
+                    contentDescription = null,
+                    tint = if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     item.definition.name,
-                    color = if (item.isUnlocked) Color.White else Color.Gray,
+                    color = if (item.isUnlocked) MapChinaColors.TextPrimary else MapChinaColors.TextTertiary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Text(item.definition.description, color = Color.Gray, fontSize = 12.sp)
+                Text(item.definition.description, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     "${item.progressValue}/${item.progressTarget}",
-                    color = if (item.isUnlocked) rarityColor else Color.Gray,
+                    color = if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary,
                     fontSize = 13.sp
                 )
                 Text(
@@ -449,14 +462,14 @@ private fun CoverageSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(label, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            Text(label, color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Medium, fontSize = 16.sp)
             Text(
                 "$visited / $total",
                 color = MapChinaColors.Primary,
@@ -471,13 +484,13 @@ private fun CoverageSection(
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = MapChinaColors.Primary,
-            trackColor = Color(0xFF0F1923)
+            trackColor = MapChinaColors.Background
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             "${(percent * 100).toInt()}%",
             fontSize = 12.sp,
-            color = Color.Gray
+            color = MapChinaColors.TextTertiary
         )
     }
 }
@@ -502,7 +515,9 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Row(
             modifier = Modifier
@@ -514,12 +529,12 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = levelBadge,
-                    color = if (attraction.level == "A5") Color(0xFFFFD700) else Color(0xFF90CAF9),
+                    color = if (attraction.level == "A5") MapChinaColors.AccentGold else MapChinaColors.AccentBlue,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .background(
-                            if (attraction.level == "A5") Color(0xFF332E00) else Color(0xFF0F3347),
+                            if (attraction.level == "A5") MapChinaColors.AccentGold.copy(alpha = 0.2f) else MapChinaColors.AccentBlue.copy(alpha = 0.2f),
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -527,7 +542,7 @@ private fun VisitedAttractionCard(attraction: VisitedAttractionUi) {
                 Spacer(modifier = Modifier.padding(horizontal = 6.dp))
                 Text(
                     text = attraction.name,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )

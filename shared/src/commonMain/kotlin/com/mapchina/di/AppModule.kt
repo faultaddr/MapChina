@@ -12,6 +12,7 @@ import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.AtlasRepository
+import com.mapchina.data.repository.CarvingRepository
 import com.mapchina.data.repository.JournalRepository
 import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.repository.UserScoreRepository
@@ -23,8 +24,13 @@ import com.mapchina.domain.service.AtlasService
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.journal.JournalViewModel
+import com.mapchina.ui.carving.CarvingViewModel
+import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.data.remote.MapChinaApiClient
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
+import com.mapchina.platform.LocationProvider
+import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.ui.achievement.AtlasViewModel
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.map.MapViewModel
@@ -51,15 +57,19 @@ val appModule = module {
 
     single { JournalRepository(get()) }
     single { JournalService(get(), get(), get()) }
+    single { RegionMatcher(get()) }
 
-    single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>()) }
+    single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>(), getOrNull<AchievementRepository>()) }
     single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get()) }
     single { StatsViewModel(get(), get(), get(), get()) }
-    single { ProfileViewModel(get(), get()) }
+    single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
     single { AchievementViewModel(get(), get()) }
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }
     single { JournalViewModel(get(), get(), get(), getOrNull<PhotoPicker>()) }
+    single { CarvingRepository(get()) }
+    single { CarvingViewModel(get()) }
+    single { CommunityViewModel(getOrNull<MapChinaApiClient>() ?: MapChinaApiClient("", get())) }
 }
 
 expect val platformModule: Module

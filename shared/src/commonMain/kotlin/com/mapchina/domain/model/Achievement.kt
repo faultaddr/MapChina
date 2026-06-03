@@ -28,7 +28,7 @@ data class UserAchievement(
     val progressPercent: Float get() = if (progressTarget > 0) progressValue.toFloat() / progressTarget else 0f
 }
 
-enum class AchievementCategory { REGION, SCENIC, PROVINCE, ATLAS }
+enum class AchievementCategory { REGION, SCENIC, PROVINCE, ATLAS, GEOGRAPHY }
 enum class AchievementRarity { COMMON, RARE, EPIC, LEGENDARY }
 enum class AchievementStatus { LOCKED, UNLOCKED }
-enum class TriggerType { COUNT, RATIO, FULL_COMPLETE, CUSTOM }
+enum class TriggerType { COUNT, RATIO, FULL_COMPLETE, CUSTOM, GEO }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.service.AtlasItemVisitStatus
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,16 +58,16 @@ fun AtlasDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text(progress?.atlasName ?: "图鉴详情", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text(progress?.atlasName ?: "图鉴详情", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         if (progress == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("加载中...", color = Color.Gray)
+                Text("加载中...", color = MapChinaColors.TextTertiary)
             }
             return
         }
@@ -80,16 +81,18 @@ fun AtlasDetailScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(progress.atlasDescription, color = Color.Gray, fontSize = 13.sp)
+                        Text(progress.atlasDescription, color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("已收录", color = Color.Gray, fontSize = 13.sp)
+                            Text("已收录", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                             Text("${progress.visitedItems}/${progress.totalItems}", color = MapChinaColors.Primary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -100,7 +103,7 @@ fun AtlasDetailScreen(
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
                             color = MapChinaColors.Primary,
-                            trackColor = Color(0xFF0F1923)
+                            trackColor = MapChinaColors.Background
                         )
                     }
                 }
@@ -108,7 +111,7 @@ fun AtlasDetailScreen(
 
             if (detailUi.atlasAchievements.isNotEmpty()) {
                 item {
-                    Text("图鉴成就", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("图鉴成就", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
                 items(detailUi.atlasAchievements, key = { it.definition.id }) { badge ->
                     AtlasAchievementRow(badge)
@@ -117,7 +120,7 @@ fun AtlasDetailScreen(
 
             if (detailUi.items.isNotEmpty()) {
                 item {
-                    Text("收录项目", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("收录项目", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                 }
                 items(detailUi.items, key = { it.attractionId }) { item ->
                     AtlasItemRow(item)
@@ -130,17 +133,17 @@ fun AtlasDetailScreen(
 @Composable
 private fun AtlasAchievementRow(item: AchievementWithProgress) {
     val rarityColor = when (item.definition.rarity) {
-        AchievementRarity.COMMON -> Color(0xFF90CAF9)
-        AchievementRarity.RARE -> Color(0xFF69F0AE)
-        AchievementRarity.EPIC -> Color(0xFFCE93D8)
-        AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
+        AchievementRarity.COMMON -> MapChinaColors.AccentBlue
+        AchievementRarity.RARE -> MapChinaColors.RarityRare
+        AchievementRarity.EPIC -> MapChinaColors.RarityEpic
+        AchievementRarity.LEGENDARY -> MapChinaColors.AccentGold
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp),
-        colors = CardDefaults.cardColors(containerColor = if (item.isUnlocked) Color(0xFF1A2C3D) else Color(0xFF1F1F33))
+        colors = CardDefaults.cardColors(containerColor = if (item.isUnlocked) MapChinaColors.SurfaceElevated else MapChinaColors.CardBackgroundLight)
     ) {
         Row(
             modifier = Modifier
@@ -152,29 +155,29 @@ private fun AtlasAchievementRow(item: AchievementWithProgress) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)),
+                    .background(if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else MapChinaColors.CardBackgroundLight),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(18.dp)
                         .clip(CircleShape)
-                        .background(if (item.isUnlocked) rarityColor else Color.Gray)
+                        .background(if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary)
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     item.definition.name,
-                    color = if (item.isUnlocked) Color.White else Color.Gray,
+                    color = if (item.isUnlocked) MapChinaColors.TextPrimary else MapChinaColors.TextTertiary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Text(item.definition.description, color = Color.Gray, fontSize = 12.sp)
+                Text(item.definition.description, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
             }
             Text(
                 "${item.progressValue}/${item.progressTarget}",
-                color = if (item.isUnlocked) rarityColor else Color.Gray,
+                color = if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary,
                 fontSize = 13.sp
             )
         }
@@ -187,7 +190,9 @@ private fun AtlasItemRow(item: AtlasItemVisitStatus) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Row(
             modifier = Modifier
@@ -199,12 +204,12 @@ private fun AtlasItemRow(item: AtlasItemVisitStatus) {
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(if (item.isVisited) MapChinaColors.Primary else Color(0xFF213647))
+                    .background(if (item.isVisited) MapChinaColors.Primary else MapChinaColors.CardBackgroundLight)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.itemName, color = if (item.isVisited) Color.White else Color.Gray, fontSize = 14.sp)
-                Text("${item.province} ${item.city}", color = Color.Gray, fontSize = 11.sp)
+                Text(item.itemName, color = if (item.isVisited) MapChinaColors.TextPrimary else MapChinaColors.TextTertiary, fontSize = 14.sp)
+                Text("${item.province} ${item.city}", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
             }
             if (item.isVisited) {
                 Text("已点亮", color = MapChinaColors.Primary, fontSize = 11.sp)

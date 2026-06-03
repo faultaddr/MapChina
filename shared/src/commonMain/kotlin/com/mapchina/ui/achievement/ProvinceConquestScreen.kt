@@ -44,7 +44,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.ProvinceConquestInfo
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,11 +67,11 @@ fun ProvinceConquestScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text("省份征服", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text("省份征服", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         // 总览卡片
@@ -73,14 +79,16 @@ fun ProvinceConquestScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+            colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("已到访省份", color = Color.Gray, fontSize = 13.sp)
+                    Text("已到访省份", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
                     Text("${ui.visitedProvinceCount}/${ui.totalProvinceCount}", color = MapChinaColors.Primary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -88,14 +96,26 @@ fun ProvinceConquestScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("已完成省份", color = Color.Gray, fontSize = 13.sp)
-                    Text("${ui.completedProvinceCount}", color = Color(0xFFFFD700), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("已完成省份", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                    Text("${ui.completedProvinceCount}", color = MapChinaColors.AccentGold, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        if (ui.isLoading) {
+            // Shimmer skeleton
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(8) {
+                    ShimmerCard()
+                }
+            }
+        } else {
         // 省份列表
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -109,6 +129,42 @@ fun ProvinceConquestScreen(
                 )
             }
         }
+        }
+    }
+}
+
+@Composable
+private fun ShimmerCard() {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val shimmerAlpha by transition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shimmerAlpha"
+    )
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+        border = MapChinaCard.border,
+        elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(MapChinaColors.TextTertiary.copy(alpha = shimmerAlpha)))
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.fillMaxWidth(0.3f).height(14.dp).clip(RoundedCornerShape(4.dp)).background(MapChinaColors.TextTertiary.copy(alpha = shimmerAlpha)))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(MapChinaColors.TextTertiary.copy(alpha = shimmerAlpha)))
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.width(60.dp).height(10.dp).clip(RoundedCornerShape(4.dp)).background(MapChinaColors.TextTertiary.copy(alpha = shimmerAlpha)))
+                Box(modifier = Modifier.width(60.dp).height(10.dp).clip(RoundedCornerShape(4.dp)).background(MapChinaColors.TextTertiary.copy(alpha = shimmerAlpha)))
+            }
+        }
     }
 }
 
@@ -118,19 +174,21 @@ private fun ProvinceConquestRow(
     onClick: () -> Unit
 ) {
     val progressColor = when (info.colorLevel) {
-        0 -> Color(0xFF213647)
-        1 -> Color(0xFF4A6FA5)
+        0 -> MapChinaColors.CardBackgroundLight
+        1 -> MapChinaColors.AccentBlue.copy(alpha = 0.7f)
         2 -> MapChinaColors.Primary
-        3 -> Color(0xFFFF6B6B)
-        4 -> Color(0xFFFFD700)
-        else -> Color(0xFF213647)
+        3 -> MapChinaColors.Error
+        4 -> MapChinaColors.AccentGold
+        else -> MapChinaColors.CardBackgroundLight
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2C3D))
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                border = MapChinaCard.border,
+                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -146,13 +204,13 @@ private fun ProvinceConquestRow(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     info.provinceName,
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f)
                 )
                 if (info.hasCompleteBadge) {
-                    Text("已完成", color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("已完成", color = MapChinaColors.AccentGold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 } else if (info.hasVisitBadge) {
                     Text("已到访", color = MapChinaColors.Primary, fontSize = 11.sp)
                 }
@@ -167,15 +225,15 @@ private fun ProvinceConquestRow(
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = progressColor,
-                trackColor = Color(0xFF0F1923)
+                trackColor = MapChinaColors.Background
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("城市 ${info.visitedCities}/${info.totalCities}", color = Color.Gray, fontSize = 11.sp)
-                Text("景点 ${info.visitedAttractions}/${info.totalAttractions}", color = Color.Gray, fontSize = 11.sp)
+                Text("城市 ${info.visitedCities}/${info.totalCities}", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+                Text("景点 ${info.visitedAttractions}/${info.totalAttractions}", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
             }
         }
     }

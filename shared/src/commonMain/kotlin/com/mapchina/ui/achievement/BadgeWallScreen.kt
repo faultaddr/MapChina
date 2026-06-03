@@ -1,5 +1,6 @@
 package com.mapchina.ui.achievement
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +43,35 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementCategory
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.ui.theme.MapChinaColors
+import mapchina.shared.generated.resources.Res
+import mapchina.shared.generated.resources.badge_5a
+import mapchina.shared.generated.resources.badge_atlas_heritage
+import mapchina.shared.generated.resources.badge_atlas_mountain
+import mapchina.shared.generated.resources.badge_atlas_museum
+import mapchina.shared.generated.resources.badge_city
+import mapchina.shared.generated.resources.badge_district
+import mapchina.shared.generated.resources.badge_geo
+import mapchina.shared.generated.resources.badge_province
+import mapchina.shared.generated.resources.badge_province_complete
+import mapchina.shared.generated.resources.badge_province_visit
+import mapchina.shared.generated.resources.badge_total
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+
+internal fun badgeDrawable(icon: String): DrawableResource = when (icon) {
+    "badge_district" -> Res.drawable.badge_district
+    "badge_city" -> Res.drawable.badge_city
+    "badge_province" -> Res.drawable.badge_province
+    "badge_5a" -> Res.drawable.badge_5a
+    "badge_total" -> Res.drawable.badge_total
+    "badge_atlas_heritage" -> Res.drawable.badge_atlas_heritage
+    "badge_atlas_museum" -> Res.drawable.badge_atlas_museum
+    "badge_atlas_mountain" -> Res.drawable.badge_atlas_mountain
+    "badge_province_visit" -> Res.drawable.badge_province_visit
+    "badge_province_complete" -> Res.drawable.badge_province_complete
+    "badge_geo" -> Res.drawable.badge_geo
+    else -> Res.drawable.badge_district
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +83,8 @@ fun BadgeWallScreen(
 ) {
     val ui by (viewModel?.ui?.collectAsState() ?: remember { androidx.compose.runtime.mutableStateOf(AchievementUi()) })
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(viewModel) { viewModel?.refresh() }
     val tabs = listOf("全部", "地区", "景点")
 
     val filteredAchievements = when (selectedTab) {
@@ -62,17 +96,17 @@ fun BadgeWallScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1923))
+            .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text("徽章墙", color = Color.White) },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F1923))
+            title = { Text("徽章墙", color = MapChinaColors.TextPrimary) },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
         TabRow(
             selectedTabIndex = selectedTab,
-            containerColor = Color(0xFF0F1923),
-            contentColor = Color.White,
+            containerColor = MapChinaColors.Background,
+            contentColor = MapChinaColors.TextPrimary,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
@@ -84,7 +118,7 @@ fun BadgeWallScreen(
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = { Text(title, color = if (selectedTab == index) Color.White else Color.Gray) }
+                    text = { Text(title, color = if (selectedTab == index) MapChinaColors.Primary else MapChinaColors.TextTertiary) }
                 )
             }
         }
@@ -112,17 +146,18 @@ private fun BadgeGridItem(
     onClick: () -> Unit
 ) {
     val rarityColor = when (item.definition.rarity) {
-        AchievementRarity.COMMON -> Color(0xFF90CAF9)
-        AchievementRarity.RARE -> Color(0xFF69F0AE)
-        AchievementRarity.EPIC -> Color(0xFFCE93D8)
-        AchievementRarity.LEGENDARY -> Color(0xFFFFD700)
+        AchievementRarity.COMMON -> MapChinaColors.AccentBlue
+        AchievementRarity.RARE -> MapChinaColors.RarityRare
+        AchievementRarity.EPIC -> MapChinaColors.RarityEpic
+        AchievementRarity.LEGENDARY -> MapChinaColors.AccentGold
     }
     val alpha = if (item.isUnlocked) 1f else 0.3f
+    val bgColor = if (item.isUnlocked) rarityColor.copy(alpha = 0.15f) else MapChinaColors.CardBackgroundLight
 
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1A2C3D))
+            .background(MapChinaColors.SurfaceElevated)
             .clickable { onClick() }
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -131,22 +166,23 @@ private fun BadgeGridItem(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(
-                    if (item.isUnlocked) rarityColor.copy(alpha = 0.2f) else Color(0xFF213647)
-                ),
+                .background(bgColor),
             contentAlignment = Alignment.Center
         ) {
-            Box(
+            Image(
+                painter = painterResource(badgeDrawable(item.definition.icon)),
+                contentDescription = item.definition.name,
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(if (item.isUnlocked) rarityColor.copy(alpha = alpha) else Color.Gray.copy(alpha = alpha))
+                    .size(40.dp)
+                    .padding(2.dp),
+                alpha = alpha,
+                contentScale = ContentScale.Fit
             )
         }
         androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(8.dp))
         Text(
             item.definition.name,
-            color = if (item.isUnlocked) Color.White else Color.Gray,
+            color = if (item.isUnlocked) MapChinaColors.TextPrimary else MapChinaColors.TextTertiary,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
@@ -154,7 +190,7 @@ private fun BadgeGridItem(
         )
         Text(
             "${item.progressValue}/${item.progressTarget}",
-            color = if (item.isUnlocked) rarityColor else Color.Gray,
+            color = if (item.isUnlocked) rarityColor else MapChinaColors.TextTertiary,
             fontSize = 10.sp
         )
     }

@@ -68,11 +68,11 @@ fun JournalListScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
                 }
                 Text(
                     "我的游记",
-                    color = Color.White,
+                    color = MapChinaColors.TextPrimary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
@@ -100,9 +100,9 @@ fun JournalListScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("还没有游记", color = Color(0xFF8AA0B0), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("还没有游记", color = MapChinaColors.TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("点击右下角 + 开始记录旅途", color = Color(0xFF5A7080), fontSize = 14.sp)
+                        Text("点击右下角 + 开始记录旅途", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
                     }
                 }
             } else {
@@ -127,7 +127,7 @@ fun JournalListScreen(
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = 24.dp),
             containerColor = MapChinaColors.Primary,
-            contentColor = Color.White,
+            contentColor = MapChinaColors.TextPrimary,
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "新建游记", modifier = Modifier.size(28.dp))
@@ -151,7 +151,7 @@ private fun JournalCard(journal: Journal, onClick: () -> Unit) {
         Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
             Text(
                 journal.title,
-                color = Color.White,
+                color = MapChinaColors.TextPrimary,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -161,7 +161,7 @@ private fun JournalCard(journal: Journal, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     journal.description,
-                    color = Color(0xFF8AA0B0),
+                    color = MapChinaColors.TextSecondary,
                     fontSize = 14.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -184,10 +184,10 @@ private fun JournalCard(journal: Journal, onClick: () -> Unit) {
                         Icons.Default.LocationOn,
                         contentDescription = null,
                         modifier = Modifier.size(13.dp),
-                        tint = Color(0xFFF4A261).copy(alpha = 0.7f)
+                        tint = MapChinaColors.FootprintShortVisit.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.width(5.dp))
-                    Text("已关联区域", color = Color(0xFFF4A261).copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("已关联区域", color = MapChinaColors.FootprintShortVisit.copy(alpha = 0.7f), fontSize = 12.sp)
                 }
             }
         }

@@ -87,9 +87,19 @@ object AchievementSeeder {
         }
     }
 
+    private val geoSeeds = listOf(
+        // Geographic exploration achievements
+        SeedDef("geo_north", "GEOGRAPHY", "north", "极北之地", "到访最北省份黑龙江", "badge_geo", "RARE", "GEO", "geo:north:23", 200, 300),
+        SeedDef("geo_south", "GEOGRAPHY", "south", "天涯海角", "到访最南省份海南", "badge_geo", "RARE", "GEO", "geo:south:46", 200, 301),
+        SeedDef("geo_silk_road", "GEOGRAPHY", "silk_road", "丝路起点", "到访甘肃和陕西", "badge_geo", "EPIC", "GEO", "geo:silk_road:2", 500, 302),
+        SeedDef("geo_coast", "GEOGRAPHY", "coast", "海岸线", "到访3个沿海省份", "badge_geo", "RARE", "GEO", "geo:coast:3", 200, 303),
+        SeedDef("geo_river", "GEOGRAPHY", "river", "跨越大江", "到访长江南北各至少1个省", "badge_geo", "EPIC", "GEO", "geo:cross_river:2", 500, 304),
+        SeedDef("geo_same_day_3", "GEOGRAPHY", "same_day", "一日三省", "同一天标记3个不同省的足迹", "badge_geo", "LEGENDARY", "GEO", "geo:same_day_3:3", 1000, 305),
+    )
+
     fun seedAchievements(repo: AchievementRepository) {
         if (repo.getAllDefinitions().isNotEmpty()) return
-        for (s in seeds + atlasSeeds + provinceSeeds) {
+        for (s in seeds + atlasSeeds + provinceSeeds + geoSeeds) {
             repo.insertDefinition(
                 s.id, s.category, s.subCategory, s.name, s.description, s.icon,
                 s.rarity, s.triggerType, s.triggerCondition, s.rewardScore, s.sortOrder

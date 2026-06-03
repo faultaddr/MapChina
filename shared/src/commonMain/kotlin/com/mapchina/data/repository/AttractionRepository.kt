@@ -10,7 +10,8 @@ class AttractionRepository(private val database: MapChinaDatabase) {
         database.attractionQueries.insertAttraction(
             attraction.id, attraction.name, attraction.regionId,
             attraction.level.name, attraction.latitude, attraction.longitude,
-            attraction.description
+            attraction.description, attraction.imageUrl,
+            if (attraction.isCustom) 1L else 0L, attraction.userId
         )
     }
 
@@ -20,10 +21,19 @@ class AttractionRepository(private val database: MapChinaDatabase) {
                 database.attractionQueries.insertAttraction(
                     attraction.id, attraction.name, attraction.regionId,
                     attraction.level.name, attraction.latitude, attraction.longitude,
-                    attraction.description
+                    attraction.description, attraction.imageUrl,
+                    if (attraction.isCustom) 1L else 0L, attraction.userId
                 )
             }
         }
+    }
+
+    fun getCustomAttractions(userId: String): List<Attraction> {
+        return database.attractionQueries.selectCustomByUserId(userId).executeAsList().map { rowToAttraction(it) }
+    }
+
+    fun updateImageUrl(id: String, imageUrl: String?) {
+        database.attractionQueries.updateImageUrl(imageUrl, id)
     }
 
     fun getAttraction(id: String): Attraction? {
@@ -61,9 +71,12 @@ class AttractionRepository(private val database: MapChinaDatabase) {
             id = row.id,
             name = row.name,
             regionId = row.region_id,
-            level = AttractionLevel.valueOf(row.level),
+            level = try { AttractionLevel.valueOf(row.level) } catch (_: Exception) { AttractionLevel.A4 },
             latitude = row.latitude,
             longitude = row.longitude,
-            description = row.description
+            description = row.description,
+            imageUrl = row.image_url,
+            isCustom = row.is_custom == 1L,
+            userId = row.user_id
         )
 }
