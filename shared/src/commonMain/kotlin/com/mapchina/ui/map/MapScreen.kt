@@ -45,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +68,8 @@ import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
@@ -117,8 +120,9 @@ fun MapScreen(
     var showRegionCard by remember { mutableStateOf(false) }
     var showAttractionsSheet by remember { mutableStateOf(false) }
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
+    val scope = rememberCoroutineScope()
 
-    val canDrillDown = currentLevel.nextDrillDown() != null
+    val canDrillDown = currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL
     val levelLabel = when (currentLevel) {
         MapZoomLevel.NATIONAL -> "省"
         MapZoomLevel.PROVINCIAL -> "市"
@@ -198,8 +202,14 @@ fun MapScreen(
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         AnimatedVisibility(
             visible = showRegionCard && selectedRegion != null,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(tween(200)),
+            exit = slideOutVertically(
+                targetOffsetY = { it / 2 },
+                animationSpec = tween(200)
+            ) + fadeOut(tween(150)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomBarOffset)
@@ -213,8 +223,12 @@ fun MapScreen(
                         viewModel.markFootprint(regionId, level)
                     },
                     onDrillDown = {
+                        val regionId = selectedRegion!!.regionId
                         showRegionCard = false
-                        viewModel.drillIntoRegion(selectedRegion!!.regionId)
+                        scope.launch {
+                            delay(200)
+                            viewModel.drillIntoRegion(regionId)
+                        }
                     },
                     onShowAttractions = {
                         showAttractionsSheet = true
