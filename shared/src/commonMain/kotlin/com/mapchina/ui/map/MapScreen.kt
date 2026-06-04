@@ -122,7 +122,7 @@ fun MapScreen(
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
     val scope = rememberCoroutineScope()
 
-    val canDrillDown = currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL
+    val canDrillDown = selectedRegion?.let { viewModel.canDrillIntoRegion(it.regionId) } ?: (currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL)
     val levelLabel = when (currentLevel) {
         MapZoomLevel.NATIONAL -> "省"
         MapZoomLevel.PROVINCIAL -> "市"
