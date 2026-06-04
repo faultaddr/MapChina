@@ -124,23 +124,47 @@ actual class BoundaryLoader(private val context: Context) {
     private fun parseAttractionSeeds(jsonString: String): List<AttractionSeed>? {
         return try {
             val json = Json.parseToJsonElement(jsonString).jsonArray
+            // Load image URL map from attraction_details.json
+            val imageMap = loadAttractionImageMap()
             val result = mutableListOf<AttractionSeed>()
             for (item in json) {
                 val obj = item.jsonObject
+                val id = obj["id"]?.jsonPrimitive?.content ?: continue
                 result.add(AttractionSeed(
-                    id = obj["id"]?.jsonPrimitive?.content ?: continue,
+                    id = id,
                     name = obj["name"]?.jsonPrimitive?.content ?: continue,
                     regionId = obj["regionId"]?.jsonPrimitive?.content ?: continue,
                     level = obj["level"]?.jsonPrimitive?.content ?: continue,
                     latitude = obj["latitude"]?.jsonPrimitive?.content?.toDouble() ?: continue,
                     longitude = obj["longitude"]?.jsonPrimitive?.content?.toDouble() ?: continue,
-                    description = obj["description"]?.jsonPrimitive?.content ?: ""
+                    description = obj["description"]?.jsonPrimitive?.content ?: "",
+                    imageUrl = imageMap[id]
                 ))
             }
             if (result.isEmpty()) null else result
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun loadAttractionImageMap(): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        try {
+            val detailJson = context.assets.open("attraction_details.json")
+                .bufferedReader().use { it.readText() }
+            val array = Json.parseToJsonElement(detailJson).jsonArray
+            for (item in array) {
+                val obj = item.jsonObject
+                val id = obj["id"]?.jsonPrimitive?.content ?: continue
+                val firstImage = obj["iu"]?.jsonArray?.firstOrNull()
+                    ?.jsonPrimitive?.content?.replace("http://", "https://")
+                if (firstImage != null) {
+                    map[id] = firstImage
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return map
     }
 
     actual fun getAvailableRegionIds(): List<String> {

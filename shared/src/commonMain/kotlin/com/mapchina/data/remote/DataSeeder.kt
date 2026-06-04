@@ -553,7 +553,8 @@ object DataSeeder {
                 level = AttractionLevel.valueOf(seed.level),
                 latitude = seed.latitude,
                 longitude = seed.longitude,
-                description = seed.description
+                description = seed.description,
+                imageUrl = seed.imageUrl
             )
         }
         attractionRepo.insertAttractionsInTransaction(attractions)

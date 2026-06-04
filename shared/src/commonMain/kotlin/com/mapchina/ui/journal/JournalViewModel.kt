@@ -114,6 +114,20 @@ class JournalViewModel(
         _createUi.value = _createUi.value.copy(selectedLocation = null)
     }
 
+    fun setInitialAttraction(attractionId: String) {
+        if (_createUi.value.selectedLocation != null) return
+        val attraction = attractionRepository.getAttraction(attractionId) ?: return
+        val regionName = attraction.regionId.let { regionRepository.getRegion(it)?.name }
+        _createUi.value = _createUi.value.copy(
+            selectedLocation = LocationItem(
+                id = attraction.id,
+                name = attraction.name,
+                type = LocationType.ATTRACTION,
+                subtitle = regionName ?: "景点"
+            )
+        )
+    }
+
     fun searchLocations(query: String) {
         _createUi.value = _createUi.value.copy(searchQuery = query)
         if (query.isBlank()) {
@@ -159,5 +173,9 @@ class JournalViewModel(
 
     fun clearDetail() {
         _detailUi.value = JournalDetailUi()
+    }
+
+    fun getJournalsByAttraction(attractionId: String): List<Journal> {
+        return journalService.getJournalsByAttraction(attractionId)
     }
 }

@@ -13,7 +13,8 @@ data class AttractionSeed(
     val level: String,
     val latitude: Double,
     val longitude: Double,
-    val description: String
+    val description: String,
+    val imageUrl: String? = null
 )
 
 expect class BoundaryLoader {

@@ -168,10 +168,13 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val viewModel: AttractionViewModel = koinInject()
             val attraction = remember(attractionId) { viewModel.getAttractionById(attractionId) }
             val detail = remember(attractionId) { viewModel.getAttractionDetail(attractionId) }
+            val journalVm: JournalViewModel = koinInject()
+            val journals = remember(attractionId) { journalVm.getJournalsByAttraction(attractionId) }
             AttractionDetailScreen(
                 navController = navController,
                 attraction = attraction,
                 detail = detail,
+                journals = journals,
                 onMarkVisit = { level ->
                     attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
                 },
@@ -180,7 +183,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 },
                 onWriteJournal = {
                     attraction?.let { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen(attractionId = it.id)) }
-                }
+                },
+                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) }
             )
         }
         composable<com.mapchina.ui.navigation.JournalListScreen> {

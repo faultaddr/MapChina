@@ -94,22 +94,14 @@ fun ProfileScreen(
     val stats by (statsViewModel?.stats?.collectAsState() ?: remember { mutableStateOf(StatsUi()) })
 
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("我的", "成就", "设置")
+    val tabs = listOf("我的", "成就")
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .background(MapChinaColors.Background)
+            .statusBarsPadding()
     ) {
-        Text(
-            "我的",
-            color = MapChinaColors.TextPrimary,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
-        )
-
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.Transparent,
@@ -138,8 +130,13 @@ fun ProfileScreen(
             0 -> ProfileTab(
                 profile = profile,
                 isLoggedIn = isLoggedIn,
+                stats = stats,
                 onNavigateToJournals = onNavigateToJournals,
                 onNavigateToLogin = onNavigateToLogin,
+                onNavigateToBadgeWall = onNavigateToBadgeWall,
+                onNavigateToProvinceConquest = onNavigateToProvinceConquest,
+                onNavigateToAtlas = onNavigateToAtlas,
+                settingsRepository = viewModel?.settingsRepository,
                 onLogout = { viewModel?.logout() }
             )
             1 -> AchievementTabContent(
@@ -149,7 +146,6 @@ fun ProfileScreen(
                 onNavigateToProvinceConquest = onNavigateToProvinceConquest,
                 onNavigateToAtlas = onNavigateToAtlas
             )
-            2 -> SettingsTabContent(settingsRepository = viewModel?.settingsRepository)
         }
     }
 }
@@ -158,8 +154,13 @@ fun ProfileScreen(
 private fun ProfileTab(
     profile: ProfileUi,
     isLoggedIn: Boolean,
+    stats: StatsUi,
     onNavigateToJournals: (() -> Unit)?,
     onNavigateToLogin: (() -> Unit)?,
+    onNavigateToBadgeWall: (() -> Unit)?,
+    onNavigateToProvinceConquest: (() -> Unit)?,
+    onNavigateToAtlas: (() -> Unit)?,
+    settingsRepository: SettingsRepository?,
     onLogout: (() -> Unit)?
 ) {
     LazyColumn(
@@ -167,6 +168,7 @@ private fun ProfileTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
     ) {
+        // Compact user card
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -175,123 +177,138 @@ private fun ProfileTab(
                 border = MapChinaCard.border,
                 elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Decorative gradient header
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        MapChinaColors.Primary,
-                                        MapChinaColors.PrimaryVariant
-                                    )
-                                ),
-                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                            )
-                    )
-                    // Overlapping avatar
-                    Box(
-                        modifier = Modifier.offset(y = (-40).dp)
-                    ) {
-                        LevelBadgeIcon(
-                            level = profile.levelInfo?.currentLevel ?: 1,
-                            modifier = Modifier.size(72.dp)
-                        )
-                    }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
-                            .offset(y = (-24).dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(profile.nickname, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MapChinaColors.TextPrimary)
-                        if (profile.phone != null) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(profile.phone!!, fontSize = 14.sp, color = MapChinaColors.TextTertiary)
-                        }
-
-                        val levelInfo = profile.levelInfo
-                        if (isLoggedIn && levelInfo != null) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(MapChinaColors.Primary),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        "Lv${levelInfo.currentLevel}",
-                                        color = MapChinaColors.SurfaceElevated,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        levelInfo.currentTitle,
-                                        color = MapChinaColors.TextPrimary,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    if (!levelInfo.isMaxLevel) {
-                                        LinearProgressIndicator(
-                                            progress = { levelInfo.progressToNext },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(4.dp)
-                                                .clip(RoundedCornerShape(2.dp)),
-                                            color = MapChinaColors.Primary,
-                                            trackColor = MapChinaColors.Background
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "${levelInfo.currentScore}",
-                                    color = MapChinaColors.Primary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth().clickable { onNavigateToJournals?.invoke() },
-                shape = MapChinaCard.shape,
-                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                border = MapChinaCard.border,
-                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Book, contentDescription = null, tint = MapChinaColors.Primary, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("我的游记", color = MapChinaColors.TextPrimary, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
+                    LevelBadgeIcon(
+                        level = profile.levelInfo?.currentLevel ?: 1,
+                        modifier = Modifier.size(52.dp)
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(profile.nickname, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MapChinaColors.TextPrimary)
+                        if (isLoggedIn && profile.levelInfo != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MapChinaColors.Primary.copy(alpha = 0.12f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("Lv${profile.levelInfo!!.currentLevel}", color = MapChinaColors.Primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(profile.levelInfo!!.currentTitle, color = MapChinaColors.TextSecondary, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("${profile.levelInfo!!.currentScore} 山河值", color = MapChinaColors.AccentGold, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("登录后解锁完整功能", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                        }
+                    }
+                    if (!isLoggedIn) {
+                        Button(
+                            onClick = { onNavigateToLogin?.invoke() },
+                            colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                        ) { Text("登录", fontSize = 13.sp) }
+                    }
                 }
             }
         }
 
+        // Footprint stats row
         item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FootprintStatCard("省", stats.visitedProvinces, stats.totalProvinces, MapChinaColors.Primary, modifier = Modifier.weight(1f))
+                FootprintStatCard("市", stats.visitedCities, stats.totalCities, MapChinaColors.AccentGold, modifier = Modifier.weight(1f))
+                FootprintStatCard("区", stats.visitedDistricts, stats.totalDistricts, MapChinaColors.FootprintShortVisit, modifier = Modifier.weight(1f))
+            }
+        }
+
+        // Feature grid (2x2)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeatureCard(
+                        icon = Icons.Default.Book,
+                        title = "我的游记",
+                        subtitle = "记录旅途故事",
+                        tint = MapChinaColors.Primary,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToJournals?.invoke() }
+                    )
+                    FeatureCard(
+                        icon = Icons.Default.WorkspacePremium,
+                        title = "徽章墙",
+                        subtitle = "收集旅行荣誉",
+                        tint = MapChinaColors.AccentGold,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToBadgeWall?.invoke() }
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeatureCard(
+                        icon = Icons.Default.Map,
+                        title = "省份征服",
+                        subtitle = "点亮中国版图",
+                        tint = MapChinaColors.FootprintDeep,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToProvinceConquest?.invoke() }
+                    )
+                    FeatureCard(
+                        icon = Icons.Default.AutoStories,
+                        title = "主题图鉴",
+                        subtitle = "按主题探索中国",
+                        tint = MapChinaColors.RarityEpic,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToAtlas?.invoke() }
+                    )
+                }
+            }
+        }
+
+        // Level progress (if logged in)
+        if (isLoggedIn && profile.levelInfo != null && !profile.levelInfo!!.isMaxLevel) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MapChinaCard.shape,
+                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+                    border = MapChinaCard.border,
+                    elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("距离 ${profile.levelInfo!!.nextTitle}", color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("还差 ${profile.levelInfo!!.nextLevelScore - profile.levelInfo!!.currentScore} 山河值", color = MapChinaColors.Primary, fontSize = 13.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { profile.levelInfo!!.progressToNext },
+                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                            color = MapChinaColors.Primary,
+                            trackColor = MapChinaColors.Background
+                        )
+                    }
+                }
+            }
+        }
+
+        // Settings section
+        item {
+            var photoMarkersVisible by remember { mutableStateOf(settingsRepository?.getString("photo_markers_visible") != "false") }
+            var autoMarkFootprint by remember { mutableStateOf(settingsRepository?.getString("auto_mark_footprint") != "false") }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MapChinaCard.shape,
@@ -300,45 +317,130 @@ private fun ProfileTab(
                 elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Explore, contentDescription = null, tint = MapChinaColors.FootprintDeep, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("足迹统计", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    val levelInfo = profile.levelInfo
-                    if (isLoggedIn && levelInfo != null) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            StatItem("山河值", "${levelInfo.currentScore}", MapChinaColors.Primary)
-                            StatItem("等级", "Lv${levelInfo.currentLevel}", MapChinaColors.AccentGold)
-                            StatItem("称号", levelInfo.currentTitle, MapChinaColors.FootprintShortVisit)
-                        }
-                    } else {
-                        Text("登录后查看足迹统计", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
-                    }
+                    Text("设置", color = MapChinaColors.TextTertiary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    SettingsRow("照片标记", photoMarkersVisible, { photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
+                    Spacer(modifier = Modifier.height(6.dp))
+                    SettingsRow("自动标记足迹", autoMarkFootprint, { autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
                 }
             }
         }
 
+        // Logout / version
         item {
-            Spacer(modifier = Modifier.height(16.dp))
             if (isLoggedIn) {
-                Button(
-                    onClick = { onLogout?.invoke() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Error),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("退出登录") }
-            } else {
-                Button(
-                    onClick = { onNavigateToLogin?.invoke() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("登录") }
+                Text(
+                    "退出登录",
+                    color = MapChinaColors.Error,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onLogout?.invoke() }
+                        .padding(vertical = 8.dp)
+                )
+            }
+            Text(
+                "MapChina v1.0.0",
+                color = MapChinaColors.TextTertiary.copy(alpha = 0.5f),
+                fontSize = 11.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun FootprintStatCard(
+    label: String,
+    visited: Int,
+    total: Int,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val percent = if (total > 0) visited.toFloat() / total else 0f
+    Card(
+        modifier = modifier,
+        shape = MapChinaCard.shape,
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+        border = MapChinaCard.border,
+        elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("$visited", color = accentColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("/$total$label", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { percent },
+                modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(1.5.dp)),
+                color = accentColor,
+                trackColor = MapChinaColors.Background
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeatureCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    tint: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = MapChinaCard.shape,
+        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
+        border = MapChinaCard.border,
+        elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(tint.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(title, color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, color = MapChinaColors.TextTertiary, fontSize = 11.sp)
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(title, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MapChinaColors.Primary,
+                checkedThumbColor = MapChinaColors.SurfaceElevated
+            )
+        )
     }
 }
 
@@ -443,108 +545,6 @@ private fun AchievementTabContent(
         item { CoverageSection("省份", stats.visitedProvinces, stats.totalProvinces, stats.provincePercent) }
         item { CoverageSection("城市", stats.visitedCities, stats.totalCities, stats.cityPercent) }
         item { CoverageSection("区县", stats.visitedDistricts, stats.totalDistricts, stats.districtPercent) }
-    }
-}
-
-@Composable
-private fun SettingsTabContent(settingsRepository: SettingsRepository?) {
-    var photoMarkersVisible by remember { mutableStateOf(settingsRepository?.getString("photo_markers_visible") != "false") }
-    var autoMarkFootprint by remember { mutableStateOf(settingsRepository?.getString("auto_mark_footprint") != "false") }
-    var showZoomControls by remember { mutableStateOf(settingsRepository?.getString("show_zoom_controls") == "true") }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item {
-            Text("显示", color = MapChinaColors.TextTertiary, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 4.dp))
-        }
-        item {
-            SettingsSwitch(
-                title = "照片标记",
-                description = "在地图上显示拍摄的照片标记",
-                checked = photoMarkersVisible,
-                onCheckedChange = {
-                    photoMarkersVisible = it
-                    settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false")
-                }
-            )
-        }
-        item {
-            SettingsSwitch(
-                title = "地图缩放按钮",
-                description = "显示地图右下角的 +/- 缩放按钮",
-                checked = showZoomControls,
-                onCheckedChange = {
-                    showZoomControls = it
-                    settingsRepository?.setString("show_zoom_controls", if (it) "true" else "false")
-                }
-            )
-        }
-        item {
-            Text("行为", color = MapChinaColors.TextTertiary, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
-        }
-        item {
-            SettingsSwitch(
-                title = "自动标记足迹",
-                description = "根据 GPS 位置自动标记到访区域",
-                checked = autoMarkFootprint,
-                onCheckedChange = {
-                    autoMarkFootprint = it
-                    settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false")
-                }
-            )
-        }
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                border = MapChinaCard.border,
-                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("MapChina", color = MapChinaColors.Primary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("v1.0.0", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsSwitch(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-        border = MapChinaCard.border,
-        elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = MapChinaColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                Text(description, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MapChinaColors.Primary,
-                    checkedThumbColor = MapChinaColors.SurfaceElevated
-                )
-            )
-        }
     }
 }
 
@@ -762,14 +762,6 @@ private fun CoverageSection(
             fontSize = 12.sp,
             color = MapChinaColors.TextTertiary
         )
-    }
-}
-
-@Composable
-private fun StatItem(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text(label, color = MapChinaColors.TextTertiary, fontSize = 11.sp)
     }
 }
 

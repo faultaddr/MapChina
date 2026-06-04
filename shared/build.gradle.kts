@@ -26,15 +26,15 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
             implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.8.0-alpha10")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-            implementation("io.ktor:ktor-client-core:3.1.3")
+            implementation("io.ktor:ktor-client-core:3.3.3")
             implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
             implementation("io.insert-koin:koin-core:4.0.4")
             implementation("io.insert-koin:koin-compose:4.0.4")
             implementation("app.cash.sqldelight:runtime:2.0.2")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             implementation("io.coil-kt.coil3:coil-compose:3.1.0")
             implementation("io.coil-kt.coil3:coil-network-ktor3:3.1.0")
         }
@@ -47,7 +47,7 @@ kotlin {
             implementation("app.cash.sqldelight:android-driver:2.0.2")
             implementation("io.insert-koin:koin-android:4.0.4")
             implementation("com.amap.api:3dmap:10.0.600")
-            implementation("androidx.exifinterface:exifinterface:1.3.7")
+            implementation("androidx.exifinterface:exifinterface:1.4.2")
             implementation("androidx.ink:ink-authoring-compose:1.0.0")
             implementation("androidx.ink:ink-authoring:1.0.0")
             implementation("androidx.ink:ink-brush:1.0.0")
@@ -68,7 +68,7 @@ kotlin {
 
 android {
     namespace = "com.mapchina.shared"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig { minSdk = 26 }
 
     testOptions {

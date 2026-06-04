@@ -341,7 +341,10 @@ class MapViewModel(
     }
 
     fun canDrillIntoRegion(regionId: String): Boolean {
-        return !childrenIndex[regionId].isNullOrEmpty()
+        val hasChildren = !childrenIndex[regionId].isNullOrEmpty()
+        if (hasChildren) return true
+        val region = regionRepository.getRegion(regionId) ?: return false
+        return region.level != RegionLevel.DISTRICT
     }
 
     fun getAttractionCountForRegion(regionId: String): Int {

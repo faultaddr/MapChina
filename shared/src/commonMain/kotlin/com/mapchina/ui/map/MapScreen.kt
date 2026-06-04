@@ -123,12 +123,12 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
 
-    val canDrillDown = selectedRegion?.let { viewModel.canDrillIntoRegion(it.regionId) } ?: (currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL)
+    val canDrillDown = selectedRegion?.let { viewModel.canDrillIntoRegion(it.regionId) } ?: (currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL || currentLevel == MapZoomLevel.CITY)
     val levelLabel = when (currentLevel) {
-        MapZoomLevel.NATIONAL -> "省"
-        MapZoomLevel.PROVINCIAL -> "市"
-        MapZoomLevel.CITY -> "区"
-        MapZoomLevel.DISTRICT -> "区"
+        MapZoomLevel.NATIONAL -> "国家"
+        MapZoomLevel.PROVINCIAL -> "省"
+        MapZoomLevel.CITY -> "市"
+        MapZoomLevel.DISTRICT -> "县"
     }
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
     val totalCount = regions.size

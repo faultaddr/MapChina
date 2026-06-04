@@ -58,6 +58,10 @@ class JournalService(
         return journalRepository.getJournalsByUser(userId)
     }
 
+    fun getJournalsByAttraction(attractionId: String): List<Journal> {
+        return journalRepository.getJournalsByAttraction(attractionId)
+    }
+
     fun getJournalDetail(journalId: String): JournalDetail? {
         val journal = journalRepository.getJournal(journalId) ?: return null
         val photos = journalRepository.getPhotosByJournal(journalId)

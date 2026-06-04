@@ -18,6 +18,12 @@ class JournalRepository(private val database: MapChinaDatabase) {
         }
     }
 
+    fun getJournalsByAttraction(attractionId: String): List<Journal> {
+        return database.journalQueries.selectByAttractionId(attractionId).executeAsList().map {
+            Journal(it.id, it.user_id, it.title, it.description, it.region_id, it.attraction_id, it.start_time, it.end_time, it.created_at, it.updated_at)
+        }
+    }
+
     fun insertJournal(journal: Journal) {
         database.journalQueries.insertJournal(
             journal.id, journal.userId, journal.title, journal.description,

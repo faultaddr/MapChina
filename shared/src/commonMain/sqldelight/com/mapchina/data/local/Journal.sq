@@ -17,6 +17,9 @@ SELECT * FROM journal WHERE id = ?;
 selectByUserId:
 SELECT * FROM journal WHERE user_id = ? ORDER BY start_time DESC;
 
+selectByAttractionId:
+SELECT * FROM journal WHERE attraction_id = ? ORDER BY start_time DESC;
+
 insertJournal:
 INSERT OR REPLACE INTO journal(id, user_id, title, description, region_id, attraction_id, start_time, end_time, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
