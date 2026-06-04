@@ -6,7 +6,8 @@ data class AttractionDetail(
     val cost: String?,
     val openTime: String?,
     val tel: String?,
-    val website: String?
+    val website: String?,
+    val appointmentUrl: String? = null
 )
 
 expect class AttractionDetailProvider {

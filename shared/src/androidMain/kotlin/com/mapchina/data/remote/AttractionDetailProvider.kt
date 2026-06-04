@@ -33,6 +33,7 @@ actual class AttractionDetailProvider(private val context: Context) {
                     openTime = obj["ot"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
                     tel = obj["t"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
                     website = obj["w"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
+                    appointmentUrl = obj["au"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
                 )
                 result[id] = detail
             }

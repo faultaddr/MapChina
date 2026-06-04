@@ -26,8 +26,10 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -60,9 +62,11 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.platform.ExternalNavigator
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.datetime.Instant
+import org.koin.compose.koinInject
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -215,6 +219,27 @@ fun AttractionDetailScreen(
                     }
                 }
 
+                // Navigate button
+                val navigator: ExternalNavigator = koinInject()
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = {
+                        navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MapChinaColors.Primary
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MapChinaColors.Primary.copy(alpha = 0.3f))
+                ) {
+                    Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("高德导航", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+
                 // Visit section
                 Spacer(Modifier.height(20.dp))
                 VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
@@ -349,6 +374,10 @@ private fun InfoRows(attraction: AttractionUi, detail: AttractionDetail) {
     }
     if (detail.website != null) {
         InfoRow(icon = Icons.Default.Language, label = "官网", value = detail.website)
+        Spacer(Modifier.height(10.dp))
+    }
+    if (detail.appointmentUrl != null) {
+        InfoRow(icon = Icons.Default.ConfirmationNumber, label = "预约", value = detail.appointmentUrl)
         Spacer(Modifier.height(10.dp))
     }
     if (attraction.description != null) {
