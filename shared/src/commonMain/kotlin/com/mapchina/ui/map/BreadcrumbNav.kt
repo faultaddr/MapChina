@@ -54,8 +54,18 @@ fun BreadcrumbNav(
                 if (index > 0) {
                     Text(" > ", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
                 }
-                TextButton(onClick = { onNavigateTo(item.id) }) {
-                    Text(item.name, fontSize = 14.sp)
+                val isLast = index == path.lastIndex
+                if (item.id.isEmpty() || isLast) {
+                    Text(
+                        item.name,
+                        fontSize = 14.sp,
+                        color = if (isLast) MapChinaColors.Primary else MapChinaColors.TextSecondary,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                } else {
+                    TextButton(onClick = { onNavigateTo(item.id) }) {
+                        Text(item.name, fontSize = 14.sp)
+                    }
                 }
             }
         }

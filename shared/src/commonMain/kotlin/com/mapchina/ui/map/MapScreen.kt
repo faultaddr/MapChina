@@ -180,9 +180,9 @@ fun MapScreen(
                 .padding(top = 8.dp, start = 8.dp, end = 8.dp)
         ) {
             BreadcrumbNav(
-                path = currentPath.map { BreadcrumbItem(it.id, it.name) },
+                path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
                 onNavigateUp = { viewModel.navigateUp() },
-                onNavigateTo = { viewModel.navigateTo(it) }
+                onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
             )
         }
 
