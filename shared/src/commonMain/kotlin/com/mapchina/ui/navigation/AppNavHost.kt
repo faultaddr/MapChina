@@ -16,6 +16,8 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AtlasScreen as AtlasScreenComposable
 import com.mapchina.ui.achievement.AtlasDetailScreen as AtlasDetailScreenComposable
@@ -49,7 +51,19 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
     NavHost(
         navController = navController,
         startDestination = MapScreen,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = {
+            slideInVertically(initialOffsetY = { it / 3 }) + fadeIn(tween(300))
+        },
+        exitTransition = {
+            fadeOut(tween(150))
+        },
+        popEnterTransition = {
+            fadeIn(tween(300))
+        },
+        popExitTransition = {
+            slideOutVertically(targetOffsetY = { it / 3 }) + fadeOut(tween(300))
+        }
     ) {
         composable<MapScreen> {
             MapScreenComposable(navController = navController, viewModel = koinInject())

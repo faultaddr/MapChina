@@ -1,5 +1,8 @@
 package com.mapchina.ui.community
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -31,11 +35,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -43,10 +52,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.mapchina.ui.common.EmptyState
 import com.mapchina.data.remote.CommunityPostDto
 import com.mapchina.ui.navigation.PostDetailScreen
 import com.mapchina.ui.theme.UserAvatar
 import com.mapchina.ui.theme.MapChinaColors
+import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -76,9 +87,12 @@ fun CommunityScreen(
                 CircularProgressIndicator(color = MapChinaColors.Primary)
             }
         } else if (feedUi.posts.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无帖子，成为第一个分享的人吧", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
-            }
+            EmptyState(
+                icon = Icons.Default.AutoStories,
+                title = "暂无帖子",
+                subtitle = "成为第一个分享的人吧",
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             LazyColumn(
                 state = listState,
@@ -156,6 +170,20 @@ private fun PostCard(
 
             Spacer(Modifier.height(10.dp))
 
+            var likeAnimTrigger by remember { mutableStateOf(false) }
+            val likeScale by animateFloatAsState(
+                targetValue = if (likeAnimTrigger) 1.3f else 1f,
+                animationSpec = spring(dampingRatio = 0.3f, stiffness = Spring.StiffnessMedium),
+                label = "likeScale"
+            )
+            LaunchedEffect(post.likedByMe) {
+                if (post.likedByMe) {
+                    likeAnimTrigger = true
+                    delay(150)
+                    likeAnimTrigger = false
+                }
+            }
+
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -166,7 +194,7 @@ private fun PostCard(
                         if (post.likedByMe) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "点赞",
                         tint = if (post.likedByMe) Color(0xFFE53935) else MapChinaColors.TextTertiary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp).scale(likeScale)
                     )
                 }
                 Text(post.likeCount.toString(), color = MapChinaColors.TextTertiary, fontSize = 12.sp)

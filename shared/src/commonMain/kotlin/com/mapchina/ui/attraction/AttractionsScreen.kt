@@ -2,6 +2,7 @@ package com.mapchina.ui.attraction
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.navigation.CustomAttractionScreen
 import com.mapchina.ui.theme.MapChinaColors
@@ -129,7 +132,11 @@ fun AttractionsScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isSelected) MapChinaColors.Primary else MapChinaColors.SurfaceElevated)
-                        .clickable { selectedFilter = filter }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true, radius = 20.dp),
+                            onClick = { selectedFilter = filter }
+                        )
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
@@ -145,15 +152,12 @@ fun AttractionsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (filteredAttractions.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "输入关键词搜索景点" else "未找到匹配景点",
-                    color = MapChinaColors.TextTertiary
-                )
-            }
+            EmptyState(
+                icon = Icons.Default.Search,
+                title = if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "搜索景点" else "未找到匹配",
+                subtitle = if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "输入关键词开始搜索" else "试试其他筛选条件",
+                modifier = Modifier.fillMaxSize()
+            )
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -207,7 +211,9 @@ private fun AttractionCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier

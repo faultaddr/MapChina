@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -147,7 +150,6 @@ private fun SplashScreen(onFinish: () -> Unit) {
     }
 }
 
-private val InkBlack = Color(0xFF1C1C1E)
 private val InkGrey = Color(0xFF8E8E93)
 private val RicePaper = Color(0xFFF8F6F1)
 
@@ -166,25 +168,42 @@ private fun InkBottomBar(
         }
     }
 
-    Surface(color = RicePaper) {
-        Column {
+    Column {
+        // Top shadow cast by bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.06f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        Surface(
+            color = RicePaper,
+            shadowElevation = 8.dp,
+            tonalElevation = 2.dp
+        ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Subtle ink stain under selected tab
-                Canvas(modifier = Modifier.fillMaxSize()) {
+                // Ink stain glow under selected tab
+                Canvas(modifier = Modifier.matchParentSize()) {
                     val tabWidth = size.width / bottomNavItems.size
                     val selectedCenter = Offset(
                         tabWidth * selectedIndex + tabWidth / 2,
-                        size.height / 2
+                        size.height * 0.4f
                     )
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                MapChinaColors.Primary.copy(alpha = 0.08f),
-                                MapChinaColors.Primary.copy(alpha = 0.02f),
+                                MapChinaColors.Primary.copy(alpha = 0.1f),
+                                MapChinaColors.Primary.copy(alpha = 0.03f),
                                 Color.Transparent
                             ),
                             center = selectedCenter,
@@ -195,16 +214,18 @@ private fun InkBottomBar(
                     )
                 }
 
-                // Tab items row
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .align(Alignment.Center),
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, bottom = 4.dp)
+                        .windowInsetsPadding(WindowInsets.navigationBars),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     bottomNavItems.forEachIndexed { index, item ->
-                        val selected = currentDestination?.hierarchy?.any { it.hasRoute(item.screen::class) } == true
+                        val selected = currentDestination?.hierarchy?.any {
+                            it.hasRoute(item.screen::class)
+                        } == true
                         InkTabItem(
                             item = item,
                             selected = selected,
@@ -221,11 +242,6 @@ private fun InkBottomBar(
                     }
                 }
             }
-
-            Spacer(
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-            )
         }
     }
 }
@@ -236,29 +252,62 @@ private fun InkTabItem(
     selected: Boolean,
     onTap: () -> Unit
 ) {
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.1f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow),
-        label = "iconScale"
-    )
     val tint by animateColorAsState(
         targetValue = if (selected) MapChinaColors.Primary else InkGrey,
-        animationSpec = tween(200),
+        animationSpec = tween(220),
         label = "tint"
+    )
+    val pillAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(220),
+        label = "pillAlpha"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.08f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.55f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "iconScale"
+    )
+    val indicatorWidth by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(250),
+        label = "indicatorWidth"
     )
 
     Column(
         modifier = Modifier
             .clickable(onClick = onTap)
-            .padding(vertical = 4.dp),
+            .padding(horizontal = 24.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            item.icon,
-            contentDescription = item.label,
-            tint = tint,
-            modifier = Modifier.size(if (selected) 26.dp else 22.dp)
-        )
+        Box(contentAlignment = Alignment.Center) {
+            // Selection pill
+            if (pillAlpha > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    MapChinaColors.Primary.copy(alpha = 0.14f * pillAlpha),
+                                    MapChinaColors.Primary.copy(alpha = 0.04f * pillAlpha)
+                                )
+                            ),
+                            shape = CircleShape
+                        )
+                )
+            }
+            Icon(
+                item.icon,
+                contentDescription = item.label,
+                tint = tint,
+                modifier = Modifier
+                    .size(24.dp)
+                    .offset(y = if (selected) (-1).dp else 0.dp)
+            )
+        }
         Spacer(Modifier.height(2.dp))
         Text(
             item.label,
@@ -267,6 +316,24 @@ private fun InkTabItem(
             color = tint,
             letterSpacing = if (selected) 0.5.sp else 0.sp
         )
+        // Active indicator dot
+        if (indicatorWidth > 0.01f) {
+            Spacer(Modifier.height(2.dp))
+            Box(
+                modifier = Modifier
+                    .height(3.dp)
+                    .width((16 * indicatorWidth).dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MapChinaColors.Primary,
+                                MapChinaColors.PrimaryVariant
+                            )
+                        ),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+        }
     }
 }
 

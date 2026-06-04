@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -42,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.AchievementCategory
 import com.mapchina.domain.model.AchievementRarity
+import com.mapchina.ui.theme.InkTabIndicator
 import com.mapchina.ui.theme.MapChinaColors
 import mapchina.shared.generated.resources.Res
 import mapchina.shared.generated.resources.badge_5a
@@ -108,10 +107,7 @@ fun BadgeWallScreen(
             containerColor = MapChinaColors.Background,
             contentColor = MapChinaColors.TextPrimary,
             indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = MapChinaColors.Primary
-                )
+                InkTabIndicator(currentTabPosition = tabPositions[selectedTab])
             }
         ) {
             tabs.forEachIndexed { index, title ->

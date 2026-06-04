@@ -24,16 +24,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -115,6 +120,14 @@ fun StatsScreen(
 
 @Composable
 private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
+    var chartVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { chartVisible = true }
+    val chartProgress by animateFloatAsState(
+        targetValue = if (chartVisible) 1f else 0f,
+        animationSpec = tween(800),
+        label = "pieProgress"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,7 +165,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
                 )
 
                 // 5A 已到访
-                val a5Sweep = if (dist.a5Total > 0) (dist.a5Visited.toFloat() / dist.a5Total) * 180f else 0f
+                val a5Sweep = if (dist.a5Total > 0) (dist.a5Visited.toFloat() / dist.a5Total) * 180f * chartProgress else 0f
                 drawArc(
                     color = MapChinaColors.AccentGold,
                     startAngle = -90f,
@@ -164,7 +177,7 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
                 )
 
                 // 4A 已到访
-                val a4Sweep = if (dist.a4Total > 0) (dist.a4Visited.toFloat() / dist.a4Total) * 180f else 0f
+                val a4Sweep = if (dist.a4Total > 0) (dist.a4Visited.toFloat() / dist.a4Total) * 180f * chartProgress else 0f
                 drawArc(
                     color = MapChinaColors.AccentBlue,
                     startAngle = 90f,
@@ -230,6 +243,14 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
     val total = levelCounts.values.sum()
     if (total == 0) return
 
+    var chartVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { chartVisible = true }
+    val chartProgress by animateFloatAsState(
+        targetValue = if (chartVisible) 1f else 0f,
+        animationSpec = tween(800),
+        label = "donutProgress"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -261,7 +282,7 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
                 for ((level, color) in segments) {
                     val count = levelCounts[level] ?: 0
                     if (count == 0) continue
-                    val sweep = (count.toFloat() / total) * 360f
+                    val sweep = (count.toFloat() / total) * 360f * chartProgress
                     drawArc(
                         color = color,
                         startAngle = startAngle,
@@ -347,53 +368,75 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
         Spacer(modifier = Modifier.height(8.dp))
 
         provinceVisits.take(10).forEach { pv ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = pv.provinceName,
-                    color = MapChinaColors.TextPrimary,
-                    fontSize = 12.sp,
-                    modifier = Modifier.width(64.dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(18.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MapChinaColors.Background)
-                ) {
-                    // 总量背景条
-                    val totalWidth = pv.attractionCount.toFloat() / maxCount
-                    Box(
-                        modifier = Modifier
-                            .height(12.dp)
-                            .fillMaxWidth(totalWidth)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MapChinaColors.CardBackgroundLight)
-                    )
-                    // 已到访前景条
-                    val visitedWidth = if (pv.attractionCount > 0) pv.visitedCount.toFloat() / pv.attractionCount else 0f
-                    Box(
-                        modifier = Modifier
-                            .height(12.dp)
-                            .fillMaxWidth(totalWidth * visitedWidth)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MapChinaColors.Primary)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "${pv.visitedCount}/${pv.attractionCount}",
-                    color = MapChinaColors.TextTertiary,
-                    fontSize = 11.sp,
-                    modifier = Modifier.width(48.dp)
-                )
-            }
+            ProvinceBarRow(pv, maxCount)
         }
+    }
+}
+
+@Composable
+private fun ProvinceBarRow(pv: ProvinceVisitUi, maxCount: Int) {
+    val animatedTotalWidth by animateFloatAsState(
+        targetValue = pv.attractionCount.toFloat() / maxCount,
+        animationSpec = tween(600),
+        label = "barWidth"
+    )
+    val animatedVisitedRatio by animateFloatAsState(
+        targetValue = if (pv.attractionCount > 0) pv.visitedCount.toFloat() / pv.attractionCount else 0f,
+        animationSpec = tween(800),
+        label = "visitedWidth"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = pv.provinceName,
+            color = MapChinaColors.TextPrimary,
+            fontSize = 12.sp,
+            modifier = Modifier.width(64.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(18.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MapChinaColors.Background)
+        ) {
+            // 总量背景条
+            Box(
+                modifier = Modifier
+                    .height(12.dp)
+                    .fillMaxWidth(animatedTotalWidth)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MapChinaColors.CardBackgroundLight)
+            )
+            // 已到访前景条（渐变）
+            Box(
+                modifier = Modifier
+                    .height(12.dp)
+                    .fillMaxWidth(animatedTotalWidth * animatedVisitedRatio)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MapChinaColors.Primary,
+                                MapChinaColors.PrimaryVariant
+                            )
+                        ),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            "${pv.visitedCount}/${pv.attractionCount}",
+            color = MapChinaColors.TextTertiary,
+            fontSize = 11.sp,
+            modifier = Modifier.width(48.dp)
+        )
     }
 }
 

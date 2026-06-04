@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MilitaryTech
@@ -31,8 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,11 +47,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mapchina.ui.common.EmptyState
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.stats.StatsUi
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.ui.stats.VisitedAttractionUi
+import com.mapchina.ui.theme.InkTabIndicator
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 
@@ -92,11 +93,7 @@ fun AchievementScreen(
             containerColor = Color.Transparent,
             contentColor = MapChinaColors.TextPrimary,
             indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = MapChinaColors.Primary,
-                    height = 3.dp
-                )
+                InkTabIndicator(currentTabPosition = tabPositions[selectedTab])
             }
         ) {
             tabs.forEachIndexed { index, title ->
@@ -253,14 +250,14 @@ private fun StatsTab(stats: StatsUi) {
 
         if (stats.visitedAttractionList.isEmpty() && stats.totalProvinces == 0) {
             item {
-                Box(
+                EmptyState(
+                    icon = Icons.Default.Explore,
+                    title = "暂无统计数据",
+                    subtitle = "开始探索吧",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("暂无统计数据，开始探索吧", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
-                }
+                        .height(120.dp)
+                )
             }
         }
     }

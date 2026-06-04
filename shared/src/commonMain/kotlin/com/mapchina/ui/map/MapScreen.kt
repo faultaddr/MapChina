@@ -61,12 +61,14 @@ import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
 import com.mapchina.ui.navigation.CarvingScreen
 import com.mapchina.platform.DevicePhoto
+import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Attractions
 import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -474,14 +476,13 @@ private fun AttractionsBottomSheet(
             )
 
             if (attractions.isEmpty()) {
-                Box(
+                EmptyState(
+                    icon = Icons.Default.Attractions,
+                    title = "暂无景点数据",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("暂无景点数据", color = MapChinaColors.TextTertiary)
-                }
+                        .height(120.dp)
+                )
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(6.dp)

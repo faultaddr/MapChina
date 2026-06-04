@@ -42,8 +42,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -72,6 +70,7 @@ import com.mapchina.ui.achievement.AchievementWithProgress
 import com.mapchina.ui.stats.StatsUi
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.ui.stats.VisitedAttractionUi
+import com.mapchina.ui.theme.InkTabIndicator
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 
@@ -114,11 +113,7 @@ fun ProfileScreen(
             containerColor = Color.Transparent,
             contentColor = MapChinaColors.TextPrimary,
             indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = MapChinaColors.Primary,
-                    height = 3.dp
-                )
+                InkTabIndicator(currentTabPosition = tabPositions[selectedTab])
             }
         ) {
             tabs.forEachIndexed { index, title ->

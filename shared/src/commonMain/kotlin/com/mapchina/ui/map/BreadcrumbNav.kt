@@ -8,11 +8,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,25 +30,33 @@ fun BreadcrumbNav(
     onNavigateTo: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MapChinaColors.SurfaceOverlay,
+        shadowElevation = 4.dp
     ) {
-        if (path.size > 1) {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回上级",
-                    modifier = Modifier.size(20.dp)
-                )
+        Row(
+            modifier = modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (path.size > 1) {
+                IconButton(onClick = onNavigateUp) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回上级",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-        }
-        path.forEachIndexed { index, item ->
-            if (index > 0) {
-                Text(" > ", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
-            }
-            TextButton(onClick = { onNavigateTo(item.id) }) {
-                Text(item.name, fontSize = 14.sp)
+            path.forEachIndexed { index, item ->
+                if (index > 0) {
+                    Text(" > ", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
+                }
+                TextButton(onClick = { onNavigateTo(item.id) }) {
+                    Text(item.name, fontSize = 14.sp)
+                }
             }
         }
     }
