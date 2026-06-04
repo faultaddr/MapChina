@@ -670,6 +670,8 @@ class MapViewModel(
     private fun syncMarkersToMap() {
         val controller = _mapController ?: return
         controller.clearMarkers()
+        val level = _currentLevel.value
+        if (level != MapZoomLevel.CITY && level != MapZoomLevel.DISTRICT) return
         for (attraction in _attractions.value) {
             val fullAttraction = attractionService.getAttraction(attraction.id) ?: continue
             controller.addAttractionMarker(
