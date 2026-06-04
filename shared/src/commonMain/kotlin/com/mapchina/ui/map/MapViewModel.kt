@@ -340,6 +340,10 @@ class MapViewModel(
         _showOnboarding.value = false
     }
 
+    fun canDrillIntoRegion(regionId: String): Boolean {
+        return !childrenIndex[regionId].isNullOrEmpty()
+    }
+
     fun getAttractionCountForRegion(regionId: String): Int {
         return attractionCountCache.getOrPut(regionId) {
             attractionService.getAttractionsByParentRegion(regionId).size
@@ -775,31 +779,40 @@ class MapViewModel(
             val rate = childCoverageRate.coerceIn(0f, 1f)
             if (rate == 0f) {
                 return OverlayStyle(
-                    fillColor = 0xFF1A2C3DL,
-                    strokeColor = 0xFF2A3E52,
-                    strokeWidth = 1f,
-                    alpha = 0.15f
+                    fillColor = 0xFF0D7377L,
+                    strokeColor = 0xFF6BAAAEL,
+                    strokeWidth = 0.5f,
+                    alpha = 0.07f
                 )
             }
-            val alpha = 0.12f + rate * 0.25f
+            val alpha = 0.08f + rate * 0.22f
             return OverlayStyle(
-                fillColor = 0xFF2EC4B6L,
-                strokeColor = 0xFF1A8A7E,
-                strokeWidth = 1.5f,
+                fillColor = 0xFF14A3A8L,
+                strokeColor = 0xFF0D7377L,
+                strokeWidth = 0.8f + rate * 0.7f,
                 alpha = alpha
             )
         }
-        val (baseColor, alpha) = when (level) {
-            FootprintLevel.DEEP -> 0xFFE76F51L to 0.60f
-            FootprintLevel.SHORT_VISIT -> 0xFFF4A261L to 0.50f
-            FootprintLevel.PASS_BY -> 0xFFE9C46AL to 0.40f
+        return when (level) {
+            FootprintLevel.DEEP -> OverlayStyle(
+                fillColor = 0xFFC84530L,
+                strokeColor = 0xFF5A1C10L,
+                strokeWidth = 2.0f,
+                alpha = 0.55f
+            )
+            FootprintLevel.SHORT_VISIT -> OverlayStyle(
+                fillColor = 0xFFD48840L,
+                strokeColor = 0xFF6B4020L,
+                strokeWidth = 1.8f,
+                alpha = 0.45f
+            )
+            FootprintLevel.PASS_BY -> OverlayStyle(
+                fillColor = 0xFFC8A040L,
+                strokeColor = 0xFF5A4A20L,
+                strokeWidth = 1.5f,
+                alpha = 0.35f
+            )
         }
-        return OverlayStyle(
-            fillColor = baseColor,
-            strokeColor = 0xFF264653L,
-            strokeWidth = 2f,
-            alpha = alpha
-        )
     }
 
     private fun buildPathTo(regionId: String): List<Region> {
