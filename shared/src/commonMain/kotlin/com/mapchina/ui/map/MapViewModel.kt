@@ -713,9 +713,10 @@ class MapViewModel(
         controller.clearMarkers()
         for (attraction in _attractions.value) {
             val fullAttraction = attractionService.getAttraction(attraction.id) ?: continue
-            controller.addMarker(
+            controller.addAttractionMarker(
                 attraction.id, attraction.name,
                 fullAttraction.latitude, fullAttraction.longitude,
+                fullAttraction.imageUrl,
                 attraction.visitLevel != null
             )
         }

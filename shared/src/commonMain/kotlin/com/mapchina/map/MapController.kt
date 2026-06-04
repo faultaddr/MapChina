@@ -6,6 +6,7 @@ expect class MapController() {
     fun clearOverlays()
     fun removeOverlaysExcept(regionIds: Set<String>)
     fun addMarker(attractionId: String, name: String, lat: Double, lng: Double, visited: Boolean)
+    fun addAttractionMarker(attractionId: String, name: String, lat: Double, lng: Double, imageUrl: String?, visited: Boolean)
     fun removeMarker(attractionId: String)
     fun clearMarkers()
     fun addPolyline(id: String, points: List<Pair<Double, Double>>, color: Long, width: Float)
