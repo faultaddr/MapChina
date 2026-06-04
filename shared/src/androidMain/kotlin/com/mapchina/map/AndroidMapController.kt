@@ -50,6 +50,8 @@ actual class MapController actual constructor() {
     private var pulseAnimator: ValueAnimator? = null
     private var pulseTargetId: String? = null
     private var pulseOriginalStyle: OverlayStyle? = null
+    private var lastTapTime = 0L
+    private val TAP_DEBOUNCE_MS = 300L
 
     fun bindMap(amap: AMap, context: android.content.Context? = null) {
         this.aMap = amap
@@ -113,9 +115,11 @@ actual class MapController actual constructor() {
                     }
                 }
                 MotionEvent.ACTION_UP -> {
-                    // Short tap → select region (same as tapping blank area)
-                    // Long press already fired markerTapListener and cleared touchDownRegionId
-                    touchDownRegionId?.let { regionTapListener?.invoke(it) }
+                    val now = System.currentTimeMillis()
+                    if (now - lastTapTime >= TAP_DEBOUNCE_MS) {
+                        lastTapTime = now
+                        touchDownRegionId?.let { regionTapListener?.invoke(it) }
+                    }
                     cancelLongPress()
                     touchDownRegionId = null
                     touchDownPoint = null
@@ -313,12 +317,20 @@ actual class MapController actual constructor() {
         // Restore previously pulsed overlay to its original color
         pulseTargetId?.let { prevId ->
             if (prevId != regionId) {
-                pulseAnimator?.cancel()
-                val prevPolygon = overlays[prevId]
-                if (prevPolygon != null && pulseOriginalStyle != null) {
-                    prevPolygon.fillColor = applyAlpha(pulseOriginalStyle!!.fillColor, pulseOriginalStyle!!.alpha)
+                val prevStyle = pulseOriginalStyle
+                if (prevStyle != null) {
+                    pulseAnimator?.cancel()
+                    val prevPolygon = overlays[prevId]
+                    if (prevPolygon != null) {
+                        prevPolygon.fillColor = applyAlpha(prevStyle.fillColor, prevStyle.alpha)
+                    }
                 }
             }
+        }
+
+        // Same region tapped again — just restart pulse
+        if (pulseTargetId == regionId) {
+            pulseAnimator?.cancel()
         }
 
         val polygon = overlays[regionId] ?: return

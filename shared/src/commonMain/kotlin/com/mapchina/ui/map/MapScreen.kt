@@ -136,6 +136,7 @@ fun MapScreen(
 
     // Single tap on region → pulse + show card
     mapController.setOnRegionTapListener { regionId ->
+        if (showRegionCard && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
         mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
         showRegionCard = true
