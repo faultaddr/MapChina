@@ -10,10 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -24,12 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -57,91 +56,71 @@ fun MapFab(
         targetValue = if (photoMarkersVisible) MapChinaColors.FootprintPassBy else MapChinaColors.Primary,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
-    val glowAlpha by animateFloatAsState(
-        targetValue = if (visitedCount == 0) 0.25f else 0.12f,
-        animationSpec = tween(600),
-        label = "glowAlpha"
-    )
 
     Box(modifier = modifier) {
-        // Outer glow halo
-        Canvas(modifier = Modifier.size(88.dp)) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        ringColor.copy(alpha = glowAlpha),
-                        ringColor.copy(alpha = glowAlpha * 0.3f),
-                        Color.Transparent
-                    ),
-                    center = center,
-                    radius = size.minDimension / 2
-                ),
-                radius = size.minDimension / 2,
-                center = center
-            )
-        }
-
-        // Main jade disc
-        Surface(
-            shape = CircleShape,
-            color = Color.Transparent,
-            shadowElevation = 0.dp,
+        // Single Canvas draws everything: disc + shadow + ring + arc
+        Canvas(
             modifier = Modifier
-                .size(76.dp)
-                .clip(CircleShape)
-                .offset(x = 6.dp, y = 6.dp)
+                .size(80.dp)
                 .then(
-                    if (visitedCount == 0 && onDepart != null) Modifier.clickable(onClick = onDepart)
+                    if (visitedCount == 0 && onDepart != null) Modifier
+                        .clip(CircleShape)
+                        .clickable(onClick = onDepart)
                     else Modifier
                 )
         ) {
-            Canvas(modifier = Modifier.size(76.dp)) {
-                val strokeWidth = 4.5.dp.toPx()
-                val outerRadius = size.minDimension / 2 - 2.dp.toPx()
-                val innerRingRadius = outerRadius - 8.dp.toPx()
+            val center = Offset(size.width / 2, size.height / 2)
+            val outerR = size.minDimension / 2 - 4.dp.toPx()
+            val ringR = outerR - 5.dp.toPx()
+            val strokeWidth = 4.dp.toPx()
 
-                // Jade disc body — gradient fill
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            MapChinaColors.SurfaceOverlay,
-                            MapChinaColors.SurfaceElevated.copy(alpha = 0.95f),
-                        ),
-                        center = Offset(size.width * 0.35f, size.height * 0.35f),
-                        radius = outerRadius
+            // Drop shadow (dark circle offset down-right)
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.15f),
+                radius = outerR,
+                center = Offset(center.x + 1.dp.toPx(), center.y + 2.dp.toPx())
+            )
+
+            // Main disc — warm white gradient
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFFFFFFF),
+                        Color(0xFFF8F6F1),
                     ),
-                    radius = outerRadius,
-                    center = center
-                )
+                    center = Offset(center.x - outerR * 0.25f, center.y - outerR * 0.25f),
+                    radius = outerR
+                ),
+                radius = outerR,
+                center = center
+            )
 
-                // Inner shadow ring (subtle depth)
-                drawCircle(
-                    color = MapChinaColors.BorderSubtle,
-                    radius = innerRingRadius + 1.dp.toPx(),
-                    center = center,
-                    style = Stroke(width = 0.5.dp.toPx())
-                )
+            // Subtle border ring
+            drawCircle(
+                color = MapChinaColors.BorderMedium.copy(alpha = 0.5f),
+                radius = outerR,
+                center = center,
+                style = Stroke(width = 1.dp.toPx())
+            )
 
-                // Progress track
-                drawCircle(
-                    color = MapChinaColors.SurfaceElevated.copy(alpha = 0.4f),
-                    radius = innerRingRadius,
-                    center = center,
-                    style = Stroke(width = strokeWidth)
-                )
+            // Progress track (background)
+            drawCircle(
+                color = MapChinaColors.BorderSubtle,
+                radius = ringR,
+                center = center,
+                style = Stroke(width = strokeWidth)
+            )
 
-                // Progress arc
-                val arcSize = Size(innerRingRadius * 2, innerRingRadius * 2)
-                val topLeft = Offset(
-                    (size.width - innerRingRadius * 2) / 2,
-                    (size.height - innerRingRadius * 2) / 2
-                )
+            // Progress arc (foreground)
+            if (progress > 0.005f) {
+                val arcSize = Size(ringR * 2, ringR * 2)
+                val topLeft = Offset(center.x - ringR, center.y - ringR)
                 drawArc(
                     brush = Brush.sweepGradient(
                         colors = listOf(
-                            MapChinaColors.Primary,
+                            ringColor,
                             MapChinaColors.PrimaryVariant,
-                            MapChinaColors.Primary,
+                            ringColor,
                         ),
                         center = center
                     ),
@@ -152,89 +131,70 @@ fun MapFab(
                     size = arcSize,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
-
-                // Arc endpoint glow dot
-                if (progress > 0.01f) {
-                    val angleRad = Math.toRadians((-90.0 + 360.0 * progress))
-                    val dotX = center.x + innerRingRadius * kotlin.math.cos(angleRad).toFloat()
-                    val dotY = center.y + innerRingRadius * kotlin.math.sin(angleRad).toFloat()
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                MapChinaColors.PrimaryVariant.copy(alpha = 0.6f),
-                                Color.Transparent
-                            ),
-                            center = Offset(dotX, dotY),
-                            radius = 6.dp.toPx()
-                        ),
-                        radius = 6.dp.toPx(),
-                        center = Offset(dotX, dotY)
-                    )
-                }
             }
+        }
 
-            // Center content
-            Box(contentAlignment = Alignment.Center) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.offset(y = (-1).dp)
-                ) {
-                    if (visitedCount == 0) {
-                        androidx.compose.material3.Text(
-                            "出发",
-                            style = TextStyle(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        MapChinaColors.Primary,
-                                        MapChinaColors.PrimaryVariant
-                                    )
-                                ),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                shadow = Shadow(
-                                    color = MapChinaColors.Primary.copy(alpha = 0.2f),
-                                    offset = Offset(0f, 1f),
-                                    blurRadius = 4f
-                                )
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    } else {
-                        androidx.compose.material3.Text(
-                            "$coveragePercent",
-                            color = MapChinaColors.TextPrimary,
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        androidx.compose.material3.Text(
-                            "%",
-                            style = TextStyle(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        MapChinaColors.Primary,
-                                        MapChinaColors.PrimaryVariant
-                                    )
-                                ),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    androidx.compose.material3.Text(
-                        when {
-                            visitedCount == 0 -> "开始旅程"
-                            coveragePercent < 5 -> "探索起步"
-                            coveragePercent < 20 -> "渐入佳境"
-                            else -> "$visitedCount/$totalCount$currentLevel"
-                        },
-                        color = MapChinaColors.TextTertiary,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center
-                    )
-                }
+        // Center text overlay
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .offset(y = 8.dp)   // center within 80dp canvas (accounting for shadow offset)
+        ) {
+            if (visitedCount == 0) {
+                androidx.compose.material3.Text(
+                    "出发",
+                    style = TextStyle(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MapChinaColors.Primary,
+                                MapChinaColors.PrimaryVariant
+                            )
+                        ),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                androidx.compose.material3.Text(
+                    "开始旅程",
+                    color = MapChinaColors.TextTertiary,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                androidx.compose.material3.Text(
+                    "$coveragePercent",
+                    color = MapChinaColors.TextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                androidx.compose.material3.Text(
+                    "%",
+                    style = TextStyle(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                MapChinaColors.Primary,
+                                MapChinaColors.PrimaryVariant
+                            )
+                        ),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                androidx.compose.material3.Text(
+                    when {
+                        coveragePercent < 5 -> "探索起步"
+                        coveragePercent < 20 -> "渐入佳境"
+                        else -> "$visitedCount/$totalCount$currentLevel"
+                    },
+                    color = MapChinaColors.TextTertiary,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
