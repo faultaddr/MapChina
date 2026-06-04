@@ -224,6 +224,17 @@ actual class MapController actual constructor() {
         }
     }
 
+    actual fun addAttractionMarker(attractionId: String, name: String, lat: Double, lng: Double, imageUrl: String?, visited: Boolean) {
+        val map = aMap
+        val context = appContext
+        if (map != null && context != null) {
+            addAttractionMarkerToMap(attractionId, name, lat, lng, imageUrl, visited)
+        } else {
+            pendingMarkers.removeAll { it.attractionId == attractionId }
+            pendingMarkers.add(PendingMarker(attractionId, name, lat, lng, visited))
+        }
+    }
+
     actual fun removeMarker(attractionId: String) {
         markers.remove(attractionId)?.remove()
         pendingMarkers.removeAll { it.attractionId == attractionId }
@@ -420,6 +431,27 @@ actual class MapController actual constructor() {
             .snippet(if (visited) "已到访" else "未到访")
         )
         markers[attractionId] = marker
+    }
+
+    private fun addAttractionMarkerToMap(attractionId: String, name: String, lat: Double, lng: Double, imageUrl: String?, visited: Boolean) {
+        val map = aMap ?: return
+        val context = appContext ?: return
+        removeMarker(attractionId)
+
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (aMap == null) return@post
+            val bitmap = AttractionMarkerRenderer.render(context, imageUrl, name, visited) ?: return@post
+            val descriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
+            val marker = map.addMarker(MarkerOptions()
+                .position(LatLng(lat, lng))
+                .icon(descriptor)
+                .anchor(0.5f, 1f)
+                .zIndex(2f)
+            )
+            marker.title = attractionId
+            markers[attractionId] = marker
+            bitmap.recycle()
+        }
     }
 
     private fun addImageMarkerToMap(id: String, lat: Double, lng: Double, imagePath: String, count: Int) {

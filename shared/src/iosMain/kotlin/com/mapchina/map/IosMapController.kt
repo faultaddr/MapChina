@@ -25,6 +25,10 @@ actual class MapController actual constructor() {
         // TODO: Integrate with AMap SDK
     }
 
+    actual fun addAttractionMarker(attractionId: String, name: String, lat: Double, lng: Double, imageUrl: String?, visited: Boolean) {
+        // TODO: Integrate with AMap SDK
+    }
+
     actual fun removeMarker(attractionId: String) {
         // TODO: Integrate with AMap SDK
     }
