@@ -20,11 +20,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +30,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Attractions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -92,16 +91,15 @@ fun MapChinaApp() {
                 currentDestination?.hasRoute(item.screen::class) == true
             }
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    AppNavHost(navController = navController)
+            Scaffold(
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                bottomBar = {
+                    if (showBottomBar) {
+                        InkBottomBar(currentDestination, navController)
+                    }
                 }
-
-                if (showBottomBar) {
-                    InkBottomBar(currentDestination, navController)
-                }
+            ) { _ ->
+                AppNavHost(navController = navController)
             }
         }
     }
@@ -217,8 +215,7 @@ private fun InkBottomBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 6.dp, bottom = 4.dp)
-                        .windowInsetsPadding(WindowInsets.navigationBars),
+                        .padding(top = 6.dp, bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
