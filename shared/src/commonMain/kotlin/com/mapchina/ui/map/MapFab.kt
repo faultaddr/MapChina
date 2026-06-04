@@ -137,8 +137,7 @@ fun MapFab(
         // Center text overlay
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .offset(y = 8.dp)   // center within 80dp canvas (accounting for shadow offset)
+            modifier = Modifier.align(Alignment.Center)
         ) {
             if (visitedCount == 0) {
                 androidx.compose.material3.Text(
