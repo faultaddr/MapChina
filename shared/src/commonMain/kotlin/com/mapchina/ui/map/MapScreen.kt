@@ -121,6 +121,7 @@ fun MapScreen(
     var showAttractionsSheet by remember { mutableStateOf(false) }
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
     val scope = rememberCoroutineScope()
+    var showDartTravel by remember { mutableStateOf(false) }
 
     val canDrillDown = currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL
     val levelLabel = when (currentLevel) {
@@ -192,6 +193,7 @@ fun MapScreen(
             currentLevel = levelLabel,
             photoMarkersVisible = photoMarkersVisible,
             onTogglePhotos = { viewModel.togglePhotoMarkers() },
+            onDepart = { showDartTravel = true },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
@@ -293,6 +295,37 @@ fun MapScreen(
         visible = showOnboarding,
         onDismiss = { viewModel.dismissOnboarding() }
     )
+
+    // Dart travel overlay
+    var dartTravelKey by remember { mutableStateOf(0) }
+    var dartTravelReady by remember { mutableStateOf(false) }
+    LaunchedEffect(showDartTravel) {
+        if (showDartTravel) {
+            dartTravelReady = false
+            dartTravelKey++
+            mapController.setCamera(34.5, 106.0, 3.8f, true)
+            kotlinx.coroutines.delay(800)
+            dartTravelReady = true
+        } else {
+            dartTravelReady = false
+        }
+    }
+    if (showDartTravel && dartTravelReady) {
+        val cityDots = remember { viewModel.getCityDots() }
+        DartTravelOverlay(
+            key = dartTravelKey,
+            cityDots = cityDots,
+            mapController = mapController,
+            onCitySelected = { cityId ->
+                showDartTravel = false
+                viewModel.navigateTo(cityId)
+                viewModel.selectRegion(cityId)
+                showRegionCard = true
+                showAttractionsSheet = true
+            },
+            onDismiss = { showDartTravel = false }
+        )
+    }
 
     // Attractions bottom sheet
     if (showAttractionsSheet && selectedRegion != null) {

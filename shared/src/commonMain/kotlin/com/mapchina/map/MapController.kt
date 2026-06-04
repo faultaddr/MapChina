@@ -15,6 +15,7 @@ expect class MapController() {
     fun removeImageMarker(id: String)
     fun clearImageMarkers()
     fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean)
+    fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>?
     fun setOnRegionTapListener(listener: ((String) -> Unit)?)
     fun setOnMarkerTapListener(listener: ((String) -> Unit)?)
     fun setOnCameraZoomChangeListener(listener: ((Float) -> Unit)?)

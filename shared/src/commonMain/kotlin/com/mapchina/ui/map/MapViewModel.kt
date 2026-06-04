@@ -51,6 +51,13 @@ data class RegionBounds(
     val maxY: Float
 )
 
+data class CityDot(
+    val id: String,
+    val name: String,
+    val lat: Double,
+    val lng: Double
+)
+
 class MapViewModel(
     private val footprintService: FootprintService,
     private val regionRepository: RegionRepository,
@@ -371,7 +378,7 @@ class MapViewModel(
             if (newRegions.isNotEmpty()) {
                 invalidateCaches()
                 refreshRegions()
-                _autoMarkMessage.value = "从你的位置发现了 ${newRegions.size} 个新足迹"
+                showAutoMarkMessage("从你的位置发现了 ${newRegions.size} 个新足迹")
             }
         }
     }
@@ -400,13 +407,47 @@ class MapViewModel(
             if (newRegionIds.isNotEmpty()) {
                 invalidateCaches()
                 refreshRegions()
-                _autoMarkMessage.value = "从相册发现了 ${newRegionIds.size} 个新足迹"
+                showAutoMarkMessage("从相册发现了 ${newRegionIds.size} 个新足迹")
             }
         }
     }
 
     fun dismissAutoMarkMessage() {
         _autoMarkMessage.value = null
+    }
+
+    private var autoMarkJob: kotlinx.coroutines.Job? = null
+
+    private fun showAutoMarkMessage(msg: String) {
+        autoMarkJob?.cancel()
+        _autoMarkMessage.value = msg
+        autoMarkJob = vmScope.launch {
+            kotlinx.coroutines.delay(3000)
+            _autoMarkMessage.value = null
+        }
+    }
+
+    private var cachedCityDots: List<CityDot>? = null
+
+    fun getCityDots(): List<CityDot> {
+        cachedCityDots?.let { return it }
+        val cities = regionRepository.getRegionsByLevel(RegionLevel.CITY)
+        val dots = cities.mapNotNull { city ->
+            val center = regionRepository.getRegionCenter(city.id) ?: return@mapNotNull null
+            CityDot(city.id, city.name, center.first, center.second)
+        }
+        cachedCityDots = dots
+        return dots
+    }
+
+    fun getRandomCityWithAttractions(): CityDot? {
+        val dots = getCityDots()
+        if (dots.isEmpty()) return null
+        val withAttractions = dots.filter { dot ->
+            attractionService.getAttractionsByParentRegion(dot.id).isNotEmpty()
+        }
+        if (withAttractions.isEmpty()) return dots.random()
+        return withAttractions.random()
     }
 
     fun syncPhotoMarkersToMap() {
@@ -418,7 +459,7 @@ class MapViewModel(
             if (photos.isEmpty()) {
                 controller.clearImageMarkers()
                 _photoClusters.value = emptyList()
-                _autoMarkMessage.value = "未找到带位置信息的照片（请确认已授予相册权限，且照片包含GPS信息）"
+                showAutoMarkMessage("未找到带位置信息的照片")
                 return@launch
             }
             val clusters = PhotoClusterer.cluster(photos)

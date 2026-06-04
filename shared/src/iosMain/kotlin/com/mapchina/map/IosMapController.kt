@@ -61,6 +61,11 @@ actual class MapController actual constructor() {
         // TODO: Integrate with AMap SDK
     }
 
+    actual fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
+        // TODO: Integrate with AMap SDK
+        return null
+    }
+
     actual fun setOnRegionTapListener(listener: ((String) -> Unit)?) {
         regionTapListener = listener
     }

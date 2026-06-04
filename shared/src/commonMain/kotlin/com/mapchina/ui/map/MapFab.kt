@@ -45,6 +45,7 @@ fun MapFab(
     currentLevel: String,
     photoMarkersVisible: Boolean,
     onTogglePhotos: () -> Unit,
+    onDepart: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val progress by animateFloatAsState(
@@ -65,6 +66,10 @@ fun MapFab(
             modifier = Modifier
                 .size(76.dp)
                 .clip(CircleShape)
+                .then(
+                    if (visitedCount == 0 && onDepart != null) Modifier.clickable(onClick = onDepart)
+                    else Modifier
+                )
         ) {
             Box(contentAlignment = Alignment.Center) {
                 // Background ring track

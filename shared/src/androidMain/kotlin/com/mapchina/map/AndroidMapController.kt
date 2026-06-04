@@ -283,6 +283,12 @@ actual class MapController actual constructor() {
         }
     }
 
+    actual fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
+        val map = aMap ?: return null
+        val point = map.projection.toScreenLocation(LatLng(lat, lng))
+        return Pair(point.x.toFloat(), point.y.toFloat())
+    }
+
     actual fun setOnRegionTapListener(listener: ((String) -> Unit)?) {
         regionTapListener = listener
     }
