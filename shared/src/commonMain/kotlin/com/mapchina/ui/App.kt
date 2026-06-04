@@ -19,8 +19,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,6 +78,8 @@ val bottomNavItems = listOf(
     BottomNavItem(ProfileScreen, "我的", Icons.Default.Person),
 )
 
+internal val LocalScaffoldBottomPadding = compositionLocalOf { 0.dp }
+
 @Composable
 fun MapChinaApp() {
     MapChinaTheme {
@@ -98,8 +103,12 @@ fun MapChinaApp() {
                         InkBottomBar(currentDestination, navController)
                     }
                 }
-            ) { _ ->
-                AppNavHost(navController = navController)
+            ) { innerPadding ->
+                CompositionLocalProvider(
+                    LocalScaffoldBottomPadding provides innerPadding.calculateBottomPadding()
+                ) {
+                    AppNavHost(navController = navController)
+                }
             }
         }
     }

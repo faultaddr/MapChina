@@ -195,11 +195,14 @@ fun MapScreen(
         )
 
         // Bottom RegionCard
+        val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         AnimatedVisibility(
             visible = showRegionCard && selectedRegion != null,
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it }),
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomBarOffset)
         ) {
             if (selectedRegion != null) {
                 RegionCard(
