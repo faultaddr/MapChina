@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Landscape
@@ -85,6 +86,7 @@ fun ProfileScreen(
     onNavigateToBadgeWall: (() -> Unit)? = null,
     onNavigateToProvinceConquest: (() -> Unit)? = null,
     onNavigateToAtlas: (() -> Unit)? = null,
+    onNavigateToCarvings: (() -> Unit)? = null,
     onLoginSuccess: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -136,6 +138,7 @@ fun ProfileScreen(
                 onNavigateToBadgeWall = onNavigateToBadgeWall,
                 onNavigateToProvinceConquest = onNavigateToProvinceConquest,
                 onNavigateToAtlas = onNavigateToAtlas,
+                onNavigateToCarvings = onNavigateToCarvings,
                 settingsRepository = viewModel?.settingsRepository,
                 onLogout = { viewModel?.logout() }
             )
@@ -160,6 +163,7 @@ private fun ProfileTab(
     onNavigateToBadgeWall: (() -> Unit)?,
     onNavigateToProvinceConquest: (() -> Unit)?,
     onNavigateToAtlas: (() -> Unit)?,
+    onNavigateToCarvings: (() -> Unit)?,
     settingsRepository: SettingsRepository?,
     onLogout: (() -> Unit)?
 ) {
@@ -271,35 +275,16 @@ private fun ProfileTab(
                         onClick = { onNavigateToAtlas?.invoke() }
                     )
                 }
-            }
-        }
-
-        // Level progress (if logged in)
-        if (isLoggedIn && profile.levelInfo != null && !profile.levelInfo!!.isMaxLevel) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MapChinaCard.shape,
-                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                    border = MapChinaCard.border,
-                    elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("距离 ${profile.levelInfo!!.nextTitle}", color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text("还差 ${profile.levelInfo!!.nextLevelScore - profile.levelInfo!!.currentScore} 山河值", color = MapChinaColors.Primary, fontSize = 13.sp)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = { profile.levelInfo!!.progressToNext },
-                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                            color = MapChinaColors.Primary,
-                            trackColor = MapChinaColors.Background
-                        )
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeatureCard(
+                        icon = Icons.Default.Edit,
+                        title = "我的碑刻",
+                        subtitle = "石壁留名题字",
+                        tint = Color(0xFF8B7355),
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigateToCarvings?.invoke() }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -462,72 +447,6 @@ private fun AchievementTabContent(
         if (ui.recentUnlocked.isNotEmpty()) item { RecentUnlockedSection(ui.recentUnlocked) }
         if (ui.regionAchievements.isNotEmpty()) item { AchievementSection("地区征服", ui.regionAchievements) }
         if (ui.scenicAchievements.isNotEmpty()) item { AchievementSection("景点收集", ui.scenicAchievements) }
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToProvinceConquest?.invoke() },
-                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                border = MapChinaCard.border,
-                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MapChinaColors.FootprintDeep.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Map, contentDescription = null, tint = MapChinaColors.FootprintDeep, modifier = Modifier.size(22.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("省份征服", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("征服每个省份，点亮你的中国版图", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
-                    }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
-                }
-            }
-        }
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToAtlas?.invoke() },
-                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                border = MapChinaCard.border,
-                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MapChinaColors.RarityEpic.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.AutoStories, contentDescription = null, tint = MapChinaColors.RarityEpic, modifier = Modifier.size(22.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("主题图鉴", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("按主题收集中国之美", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
-                    }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
-                }
-            }
-        }
         item {
             Row(
                 modifier = Modifier

@@ -1,8 +1,11 @@
 package com.mapchina.ui.attraction
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,9 +32,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -85,6 +91,11 @@ fun AttractionsScreen(
     })
     val searchQuery by (viewModel?.searchQuery?.collectAsState() ?: remember { mutableStateOf("") })
     var selectedFilter by remember { mutableStateOf(AttractionFilter.ALL) }
+    var searchExpanded by remember { mutableStateOf(false) }
+    var showMoreFilters by remember { mutableStateOf(false) }
+
+    val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED)
+    val moreFilters = listOf(AttractionFilter.CUSTOM, AttractionFilter.UNVISITED)
 
     val filteredAttractions = remember(attractions, selectedFilter) {
         when (selectedFilter) {
@@ -168,40 +179,71 @@ fun AttractionsScreen(
                 }
             }
 
-            // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel?.searchAttractions(it) },
-                label = { Text("搜索景点", color = MapChinaColors.TextTertiary) },
-                leadingIcon = {
+            // Search bar (collapsible)
+            AnimatedVisibility(
+                visible = searchExpanded,
+                enter = expandVertically(tween(200)),
+                exit = shrinkVertically(tween(150))
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel?.searchAttractions(it) },
+                    label = { Text("搜索景点", color = MapChinaColors.TextTertiary) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MapChinaColors.Primary.copy(alpha = 0.6f)
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel?.searchAttractions("") }) {
+                                Text("✕", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MapChinaColors.TextPrimary,
+                        unfocusedTextColor = MapChinaColors.TextSecondary,
+                        focusedBorderColor = MapChinaColors.Primary,
+                        unfocusedBorderColor = MapChinaColors.BorderMedium,
+                        focusedContainerColor = MapChinaColors.SurfaceElevated,
+                        unfocusedContainerColor = MapChinaColors.SurfaceElevated,
+                        cursorColor = MapChinaColors.Primary
+                    )
+                )
+            }
+
+            // Filter chips row with search toggle
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // Search icon toggle
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = if (searchExpanded) MapChinaColors.Primary.copy(alpha = 0.12f) else MapChinaColors.SurfaceElevated,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = true, radius = 20.dp),
+                        onClick = { searchExpanded = !searchExpanded }
+                    )
+                ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = null,
-                        tint = MapChinaColors.Primary.copy(alpha = 0.6f)
+                        contentDescription = "搜索",
+                        tint = if (searchExpanded) MapChinaColors.Primary else MapChinaColors.TextSecondary,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp).size(16.dp)
                     )
-                },
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MapChinaColors.TextPrimary,
-                    unfocusedTextColor = MapChinaColors.TextSecondary,
-                    focusedBorderColor = MapChinaColors.Primary,
-                    unfocusedBorderColor = MapChinaColors.BorderMedium,
-                    focusedContainerColor = MapChinaColors.SurfaceElevated,
-                    unfocusedContainerColor = MapChinaColors.SurfaceElevated,
-                    cursorColor = MapChinaColors.Primary
-                )
-            )
+                }
 
-            // Filter chips
-            FlowRow(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                AttractionFilter.values().forEach { filter ->
+                primaryFilters.forEach { filter ->
                     val isSelected = selectedFilter == filter
                     val chipColor by animateColorAsState(
                         targetValue = if (isSelected) MapChinaColors.Primary else MapChinaColors.SurfaceElevated,
@@ -227,11 +269,69 @@ fun AttractionsScreen(
                         )
                     }
                 }
+
+                // "更多" dropdown
+                Box {
+                    val isMoreSelected = selectedFilter in moreFilters
+                    val moreChipColor by animateColorAsState(
+                        targetValue = if (isMoreSelected) MapChinaColors.Primary else MapChinaColors.SurfaceElevated,
+                        animationSpec = tween(200),
+                        label = "moreChip"
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = moreChipColor,
+                        shadowElevation = if (isMoreSelected) 2.dp else 0.dp,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(bounded = true, radius = 20.dp),
+                            onClick = { showMoreFilters = true }
+                        )
+                    ) {
+                        Text(
+                            if (isMoreSelected) selectedFilter.label else "更多",
+                            color = if (isMoreSelected) MapChinaColors.SurfaceElevated else MapChinaColors.TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = if (isMoreSelected) FontWeight.Bold else FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMoreFilters,
+                        onDismissRequest = { showMoreFilters = false }
+                    ) {
+                        moreFilters.forEach { filter ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        filter.label,
+                                        color = if (selectedFilter == filter) MapChinaColors.Primary else MapChinaColors.TextPrimary,
+                                        fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                onClick = {
+                                    selectedFilter = filter
+                                    showMoreFilters = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (filteredAttractions.isEmpty()) {
+            if (attractions.isEmpty()) {
+                // Skeleton loading state
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(4) {
+                        SkeletonAttractionCard()
+                    }
+                }
+            } else if (filteredAttractions.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.Search,
                     title = if (searchQuery.isBlank() && selectedFilter == AttractionFilter.ALL) "搜索景点" else "未找到匹配",
@@ -321,62 +421,65 @@ private fun AttractionCard(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left accent bar for visited status
-            if (visitColor != null) {
-                Box(
-                    modifier = Modifier
-                        .width(3.dp)
-                        .height(68.dp)
-                        .background(visitColor)
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = if (visitColor != null) 10.dp else 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Image or initial placeholder
-                Box {
-                    if (attraction.imageUrl != null) {
-                        SubcomposeAsyncImage(
-                            model = attraction.imageUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(68.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                        ) {
-                            val state = painter.state.collectAsState().value
-                            when (state) {
-                                is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                                else -> InitialPlaceholder(attraction.name, levelColor)
-                            }
+            // Image or initial placeholder (enlarged)
+            Box {
+                if (attraction.imageUrl != null) {
+                    SubcomposeAsyncImage(
+                        model = attraction.imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(width = 100.dp, height = 84.dp)
+                            .clip(RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp))
+                    ) {
+                        val state = painter.state.collectAsState().value
+                        when (state) {
+                            is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
+                            else -> InitialPlaceholder(attraction.name, levelColor, widthDp = 100, heightDp = 84)
                         }
-                    } else {
-                        InitialPlaceholder(attraction.name, levelColor)
                     }
+                } else {
+                    InitialPlaceholder(attraction.name, levelColor, widthDp = 100, heightDp = 84)
+                }
 
-                    // Level badge overlaid on image
-                    if (attraction.level == "A5" || attraction.level == "A4") {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = levelColor.copy(alpha = 0.9f),
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(4.dp)
-                        ) {
-                            Text(
-                                levelBadge,
-                                color = MapChinaColors.SurfaceElevated,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            )
-                        }
+                // Level badge overlaid on image
+                if (attraction.level == "A5" || attraction.level == "A4") {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = levelColor.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                    ) {
+                        Text(
+                            levelBadge,
+                            color = MapChinaColors.SurfaceElevated,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                        )
                     }
                 }
+
+                // Visit indicator on image
+                if (visitColor != null && visitLabel != null) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = visitColor.copy(alpha = 0.85f),
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(6.dp)
+                    ) {
+                        Text(
+                            visitLabel,
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
 
                 Spacer(Modifier.width(12.dp))
 
@@ -394,65 +497,37 @@ private fun AttractionCard(
                             text = attraction.description,
                             fontSize = 12.sp,
                             color = MapChinaColors.TextTertiary,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 2.dp)
+                            modifier = Modifier.padding(top = 3.dp)
                         )
                     }
 
-                    // Visit status or unvisited tag
-                    if (visitColor != null && visitLabel != null) {
+                    // Unvisited tag (visited shown on image)
+                    if (visitColor == null) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = visitColor.copy(alpha = 0.12f),
-                            modifier = Modifier.padding(top = 6.dp)
+                            color = MapChinaColors.BorderSubtle.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            Text(
+                                "未到访",
+                                fontSize = 11.sp,
+                                color = MapChinaColors.TextTertiary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(5.dp)
-                                        .clip(CircleShape)
-                                        .background(visitColor)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    visitLabel,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = visitColor
-                                )
-                            }
+                            )
                         }
-                    }
-                }
-
-                // Right side: unvisited indicator or visit dot
-                if (visitColor == null) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MapChinaColors.BorderSubtle.copy(alpha = 0.6f)
-                    ) {
-                        Text(
-                            "未到访",
-                            fontSize = 11.sp,
-                            color = MapChinaColors.TextTertiary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
                     }
                 }
             }
         }
     }
-}
 
 @Composable
-private fun InitialPlaceholder(name: String, tintColor: Color) {
+private fun InitialPlaceholder(name: String, tintColor: Color, widthDp: Int = 68, heightDp: Int = 68) {
     Box(
         Modifier
-            .size(68.dp)
+            .size(width = widthDp.dp, height = heightDp.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(
                 Brush.verticalGradient(
@@ -470,5 +545,47 @@ private fun InitialPlaceholder(name: String, tintColor: Color) {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+@Composable
+private fun SkeletonAttractionCard(modifier: Modifier = Modifier) {
+    val shimmerColor = MapChinaColors.BorderSubtle.copy(alpha = 0.3f)
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MapChinaColors.SurfaceElevated,
+        shadowElevation = 1.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(width = 100.dp, height = 84.dp)
+                    .background(shimmerColor, RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp))
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(16.dp)
+                        .background(shimmerColor, RoundedCornerShape(4.dp))
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(12.dp)
+                        .background(shimmerColor, RoundedCornerShape(4.dp))
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .width(48.dp)
+                        .height(20.dp)
+                        .background(shimmerColor, RoundedCornerShape(6.dp))
+                )
+            }
+        }
     }
 }

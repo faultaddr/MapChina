@@ -1,5 +1,9 @@
 package com.mapchina.ui.attraction
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,10 +15,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
@@ -43,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +76,9 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.platform.ExternalNavigator
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import org.koin.compose.koinInject
 import kotlinx.datetime.TimeZone
@@ -81,6 +95,7 @@ fun AttractionDetailScreen(
     onRemoveVisit: (() -> Unit)? = null,
     onWriteJournal: (() -> Unit)? = null,
     onJournalClick: ((String) -> Unit)? = null,
+    onOpenCarving: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     if (attraction == null) {
@@ -94,30 +109,66 @@ fun AttractionDetailScreen(
     }
 
     val imageUrls = detail?.imageUrls?.filter { it.isNotBlank() } ?: emptyList()
+    var showFullscreen by remember { mutableStateOf(false) }
+    var fullscreenStartPage by remember { mutableStateOf(0) }
+
+    // Hero zoom-in animation
+    val heroScale = remember { Animatable(0.82f) }
+    val heroAlpha = remember { Animatable(0f) }
+    val heroOffsetY = remember { Animatable(30f) }
+    val contentAlpha = remember { Animatable(0f) }
+    val backAlpha = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.coroutineScope {
+            launch { heroAlpha.animateTo(1f, tween(350)) }
+            launch { heroScale.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow)) }
+            launch { heroOffsetY.animateTo(0f, spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)) }
+            launch { backAlpha.animateTo(1f, tween(250, delayMillis = 100)) }
+            launch { contentAlpha.animateTo(1f, tween(400, delayMillis = 180)) }
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize().background(MapChinaColors.Background)) {
         Column(Modifier.fillMaxSize()) {
-            // Hero image area
+            // Hero image area with zoom animation
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(280.dp)
             ) {
-                if (imageUrls.isNotEmpty()) {
-                    ImageCarousel(imageUrls = imageUrls)
-                } else {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(MapChinaColors.SurfaceElevated),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MapChinaColors.BorderMedium
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = heroScale.value
+                            scaleY = heroScale.value
+                            translationY = heroOffsetY.value
+                            alpha = heroAlpha.value
+                        }
+                ) {
+                    if (imageUrls.isNotEmpty()) {
+                        ImageCarousel(
+                            imageUrls = imageUrls,
+                            onImageClick = {
+                                fullscreenStartPage = it
+                                showFullscreen = true
+                            }
                         )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(MapChinaColors.SurfaceElevated),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MapChinaColors.BorderMedium
+                            )
+                        }
                     }
                 }
 
@@ -145,24 +196,25 @@ fun AttractionDetailScreen(
                         .padding(start = 8.dp, top = 4.dp)
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.3f))
+                        .background(Color.Black.copy(alpha = 0.3f * backAlpha.value))
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "返回",
-                        tint = Color.White,
+                        tint = Color.White.copy(alpha = backAlpha.value),
                         modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            // Scrollable content
+            // Scrollable content with fade-in
             Column(
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
                     .padding(top = 0.dp, bottom = 24.dp)
+                    .graphicsLayer { alpha = contentAlpha.value }
             ) {
                 // Title row
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -219,48 +271,94 @@ fun AttractionDetailScreen(
                     }
                 }
 
-                // Navigate button
+                // Navigate button (primary action)
                 val navigator: ExternalNavigator = koinInject()
                 Spacer(Modifier.height(16.dp))
-                OutlinedButton(
+                Button(
                     onClick = {
                         navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MapChinaColors.Primary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MapChinaColors.Primary.copy(alpha = 0.3f))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MapChinaColors.Primary,
+                        contentColor = Color.White
+                    )
                 ) {
                     Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("高德导航", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text("高德导航", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                // Appointment button (if available)
+                if (detail?.appointmentUrl != null) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MapChinaColors.Primary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MapChinaColors.Primary.copy(alpha = 0.3f))
+                    ) {
+                        Icon(Icons.Default.ConfirmationNumber, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("在线预约", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
 
                 // Visit section
                 Spacer(Modifier.height(20.dp))
                 VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
 
-                // Write journal button
-                if (onWriteJournal != null) {
+                // Write journal & carving buttons (secondary)
+                if (onWriteJournal != null || onOpenCarving != null) {
                     Spacer(Modifier.height(12.dp))
-                    Button(
-                        onClick = { onWriteJournal.invoke() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MapChinaColors.Primary,
-                            contentColor = Color.White
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Article, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("写游记", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        if (onWriteJournal != null) {
+                            OutlinedButton(
+                                onClick = { onWriteJournal.invoke() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MapChinaColors.Primary
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MapChinaColors.Primary.copy(alpha = 0.3f))
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Article, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("写游记", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                        if (onOpenCarving != null) {
+                            OutlinedButton(
+                                onClick = { onOpenCarving.invoke() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFF8B7355)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B7355).copy(alpha = 0.3f))
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("留碑刻", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                     }
                 }
 
@@ -304,10 +402,19 @@ fun AttractionDetailScreen(
             }
         }
     }
+
+    // Fullscreen image viewer
+    if (showFullscreen) {
+        FullscreenImageViewer(
+            imageUrls = imageUrls,
+            startIndex = fullscreenStartPage,
+            onDismiss = { showFullscreen = false }
+        )
+    }
 }
 
 @Composable
-private fun ImageCarousel(imageUrls: List<String>) {
+private fun ImageCarousel(imageUrls: List<String>, onImageClick: (Int) -> Unit = {}) {
     val pagerState = rememberPagerState(pageCount = { imageUrls.size })
 
     Box(Modifier.fillMaxSize()) {
@@ -319,7 +426,11 @@ private fun ImageCarousel(imageUrls: List<String>) {
                 model = imageUrls[page],
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { onImageClick(page) }
+                    }
             )
         }
 
@@ -344,6 +455,91 @@ private fun ImageCarousel(imageUrls: List<String>) {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FullscreenImageViewer(
+    imageUrls: List<String>,
+    startIndex: Int = 0,
+    onDismiss: () -> Unit
+) {
+    val pagerState = rememberPagerState(initialPage = startIndex, pageCount = { imageUrls.size })
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, _, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(0.5f, 5f)
+                    if (scale < 1.05f) {
+                        scale = 1f; offsetX = 0f; offsetY = 0f
+                    }
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        if (scale > 1.05f) {
+                            scale = 1f; offsetX = 0f; offsetY = 0f
+                        } else {
+                            scale = 2.5f
+                        }
+                    },
+                    onTap = {
+                        if (scale <= 1.05f) onDismiss()
+                    }
+                )
+            }
+            .statusBarsPadding()
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            AsyncImage(
+                model = imageUrls[page],
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = scale; scaleY = scale
+                        translationX = offsetX; translationY = offsetY
+                    }
+            )
+        }
+
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.2f))
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "关闭",
+                tint = Color.White
+            )
+        }
+
+        if (imageUrls.size > 1) {
+            Text(
+                "${pagerState.currentPage + 1} / ${imageUrls.size}",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp)
+            )
         }
     }
 }

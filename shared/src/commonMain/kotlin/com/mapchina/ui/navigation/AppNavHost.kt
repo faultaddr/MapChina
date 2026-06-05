@@ -83,7 +83,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onNavigateToJournals = { navController.navigate(com.mapchina.ui.navigation.JournalListScreen) },
                 onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
                 onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
-                onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) }
+                onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) },
+                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = true)) }
             )
         }
         composable<BadgeWallScreen> {
@@ -152,7 +153,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable<AttractionDetailScreen>(
             enterTransition = {
-                fadeIn(animationSpec = tween(300))
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(350)
+                ) + fadeIn(animationSpec = tween(300))
             },
             exitTransition = {
                 fadeOut(animationSpec = tween(200))
@@ -161,7 +165,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 fadeIn(animationSpec = tween(250))
             },
             popExitTransition = {
-                fadeOut(animationSpec = tween(200))
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.End,
+                    animationSpec = tween(300)
+                ) + fadeOut(animationSpec = tween(200))
             }
         ) { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
@@ -184,7 +191,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onWriteJournal = {
                     attraction?.let { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen(attractionId = it.id)) }
                 },
-                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) }
+                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) },
+                onOpenCarving = {
+                    attraction?.let {
+                        navController.navigate(com.mapchina.ui.navigation.CarvingScreen(regionId = it.regionId, regionName = "", attractionId = it.id, attractionName = it.name))
+                    }
+                }
             )
         }
         composable<com.mapchina.ui.navigation.JournalListScreen> {
@@ -222,10 +234,34 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
             val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
             val regionName = backStackEntry.arguments?.getString("regionName") ?: ""
+            val attractionId = backStackEntry.arguments?.getString("attractionId")
+            val attractionName = backStackEntry.arguments?.getString("attractionName")
             com.mapchina.ui.carving.CarvingScreen(
                 regionId = regionId,
                 regionName = regionName,
                 viewModel = vm,
+                onBack = { navController.popBackStack() },
+                attractionId = attractionId,
+                attractionName = attractionName
+            )
+        }
+        composable<com.mapchina.ui.navigation.CarvingListScreen> { backStackEntry ->
+            val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
+            val regionId = backStackEntry.arguments?.getString("regionId")
+            val regionName = backStackEntry.arguments?.getString("regionName")
+            val attractionId = backStackEntry.arguments?.getString("attractionId")
+            val showAll = backStackEntry.arguments?.getString("showAll") == "true"
+            com.mapchina.ui.carving.CarvingListScreen(
+                viewModel = vm,
+                title = if (showAll) "我的碑刻" else "碑刻 · ${regionName ?: ""}",
+                regionId = regionId,
+                attractionId = attractionId,
+                showAll = showAll,
+                onCreateClick = {
+                    val rId = regionId ?: ""
+                    val rName = regionName ?: ""
+                    navController.navigate(com.mapchina.ui.navigation.CarvingScreen(regionId = rId, regionName = rName, attractionId = attractionId))
+                },
                 onBack = { navController.popBackStack() }
             )
         }

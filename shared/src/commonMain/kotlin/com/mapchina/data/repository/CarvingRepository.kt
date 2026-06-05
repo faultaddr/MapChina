@@ -14,14 +14,23 @@ class CarvingRepository(private val database: MapChinaDatabase) {
         return database.carvingQueries.selectByRegionId(regionId).executeAsList().map { rowToCarving(it) }
     }
 
+    fun getCarvingsByAttraction(attractionId: String): List<Carving> {
+        return database.carvingQueries.selectByAttractionId(attractionId).executeAsList().map { rowToCarving(it) }
+    }
+
     fun getCarvingsByUser(userId: String): List<Carving> {
         return database.carvingQueries.selectByUserId(userId).executeAsList().map { rowToCarving(it) }
+    }
+
+    fun getAllCarvings(): List<Carving> {
+        return database.carvingQueries.selectAll().executeAsList().map { rowToCarving(it) }
     }
 
     fun insertCarving(carving: Carving) {
         database.carvingQueries.insertCarving(
             carving.id, carving.userId, carving.regionId, carving.regionName,
-            carving.imagePath, carving.strokeData, carving.createdAt
+            carving.imagePath, carving.strokeData, carving.createdAt,
+            carving.attractionId, carving.attractionName
         )
     }
 
@@ -37,6 +46,8 @@ class CarvingRepository(private val database: MapChinaDatabase) {
             regionName = row.region_name,
             imagePath = row.image_path,
             strokeData = row.stroke_data,
-            createdAt = row.created_at
+            createdAt = row.created_at,
+            attractionId = row.attraction_id,
+            attractionName = row.attraction_name
         )
 }

@@ -5,7 +5,9 @@ CREATE TABLE carving (
     region_name TEXT NOT NULL,
     image_path TEXT,
     stroke_data TEXT,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    attraction_id TEXT,
+    attraction_name TEXT
 );
 
 selectById:
@@ -17,9 +19,15 @@ SELECT * FROM carving WHERE region_id = ?;
 selectByUserId:
 SELECT * FROM carving WHERE user_id = ? ORDER BY created_at DESC;
 
+selectByAttractionId:
+SELECT * FROM carving WHERE attraction_id = ? ORDER BY created_at DESC;
+
+selectAll:
+SELECT * FROM carving ORDER BY created_at DESC;
+
 insertCarving:
-INSERT OR REPLACE INTO carving(id, user_id, region_id, region_name, image_path, stroke_data, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO carving(id, user_id, region_id, region_name, image_path, stroke_data, created_at, attraction_id, attraction_name)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteById:
 DELETE FROM carving WHERE id = ?;

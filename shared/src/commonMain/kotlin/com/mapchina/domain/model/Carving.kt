@@ -7,5 +7,7 @@ data class Carving(
     val regionName: String,
     val imagePath: String?,
     val strokeData: String?,
-    val createdAt: Long
+    val createdAt: Long,
+    val attractionId: String? = null,
+    val attractionName: String? = null
 )

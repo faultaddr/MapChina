@@ -12,6 +12,7 @@ import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapController
+import com.mapchina.platform.PhotoResult
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
 import com.mapchina.domain.service.RegionMatcher
@@ -365,6 +366,8 @@ class MapViewModel(
         }
     }
 
+    private val lastAutoMarkedRegionIds = mutableListOf<String>()
+
     fun autoMarkFromGps() {
         val provider = locationProvider ?: return
         val matcher = regionMatcher ?: return
@@ -375,10 +378,12 @@ class MapViewModel(
             val newRegions = mutableListOf<String>()
             val footprints = getFootprintCache()
 
+            lastAutoMarkedRegionIds.clear()
             for (region in listOfNotNull(match.province, match.city, match.district)) {
                 if (footprints[region.id] == null) {
                     footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
                     newRegions.add(region.name)
+                    lastAutoMarkedRegionIds.add(region.id)
                 }
             }
 
@@ -395,18 +400,21 @@ class MapViewModel(
         val matcher = regionMatcher ?: return
         if (!provider.isAvailable()) return
         vmScope.launch {
+            if (provider.checkPermission() != PhotoResult.SUCCESS) return@launch
             val photos = provider.getPhotosWithLocation()
             if (photos.isEmpty()) return@launch
 
             val footprints = getFootprintCache()
             val newRegionIds = mutableSetOf<String>()
 
+            lastAutoMarkedRegionIds.clear()
             for (photo in photos) {
                 val match = matcher.match(photo.latitude, photo.longitude)
                 for (region in listOfNotNull(match.province, match.city, match.district)) {
                     if (footprints[region.id] == null && region.id !in newRegionIds) {
                         footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
                         newRegionIds.add(region.id)
+                        lastAutoMarkedRegionIds.add(region.id)
                     }
                 }
             }
@@ -421,6 +429,18 @@ class MapViewModel(
 
     fun dismissAutoMarkMessage() {
         _autoMarkMessage.value = null
+    }
+
+    fun undoLastAutoMark() {
+        if (lastAutoMarkedRegionIds.isEmpty()) return
+        vmScope.launch {
+            for (regionId in lastAutoMarkedRegionIds) {
+                footprintService.removeFootprint(userId, regionId)
+            }
+            lastAutoMarkedRegionIds.clear()
+            invalidateCaches()
+            refreshRegions()
+        }
     }
 
     private var autoMarkJob: kotlinx.coroutines.Job? = null
@@ -462,6 +482,13 @@ class MapViewModel(
         val provider = devicePhotoProvider ?: return
         if (!provider.isAvailable()) return
         vmScope.launch {
+            val permResult = provider.checkPermission()
+            if (permResult == PhotoResult.NO_PERMISSION) {
+                controller.clearImageMarkers()
+                _photoClusters.value = emptyList()
+                showAutoMarkMessage("请授予相册权限以读取照片")
+                return@launch
+            }
             val photos = provider.getPhotosWithLocation()
             if (photos.isEmpty()) {
                 controller.clearImageMarkers()
@@ -487,6 +514,14 @@ class MapViewModel(
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
                 _achievementUnlock.value = result.achievementResult
             }
+        }
+    }
+
+    fun removeFootprint(regionId: String) {
+        vmScope.launch {
+            footprintService.removeFootprint(userId, regionId)
+            invalidateCaches()
+            refreshRegions()
         }
     }
 

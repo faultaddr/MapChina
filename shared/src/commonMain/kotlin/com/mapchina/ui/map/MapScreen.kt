@@ -62,7 +62,7 @@ import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
-import com.mapchina.ui.navigation.CarvingScreen
+import com.mapchina.ui.navigation.CarvingListScreen
 import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
@@ -225,6 +225,9 @@ fun MapScreen(
                     onMarkFootprint = { regionId, level ->
                         viewModel.markFootprint(regionId, level)
                     },
+                    onRemoveFootprint = { regionId ->
+                        viewModel.removeFootprint(regionId)
+                    },
                     onDrillDown = {
                         val regionId = selectedRegion!!.regionId
                         showRegionCard = false
@@ -239,7 +242,7 @@ fun MapScreen(
                     onOpenCarving = {
                         val region = selectedRegion!!
                         showRegionCard = false
-                        navController.navigate(CarvingScreen(region.regionId, region.name))
+                        navController.navigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
                     },
                     onClose = {
                         showRegionCard = false
@@ -274,15 +277,144 @@ fun MapScreen(
                             autoMarkMessage!!,
                             color = MapChinaColors.Primary,
                             fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("点击关闭", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "撤销",
+                            color = MapChinaColors.Error,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable {
+                                    viewModel.undoLastAutoMark()
+                                    viewModel.dismissAutoMarkMessage()
+                                }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "✕",
+                            color = MapChinaColors.TextTertiary,
+                            fontSize = 13.sp,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { viewModel.dismissAutoMarkMessage() }
+                                .padding(horizontal = 4.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Achievement unlock → top banner notification
+        if (achievementResult != null) {
+            val animatedScore by animateIntAsState(
+                targetValue = achievementResult!!.scoreAdded,
+                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                label = "score"
+            )
+
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(
+                    initialOffsetY = { -it },
+                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)
+                ) + fadeIn(tween(300)),
+                exit = slideOutVertically(
+                    targetOffsetY = { -it },
+                    animationSpec = tween(250)
+                ) + fadeOut(tween(150)),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 60.dp, start = 16.dp, end = 16.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MapChinaColors.SurfaceElevated,
+                    shadowElevation = 8.dp,
+                    border = MapChinaCard.border,
+                    modifier = Modifier.clickable { viewModel.dismissAchievementUnlock() }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            MapChinaColors.AccentGold,
+                                            MapChinaColors.AccentGold.copy(alpha = 0.7f)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = MapChinaColors.SurfaceElevated,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "成就解锁",
+                                    color = MapChinaColors.AccentGold,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 2.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text("+", color = MapChinaColors.AccentGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text("$animatedScore", color = MapChinaColors.AccentGold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                    Text(" 山河值", color = MapChinaColors.TextTertiary, fontSize = 11.sp)
+                                }
+                            }
+                            val names = achievementResult!!.newlyUnlocked.take(2).map {
+                                viewModel.getAchievementName(it.achievementId)
+                            }
+                            val extraCount = achievementResult!!.newlyUnlocked.size - 2
+                            Text(
+                                if (extraCount > 0) "${names.joinToString("、")} 等${achievementResult!!.newlyUnlocked.size}个成就"
+                                else names.joinToString("、"),
+                                color = MapChinaColors.TextSecondary,
+                                fontSize = 12.sp,
+                                maxLines = 1
+                            )
+                            if (achievementResult!!.levelChanged) {
+                                Text(
+                                    "等级提升！Lv${achievementResult!!.newLevel}",
+                                    color = MapChinaColors.Primary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Text(
+                            "✕",
+                            color = MapChinaColors.TextTertiary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { viewModel.dismissAchievementUnlock() }
+                        )
                     }
                 }
             }
         }
     }
+
     // Photo preview overlay
     if (photoPreviewCluster != null) {
         PhotoPreviewOverlay(
@@ -347,157 +479,6 @@ fun MapScreen(
                 showAttractionsSheet = false
             }
         )
-    }
-
-    // Achievement unlock dialog with animation
-    if (achievementResult != null) {
-        val animatedScale by animateFloatAsState(
-            targetValue = 1f,
-            animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow),
-            label = "achievementScale"
-        )
-        val animatedScore by animateIntAsState(
-            targetValue = achievementResult!!.scoreAdded,
-            animationSpec = spring(stiffness = Spring.StiffnessMedium),
-            label = "score"
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MapChinaColors.TextPrimary.copy(alpha = 0.6f))
-                .clickable { viewModel.dismissAchievementUnlock() },
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .clickable(enabled = false) { },
-                colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-                border = MapChinaCard.border,
-                elevation = CardDefaults.cardElevation(defaultElevation = MapChinaCard.elevationDp.dp),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Glow badge
-                    val glowAlpha by animateFloatAsState(
-                        targetValue = 0.6f,
-                        animationSpec = tween(800),
-                        label = "glow"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(MapChinaColors.AccentGold.copy(alpha = glowAlpha * 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            MapChinaColors.AccentGold,
-                                            MapChinaColors.AccentGold.copy(alpha = 0.7f)
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = MapChinaColors.SurfaceElevated, modifier = Modifier.size(24.dp))
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "成就解锁",
-                        color = MapChinaColors.AccentGold,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 4.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Score counter
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text("+", color = MapChinaColors.AccentGold, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "$animatedScore",
-                            color = MapChinaColors.AccentGold,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("山河值", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Achievement list
-                    achievementResult!!.newlyUnlocked.take(3).forEach { achievement ->
-                        val rarity = viewModel.getAchievementRarity(achievement.achievementId)
-                        val name = viewModel.getAchievementName(achievement.achievementId)
-                        val desc = viewModel.getAchievementDescription(achievement.achievementId)
-                        val rarityColor = when (rarity) {
-                            "LEGENDARY" -> MapChinaColors.RarityLegendary
-                            "EPIC" -> MapChinaColors.RarityEpic
-                            "RARE" -> MapChinaColors.RarityRare
-                            else -> MapChinaColors.RarityCommon
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(rarityColor)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(name, color = MapChinaColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                                if (desc.isNotEmpty()) {
-                                    Text(desc, color = MapChinaColors.TextTertiary, fontSize = 11.sp)
-                                }
-                            }
-                        }
-                    }
-                    if (achievementResult!!.newlyUnlocked.size > 3) {
-                        Text(
-                            "…等 ${achievementResult!!.newlyUnlocked.size} 个成就",
-                            color = MapChinaColors.TextTertiary,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    if (achievementResult!!.levelChanged) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "等级提升！Lv${achievementResult!!.newLevel}",
-                            color = MapChinaColors.Primary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "继续探索",
-                        color = MapChinaColors.TextTertiary,
-                        fontSize = 13.sp,
-                        modifier = Modifier.clickable { viewModel.dismissAchievementUnlock() }
-                    )
-                }
-            }
-        }
     }
 }
 

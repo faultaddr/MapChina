@@ -1,6 +1,8 @@
 package com.mapchina.platform
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.MediaStore
 import android.location.Location
 import androidx.exifinterface.media.ExifInterface
@@ -9,8 +11,22 @@ import java.io.InputStream
 actual class DevicePhotoProvider {
     var context: Context? = null
 
+    actual fun checkPermission(): PhotoResult {
+        val ctx = context ?: return PhotoResult.NO_PERMISSION
+        val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            android.Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        if (ctx.checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
+            return PhotoResult.NO_PERMISSION
+        }
+        return PhotoResult.SUCCESS
+    }
+
     actual fun getPhotosWithLocation(): List<DevicePhoto> {
         val ctx = context ?: return emptyList()
+        if (checkPermission() != PhotoResult.SUCCESS) return emptyList()
         val photos = mutableListOf<DevicePhoto>()
         val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(

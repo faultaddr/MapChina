@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -187,7 +189,7 @@ fun DartTravelOverlay(
     val selectedPos = cityScreenPositions.getOrNull(currentDotIndex)
 
     Box(
-        modifier = modifier.fillMaxSize().clickable(enabled = false, onClick = {}),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -279,6 +281,32 @@ fun DartTravelOverlay(
                     }
                 }
             }
+        }
+
+        // Skip button
+        if (phase < 2) {
+            Text(
+                "跳过",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 16.dp, end = 20.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        if (phase == 0) {
+                            phase = 1
+                            currentDotIndex = finalDotIndex
+                        }
+                        if (phase == 1) {
+                            phase = 2
+                            onCitySelected(cityDots[currentDotIndex].id)
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 }

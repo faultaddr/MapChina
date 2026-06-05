@@ -1,5 +1,6 @@
 package com.mapchina.ui.carving
 
+import androidx.ink.strokes.Stroke
 import com.mapchina.data.repository.CarvingRepository
 import com.mapchina.domain.model.Carving
 import kotlinx.coroutines.CoroutineScope
@@ -23,22 +24,50 @@ class CarvingViewModel(
     private val _currentCarving = MutableStateFlow<Carving?>(null)
     val currentCarving: StateFlow<Carving?> = _currentCarving.asStateFlow()
 
-    fun loadCarvingForRegion(regionId: String) {
-        val existing = carvingRepository.getCarvingsByRegion(regionId).firstOrNull()
-        _currentCarving.value = existing
+    private val _existingStrokes = MutableStateFlow<List<Stroke>>(emptyList())
+    val existingStrokes: StateFlow<List<Stroke>> = _existingStrokes.asStateFlow()
+
+    private val _carvingList = MutableStateFlow<List<Carving>>(emptyList())
+    val carvingList: StateFlow<List<Carving>> = _carvingList.asStateFlow()
+
+    fun loadCarvingsByRegion(regionId: String) {
+        _carvingList.value = carvingRepository.getCarvingsByRegion(regionId)
     }
 
-    fun saveCarving(regionId: String, regionName: String, strokeData: String, imagePath: String? = null) {
+    fun loadCarvingsByAttraction(attractionId: String) {
+        _carvingList.value = carvingRepository.getCarvingsByAttraction(attractionId)
+    }
+
+    fun loadAllCarvings() {
+        _carvingList.value = carvingRepository.getAllCarvings()
+    }
+
+    fun loadCarvingForRegion(regionId: String) {
+        val existing = carvingRepository.getCarvingsByRegion(regionId)
+        _currentCarving.value = existing.firstOrNull()
+        _existingStrokes.value = emptyList()
+    }
+
+    fun saveCarving(
+        regionId: String,
+        regionName: String,
+        strokes: List<Stroke>,
+        imagePath: String? = null,
+        attractionId: String? = null,
+        attractionName: String? = null
+    ) {
         val now = Clock.System.now().toEpochMilliseconds()
-        val id = "carving_${regionId}_${userId.hashCode().toUInt()}"
+        val id = "carving_${regionId}_${attractionId ?: "region"}_${userId.hashCode().toUInt()}"
         val carving = Carving(
             id = id,
             userId = userId,
             regionId = regionId,
             regionName = regionName,
             imagePath = imagePath,
-            strokeData = strokeData,
-            createdAt = now
+            strokeData = "",
+            createdAt = now,
+            attractionId = attractionId,
+            attractionName = attractionName
         )
         vmScope.launch {
             carvingRepository.insertCarving(carving)

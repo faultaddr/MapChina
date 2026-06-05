@@ -2,6 +2,12 @@ package com.mapchina.ui.map
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.expandVertically
@@ -23,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegionCard(
@@ -52,6 +61,7 @@ fun RegionCard(
     attractionCount: Int,
     canDrillDown: Boolean,
     onMarkFootprint: (String, FootprintLevel) -> Unit,
+    onRemoveFootprint: (String) -> Unit = {},
     onDrillDown: () -> Unit,
     onShowAttractions: () -> Unit,
     onOpenCarving: () -> Unit = {},
@@ -59,6 +69,15 @@ fun RegionCard(
     modifier: Modifier = Modifier
 ) {
     var footprintExpanded by remember { mutableStateOf(false) }
+    var confirmMessage by remember { mutableStateOf<String?>(null) }
+    var lastMarkedLevel by remember { mutableStateOf<FootprintLevel?>(null) }
+
+    LaunchedEffect(confirmMessage) {
+        if (confirmMessage != null) {
+            delay(2500)
+            confirmMessage = null
+        }
+    }
 
     val statusText = when (region.footprintLevel) {
         FootprintLevel.DEEP -> "深度游览"
@@ -108,13 +127,19 @@ fun RegionCard(
             }
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(MapChinaColors.TextTertiary.copy(alpha = 0.08f))
                     .clickable(onClick = onClose),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Close, contentDescription = "关闭", tint = MapChinaColors.TextTertiary, modifier = Modifier.size(16.dp))
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(MapChinaColors.TextTertiary.copy(alpha = 0.08f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "关闭", tint = MapChinaColors.TextTertiary, modifier = Modifier.size(16.dp))
+                }
             }
         }
 
@@ -184,7 +209,7 @@ fun RegionCard(
 
         // Inline footprint selection
         AnimatedVisibility(
-            visible = footprintExpanded,
+            visible = footprintExpanded && confirmMessage == null,
             enter = expandVertically(spring(stiffness = Spring.StiffnessMedium)),
             exit = shrinkVertically(spring(stiffness = Spring.StiffnessMedium))
         ) {
@@ -199,7 +224,9 @@ fun RegionCard(
                     color = MapChinaColors.FootprintPassBy,
                     onClick = {
                         onMarkFootprint(region.regionId, FootprintLevel.PASS_BY)
+                        lastMarkedLevel = FootprintLevel.PASS_BY
                         footprintExpanded = false
+                        confirmMessage = "已标记：路过"
                     },
                     enabled = region.footprintLevel == null
                 )
@@ -208,7 +235,9 @@ fun RegionCard(
                     color = MapChinaColors.FootprintShortVisit,
                     onClick = {
                         onMarkFootprint(region.regionId, FootprintLevel.SHORT_VISIT)
+                        lastMarkedLevel = FootprintLevel.SHORT_VISIT
                         footprintExpanded = false
+                        confirmMessage = "已标记：短暂停留"
                     },
                     enabled = region.footprintLevel?.let { it < FootprintLevel.SHORT_VISIT } ?: true
                 )
@@ -217,10 +246,65 @@ fun RegionCard(
                     color = MapChinaColors.FootprintDeep,
                     onClick = {
                         onMarkFootprint(region.regionId, FootprintLevel.DEEP)
+                        lastMarkedLevel = FootprintLevel.DEEP
                         footprintExpanded = false
+                        confirmMessage = "已标记：深度游览"
                     },
                     enabled = region.footprintLevel?.let { it < FootprintLevel.DEEP } ?: true
                 )
+            }
+        }
+
+        // Inline confirmation
+        AnimatedVisibility(
+            visible = confirmMessage != null,
+            enter = expandVertically() + fadeIn(tween(200)),
+            exit = shrinkVertically() + fadeOut(tween(150))
+        ) {
+            if (confirmMessage != null) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MapChinaColors.Primary.copy(alpha = 0.1f),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = MapChinaColors.Primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            confirmMessage!!,
+                            color = MapChinaColors.Primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (lastMarkedLevel != null) {
+                            Text(
+                                "撤销",
+                                color = MapChinaColors.Error,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        onRemoveFootprint(region.regionId)
+                                        confirmMessage = null
+                                        lastMarkedLevel = null
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -262,12 +346,31 @@ private fun FootprintButton(
     enabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(containerColor = color),
+    val targetAlpha = if (enabled) 1f else 0.4f
+    val alpha by animateFloatAsState(
+        targetValue = targetAlpha,
+        animationSpec = tween(200),
+        label = "footprintAlpha"
+    )
+    Box(
         modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(color.copy(alpha = 0.15f * alpha))
+            .then(
+                if (enabled) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(),
+                    onClick = onClick
+                ) else Modifier
+            )
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(label)
+        Text(
+            label,
+            color = color.copy(alpha = alpha),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }

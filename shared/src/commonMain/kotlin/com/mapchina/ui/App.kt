@@ -48,6 +48,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -269,16 +270,27 @@ private fun InkTabItem(
         label = "pillAlpha"
     )
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
+        targetValue = if (selected) 1.18f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.45f,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "iconScale"
+    )
+    val iconOffsetY by animateFloatAsState(
+        targetValue = if (selected) -4f else 0f,
         animationSpec = spring(
             dampingRatio = 0.55f,
             stiffness = Spring.StiffnessMediumLow
         ),
-        label = "iconScale"
+        label = "iconOffsetY"
     )
     val indicatorWidth by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(250),
+        animationSpec = spring(
+            dampingRatio = 0.6f,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "indicatorWidth"
     )
 
@@ -311,7 +323,10 @@ private fun InkTabItem(
                 tint = tint,
                 modifier = Modifier
                     .size(24.dp)
-                    .offset(y = if (selected) (-1).dp else 0.dp)
+                    .offset(y = iconOffsetY.dp)
+                    .graphicsLayer {
+                        scaleX = iconScale; scaleY = iconScale
+                    }
             )
         }
         Spacer(Modifier.height(2.dp))

@@ -53,6 +53,10 @@ class FootprintService(
         footprintRepository.removeAttractionVisit(userId, attractionId)
     }
 
+    fun removeFootprint(userId: String, regionId: String) {
+        footprintRepository.removeFootprint(userId, regionId)
+    }
+
     fun getCoverageStats(userId: String): CoverageStats {
         val footprints = footprintRepository.getFootprintsByUser(userId)
         val visitedRegionIds = footprints.map { it.regionId }.toSet()

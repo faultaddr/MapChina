@@ -77,6 +77,10 @@ class FootprintRepository(private val database: MapChinaDatabase) {
         database.attractionVisitQueries.deleteByUserAndAttraction(userId, attractionId)
     }
 
+    fun removeFootprint(userId: String, regionId: String) {
+        database.footprintQueries.deleteByUserAndRegion(userId, regionId)
+    }
+
     fun getAttractionVisitCount(userId: String): Int {
         return database.attractionVisitQueries.countByUser(userId).executeAsOne().toInt()
     }
