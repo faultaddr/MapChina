@@ -90,10 +90,18 @@ fun ProfileScreen(
     onLoginSuccess: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel?.loadProfile() }
     val profile by (viewModel?.profile?.collectAsState() ?: remember { mutableStateOf(ProfileUi("未登录", null, null)) })
     val isLoggedIn by (viewModel?.isLoggedIn?.collectAsState() ?: remember { mutableStateOf(false) })
     val achievementUi by (achievementViewModel?.ui?.collectAsState() ?: remember { mutableStateOf(AchievementUi()) })
     val stats by (statsViewModel?.stats?.collectAsState() ?: remember { mutableStateOf(StatsUi()) })
+
+    androidx.compose.runtime.LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            statsViewModel?.refreshStats()
+            achievementViewModel?.refresh()
+        }
+    }
 
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("我的", "成就")

@@ -14,8 +14,17 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+
+@kotlinx.serialization.Serializable
+data class LoginResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val userId: String,
+    val nickname: String
+)
 
 class MapChinaApiClient(
     private val baseUrl: String,
@@ -24,18 +33,28 @@ class MapChinaApiClient(
 
     var accessToken: String? = null
 
-    suspend fun sendLoginCode(phone: String): ApiResponse<Unit> {
-        return client.post("$baseUrl/auth/send-code") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("phone" to phone))
-        }.body()
+
+    suspend fun sendLoginCode(phone: String): Boolean {
+        return try {
+            val body = """{"phone":"$phone"}"""
+            client.post("$baseUrl/auth/send-code") {
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
-    suspend fun login(phone: String, code: String): ApiResponse<UserDto> {
-        return client.post("$baseUrl/auth/login") {
+    suspend fun login(phone: String, code: String): LoginResponse {
+        val body = """{"phone":"$phone","code":"$code"}"""
+        val response = client.post("$baseUrl/auth/login") {
             contentType(ContentType.Application.Json)
-            setBody(mapOf("phone" to phone, "code" to code))
-        }.body()
+            setBody(body)
+        }
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        return json.decodeFromString<LoginResponse>(response.bodyAsText())
     }
 
     suspend fun refreshToken(refreshToken: String): ApiResponse<UserDto> {

@@ -47,6 +47,7 @@ val appModule = module {
     single { FootprintService(get(), get(), get()) }
     single { AttractionService(get()) }
     single { AuthService() }
+    single { MapChinaApiClient("http://192.168.31.62:8080", io.ktor.client.HttpClient()) }
 
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }
@@ -61,15 +62,15 @@ val appModule = module {
 
     single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>(), getOrNull<AchievementRepository>()) }
     single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get()) }
-    single { StatsViewModel(get(), get(), get(), get()) }
+    single { StatsViewModel(get(), get(), get(), get(), get()) }
     single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
-    single { AchievementViewModel(get(), get()) }
+    single { AchievementViewModel(get(), get(), get()) }
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }
     single { JournalViewModel(get(), get(), get(), getOrNull<PhotoPicker>()) }
     single { CarvingRepository(get()) }
     single { CarvingViewModel(get()) }
-    single { CommunityViewModel(getOrNull<MapChinaApiClient>() ?: MapChinaApiClient("", get())) }
+    single { CommunityViewModel(get()) }
 }
 
 expect val platformModule: Module

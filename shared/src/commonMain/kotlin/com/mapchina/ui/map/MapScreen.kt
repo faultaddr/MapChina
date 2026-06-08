@@ -70,10 +70,13 @@ import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Attractions
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,12 +125,13 @@ fun MapScreen(
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
     val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
+    var fabExpanded by remember { mutableStateOf(false) }
 
     val canDrillDown = selectedRegion?.let { viewModel.canDrillIntoRegion(it.regionId) } ?: (currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL || currentLevel == MapZoomLevel.CITY)
     val levelLabel = when (currentLevel) {
-        MapZoomLevel.NATIONAL -> "国家"
-        MapZoomLevel.PROVINCIAL -> "省"
-        MapZoomLevel.CITY -> "市"
+        MapZoomLevel.NATIONAL -> "省"
+        MapZoomLevel.PROVINCIAL -> "市"
+        MapZoomLevel.CITY -> "县"
         MapZoomLevel.DISTRICT -> "县"
     }
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
@@ -186,15 +190,28 @@ fun MapScreen(
             )
         }
 
-        // Top-right FAB: coverage + photo toggle
+        // Scrim to dismiss FAB menu
+        if (fabExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(onClick = { fabExpanded = false })
+            )
+        }
+
+        // Top-right FAB: feature hub
         MapFab(
             visitedCount = visitedCount,
             totalCount = totalCount,
             coveragePercent = coveragePercent,
             currentLevel = levelLabel,
             photoMarkersVisible = photoMarkersVisible,
+            isExpanded = fabExpanded,
+            onExpandedChange = { fabExpanded = it },
             onTogglePhotos = { viewModel.togglePhotoMarkers() },
             onDepart = { showDartTravel = true },
+            onNavigateToNational = { viewModel.navigateToNational() },
+            onMyLocation = { viewModel.moveToCurrentLocation() },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
@@ -560,6 +577,8 @@ private fun AttractionSheetCard(
         null -> MapChinaColors.SurfaceElevated
     }
 
+    var showLevelMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = bgColor)
@@ -594,22 +613,88 @@ private fun AttractionSheetCard(
                 )
             }
 
-            Text(
-                text = if (isVisited) "已玩过" else "未到访",
-                color = if (isVisited) MapChinaColors.FootprintDeep else MapChinaColors.TextTertiary,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(if (isVisited) MapChinaColors.Primary.copy(alpha = 0.2f) else MapChinaColors.BorderSubtle)
-                    .clickable {
-                        if (isVisited) {
-                            onRemoveVisit(attraction.id)
-                        } else {
+            Box {
+                Text(
+                    text = when (attraction.visitLevel) {
+                        FootprintLevel.DEEP -> "深度游"
+                        FootprintLevel.SHORT_VISIT -> "短暂停留"
+                        FootprintLevel.PASS_BY -> "路过"
+                        null -> "未到访"
+                    },
+                    color = if (isVisited) MapChinaColors.FootprintDeep else MapChinaColors.TextTertiary,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isVisited) MapChinaColors.Primary.copy(alpha = 0.2f) else MapChinaColors.BorderSubtle)
+                        .clickable { showLevelMenu = true }
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+
+                DropdownMenu(
+                    expanded = showLevelMenu,
+                    onDismissRequest = { showLevelMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { LevelMenuItemContent("深度游", MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
+                        onClick = {
+                            showLevelMenu = false
+                            onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.DEEP)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { LevelMenuItemContent("短暂停留", MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
+                        onClick = {
+                            showLevelMenu = false
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
                         }
+                    )
+                    DropdownMenuItem(
+                        text = { LevelMenuItemContent("路过", MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
+                        onClick = {
+                            showLevelMenu = false
+                            onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.PASS_BY)
+                        }
+                    )
+                    if (isVisited) {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = null,
+                                        tint = MapChinaColors.Error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("取消标记", color = MapChinaColors.Error, fontSize = 13.sp)
+                                }
+                            },
+                            onClick = {
+                                showLevelMenu = false
+                                onRemoveVisit(attraction.id)
+                            }
+                        )
                     }
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LevelMenuItemContent(label: String, color: Color, isSelected: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(label, color = if (isSelected) color else MapChinaColors.TextPrimary, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal)
+        if (isSelected) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("✓", color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -244,6 +244,33 @@ class MapViewModel(
         }
     }
 
+    fun navigateToNational() {
+        _currentLevel.value = MapZoomLevel.NATIONAL
+        _currentPath.value = emptyList()
+        savedCameraLat = 34.5
+        savedCameraLng = 106.0
+        savedCameraZoom = 3.8f
+        _programmaticCamera = true
+        mapController?.setCamera(34.5, 106.0, 3.8f, true)
+        vmScope.launch {
+            loadTopLevelRegions()
+            _attractions.value = emptyList()
+            mapController?.clearMarkers()
+        }
+    }
+
+    fun moveToCurrentLocation() {
+        val provider = locationProvider ?: return
+        vmScope.launch {
+            val location = provider.getCurrentLocation() ?: return@launch
+            savedCameraLat = location.first
+            savedCameraLng = location.second
+            savedCameraZoom = 10f
+            _programmaticCamera = true
+            mapController?.setCamera(location.first, location.second, 10f, true)
+        }
+    }
+
     fun navigateUp() {
         val path = _currentPath.value
         if (path.size > 1) {
@@ -549,7 +576,14 @@ class MapViewModel(
     private fun refreshAttractions() {
         val currentParentId = _currentPath.value.lastOrNull()?.id
         if (currentParentId != null) {
-            vmScope.launch { loadAttractionsForRegion(currentParentId) }
+            vmScope.launch {
+                loadAttractionsForRegion(currentParentId)
+                loadAttractionsForSelectedRegion(currentParentId)
+            }
+        }
+        val selectedId = _selectedRegion.value?.regionId
+        if (selectedId != null) {
+            vmScope.launch { loadAttractionsForSelectedRegion(selectedId) }
         }
     }
 

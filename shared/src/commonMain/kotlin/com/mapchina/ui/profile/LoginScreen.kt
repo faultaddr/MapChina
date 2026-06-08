@@ -43,6 +43,8 @@ import com.mapchina.ui.theme.MapChinaColors
 fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
     onQuickStart: (String) -> Unit = {},
+    onPhoneLogin: (phone: String, code: String) -> Unit = { _, _ -> },
+    onSendCode: (phone: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var nickname by remember { mutableStateOf("") }
@@ -185,7 +187,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = onLoginSuccess,
+                    onClick = { onPhoneLogin(phone, code) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = code.length >= 4 && phone.isNotBlank(),
                     shape = RoundedCornerShape(12.dp),
@@ -195,7 +197,7 @@ fun LoginScreen(
                 }
             } else {
                 Button(
-                    onClick = { codeSent = true },
+                    onClick = { onSendCode(phone); codeSent = true },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = phone.length >= 11,
                     shape = RoundedCornerShape(12.dp),

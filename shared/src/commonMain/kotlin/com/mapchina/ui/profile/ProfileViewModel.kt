@@ -4,9 +4,14 @@ import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.UserLevelInfo
 import com.mapchina.domain.service.AuthService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class ProfileUi(
     val nickname: String,
@@ -21,16 +26,32 @@ class ProfileViewModel(
     private val userScoreRepository: UserScoreRepository,
     val settingsRepository: SettingsRepository? = null
 ) {
+    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     private val _profile = MutableStateFlow(ProfileUi("", null, null))
     val profile: StateFlow<ProfileUi> = _profile.asStateFlow()
 
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    init {
+        vmScope.launch {
+            authService.currentUserFlow.collect { user ->
+                _isLoggedIn.value = user != null
+                val levelInfo = user?.id?.let { userScoreRepository.getScore(it) }
+                _profile.value = ProfileUi(
+                    nickname = user?.nickname ?: "未登录",
+                    phone = user?.phone,
+                    avatar = user?.avatar,
+                    levelInfo = levelInfo
+                )
+            }
+        }
+    }
+
     fun loadProfile() {
         val user = authService.getCurrentUser()
         _isLoggedIn.value = user != null
-
         val levelInfo = user?.id?.let { userScoreRepository.getScore(it) }
         _profile.value = ProfileUi(
             nickname = user?.nickname ?: "未登录",
@@ -42,7 +63,9 @@ class ProfileViewModel(
 
     fun logout() {
         authService.onLogout()
-        _profile.value = ProfileUi("未登录", null, null)
-        _isLoggedIn.value = false
+    }
+
+    fun onCleared() {
+        vmScope.cancel()
     }
 }

@@ -63,6 +63,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.ui.LocalScaffoldBottomPadding
 import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.navigation.CustomAttractionScreen
@@ -110,6 +111,7 @@ fun AttractionsScreen(
 
     val visitedCount = attractions.count { it.visitLevel != null }
     val totalCount = attractions.size
+    val bottomPadding = LocalScaffoldBottomPadding.current
 
     Box(modifier = modifier.fillMaxSize().background(MapChinaColors.Background)) {
         Column(
@@ -324,7 +326,7 @@ fun AttractionsScreen(
             if (attractions.isEmpty()) {
                 // Skeleton loading state
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottomPadding + 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(4) {
@@ -340,7 +342,7 @@ fun AttractionsScreen(
                 )
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottomPadding + 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredAttractions, key = { it.id }) { attraction ->
@@ -360,8 +362,7 @@ fun AttractionsScreen(
             onClick = { navController.navigate(CustomAttractionScreen(regionId = "")) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 16.dp)
-                .navigationBarsPadding(),
+                .padding(end = 16.dp, bottom = bottomPadding + 16.dp),
             containerColor = MapChinaColors.Primary,
             elevation = FloatingActionButtonDefaults.elevation(
                 defaultElevation = 6.dp,

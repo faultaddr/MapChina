@@ -6,7 +6,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -44,6 +49,7 @@ import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
 import com.mapchina.ui.profile.LoginScreen as LoginScreenComposable
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AuthService
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -103,11 +109,39 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable<LoginScreen> {
             val authService: AuthService = koinInject()
+            val apiClient: com.mapchina.data.remote.MapChinaApiClient = koinInject()
+            val scope = rememberCoroutineScope()
+            var loginError by remember { mutableStateOf("") }
             LoginScreenComposable(
                 onLoginSuccess = { navController.popBackStack() },
                 onQuickStart = { nickname ->
                     authService.quickStart(nickname)
                     navController.popBackStack()
+                },
+                onPhoneLogin = { phone, code ->
+                    loginError = ""
+                    scope.launch {
+                        try {
+                            val resp = apiClient.login(phone, code)
+                            apiClient.accessToken = resp.accessToken
+                            authService.onLogin(com.mapchina.data.model.UserDto(
+                                id = resp.userId,
+                                phone = phone,
+                                nickname = resp.nickname,
+                                avatar = null,
+                                createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                            ))
+                            navController.popBackStack()
+                        } catch (e: Exception) {
+                            loginError = e.message ?: "登录失败"
+                            e.printStackTrace()
+                        }
+                    }
+                },
+                onSendCode = { phone ->
+                    scope.launch {
+                        try { apiClient.sendLoginCode(phone) } catch (e: Exception) { e.printStackTrace() }
+                    }
                 }
             )
         }

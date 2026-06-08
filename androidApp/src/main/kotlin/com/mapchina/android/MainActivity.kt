@@ -20,11 +20,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PhotoPicker.setActivity(this)
-        enableEdgeToEdge()
-        requestPhotoPermission()
         setContent {
             MapChinaApp()
         }
+        enableEdgeToEdge()
+        requestPhotoPermission()
     }
 
     private fun requestPhotoPermission() {

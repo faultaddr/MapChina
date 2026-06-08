@@ -36,7 +36,7 @@ data class AchievementWithProgress(
 class AchievementViewModel(
     private val achievementRepository: AchievementRepository,
     private val userScoreRepository: UserScoreRepository,
-    private val userId: String = ""
+    private val authService: com.mapchina.domain.service.AuthService
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _ui = MutableStateFlow(AchievementUi())
@@ -44,6 +44,7 @@ class AchievementViewModel(
 
     fun refresh() {
         vmScope.launch {
+            val userId = authService.getCurrentUser()?.id ?: ""
             val levelInfo = userScoreRepository.getScore(userId)
             val allDefs = achievementRepository.getAllDefinitions()
             val userAchievements = achievementRepository.getUserAchievements(userId)

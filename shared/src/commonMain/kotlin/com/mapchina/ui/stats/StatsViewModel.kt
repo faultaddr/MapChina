@@ -61,7 +61,7 @@ class StatsViewModel(
     private val attractionRepository: AttractionRepository,
     private val footprintRepository: FootprintRepository,
     private val regionRepository: RegionRepository,
-    private val userId: String = ""
+    private val authService: com.mapchina.domain.service.AuthService
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -85,6 +85,7 @@ class StatsViewModel(
     }
 
     private fun computeStats(): StatsUi {
+        val userId = authService.getCurrentUser()?.id ?: ""
         val coverage = footprintService.getCoverageStats(userId)
         val totalAttractions = attractionRepository.getAttractionCount()
 
