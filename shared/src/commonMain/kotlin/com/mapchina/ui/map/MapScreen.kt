@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
@@ -175,7 +176,7 @@ fun MapScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         // Full-screen map
-        PlatformMapView(
+        ChinaMapView(
             controller = mapController,
             modifier = Modifier.fillMaxSize()
         )
