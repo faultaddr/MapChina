@@ -33,7 +33,8 @@ data class AttractionUi(
     val level: String,
     val regionId: String,
     val description: String?,
-    val visitLevel: FootprintLevel?
+    val visitLevel: FootprintLevel?,
+    val imageUrl: String? = null
 )
 
 data class RegionFootprintUi(
@@ -114,6 +115,12 @@ class MapViewModel(
     private val _autoMarkMessage = MutableStateFlow<String?>(null)
     val autoMarkMessage: StateFlow<String?> = _autoMarkMessage.asStateFlow()
 
+    private val _bottomPanel = MutableStateFlow<BottomPanel>(BottomPanel.None)
+    val bottomPanel: StateFlow<BottomPanel> = _bottomPanel.asStateFlow()
+
+    private val _previewAttraction = MutableStateFlow<AttractionUi?>(null)
+    val previewAttraction: StateFlow<AttractionUi?> = _previewAttraction.asStateFlow()
+
     private var footprintCache: Map<String, FootprintLevel>? = null
 
     private var childrenIndex: Map<String, List<String>> = emptyMap()
@@ -127,6 +134,7 @@ class MapViewModel(
 
     private var _mapController: MapController? = null
     private var _programmaticCamera = false
+    private var _programmaticCameraJob: kotlinx.coroutines.Job? = null
     private var lastBoundaries: Map<String, String>? = null
     private var lastSyncedRegionIds: Set<String> = emptySet()
 
@@ -244,13 +252,22 @@ class MapViewModel(
         }
     }
 
+    private fun setProgrammaticCamera() {
+        _programmaticCamera = true
+        _programmaticCameraJob?.cancel()
+        _programmaticCameraJob = vmScope.launch {
+            kotlinx.coroutines.delay(1500L)
+            _programmaticCamera = false
+        }
+    }
+
     fun navigateToNational() {
         _currentLevel.value = MapZoomLevel.NATIONAL
         _currentPath.value = emptyList()
         savedCameraLat = 34.5
         savedCameraLng = 106.0
         savedCameraZoom = 3.8f
-        _programmaticCamera = true
+        setProgrammaticCamera()
         mapController?.setCamera(34.5, 106.0, 3.8f, true)
         vmScope.launch {
             loadTopLevelRegions()
@@ -266,7 +283,7 @@ class MapViewModel(
             savedCameraLat = location.first
             savedCameraLng = location.second
             savedCameraZoom = 10f
-            _programmaticCamera = true
+            setProgrammaticCamera()
             mapController?.setCamera(location.first, location.second, 10f, true)
         }
     }
@@ -293,7 +310,7 @@ class MapViewModel(
             savedCameraLat = 34.5
             savedCameraLng = 106.0
             savedCameraZoom = 3.8f
-            _programmaticCamera = true
+            setProgrammaticCamera()
             mapController?.setCamera(34.5, 106.0, 3.8f, true)
 
             vmScope.launch {
@@ -391,6 +408,37 @@ class MapViewModel(
             _mapController?.clearImageMarkers()
             _photoClusters.value = emptyList()
         }
+    }
+
+    fun showAttractionPreview(attractionId: String) {
+        val fromList = _attractions.value.find { it.id == attractionId }
+            ?: _selectedRegionAttractions.value.find { it.id == attractionId }
+        if (fromList != null) {
+            _previewAttraction.value = fromList
+        } else {
+            val attraction = attractionService.getAttraction(attractionId) ?: return
+            val visits = getAttractionVisitsCache()
+            _previewAttraction.value = AttractionUi(
+                id = attraction.id,
+                name = attraction.name,
+                level = attraction.level.name,
+                regionId = attraction.regionId,
+                description = attraction.description,
+                visitLevel = visits[attraction.id],
+                imageUrl = attraction.imageUrl
+            )
+        }
+        _bottomPanel.value = BottomPanel.AttractionPreview(attractionId)
+    }
+
+    fun showRegionPanel(regionId: String) {
+        _bottomPanel.value = BottomPanel.Region(regionId)
+        _previewAttraction.value = null
+    }
+
+    fun clearBottomPanel() {
+        _bottomPanel.value = BottomPanel.None
+        _previewAttraction.value = null
     }
 
     private val lastAutoMarkedRegionIds = mutableListOf<String>()
@@ -597,7 +645,8 @@ class MapViewModel(
                 level = attraction.level.name,
                 regionId = attraction.regionId,
                 description = attraction.description,
-                visitLevel = visits[attraction.id]
+                visitLevel = visits[attraction.id],
+                imageUrl = attraction.imageUrl
             )
         }
         syncMarkersToMap()
@@ -613,7 +662,8 @@ class MapViewModel(
                 level = attraction.level.name,
                 regionId = attraction.regionId,
                 description = attraction.description,
-                visitLevel = visits[attraction.id]
+                visitLevel = visits[attraction.id],
+                imageUrl = attraction.imageUrl
             )
         }
     }
@@ -809,10 +859,7 @@ class MapViewModel(
     }
 
     private fun onCameraZoomChanged(zoom: Float) {
-        if (_programmaticCamera) {
-            _programmaticCamera = false
-            return
-        }
+        if (_programmaticCamera) return
 
         if (_currentPath.value.isEmpty()) return
 
@@ -820,7 +867,7 @@ class MapViewModel(
 
         val targetLevel = when {
             zoom < 5f -> MapZoomLevel.NATIONAL
-            zoom < 7.5f -> MapZoomLevel.PROVINCIAL
+            zoom < 8f -> MapZoomLevel.PROVINCIAL
             zoom < 10f -> MapZoomLevel.CITY
             else -> MapZoomLevel.DISTRICT
         }
@@ -836,15 +883,15 @@ class MapViewModel(
         val controller = _mapController ?: return
         val zoom = when (region.level) {
             RegionLevel.PROVINCE -> 7f
-            RegionLevel.CITY -> 8f
-            RegionLevel.DISTRICT -> 9.5f
+            RegionLevel.CITY -> 9f
+            RegionLevel.DISTRICT -> 11f
         }
         val center = regionRepository.getRegionCenter(region.id)
         if (center != null) {
             savedCameraLat = center.first
             savedCameraLng = center.second
             savedCameraZoom = zoom
-            _programmaticCamera = true
+            setProgrammaticCamera()
             controller.setCamera(center.first, center.second, zoom, true)
         }
     }

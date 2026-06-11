@@ -90,7 +90,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
                 onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
                 onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) },
-                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = true)) }
+                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = "true")) }
             )
         }
         composable<BadgeWallScreen> {
@@ -207,7 +207,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         ) { backStackEntry ->
             val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
             val viewModel: AttractionViewModel = koinInject()
-            val attraction = remember(attractionId) { viewModel.getAttractionById(attractionId) }
+            var attraction by remember(attractionId) { mutableStateOf(viewModel.getAttractionById(attractionId)) }
             val detail = remember(attractionId) { viewModel.getAttractionDetail(attractionId) }
             val journalVm: JournalViewModel = koinInject()
             val journals = remember(attractionId) { journalVm.getJournalsByAttraction(attractionId) }
@@ -218,9 +218,11 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 journals = journals,
                 onMarkVisit = { level ->
                     attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
+                    attraction = viewModel.getAttractionById(attractionId)
                 },
                 onRemoveVisit = {
                     attraction?.let { viewModel.removeVisit(it.id) }
+                    attraction = viewModel.getAttractionById(attractionId)
                 },
                 onWriteJournal = {
                     attraction?.let { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen(attractionId = it.id)) }
@@ -270,13 +272,15 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             val regionName = backStackEntry.arguments?.getString("regionName") ?: ""
             val attractionId = backStackEntry.arguments?.getString("attractionId")
             val attractionName = backStackEntry.arguments?.getString("attractionName")
+            val carvingId = backStackEntry.arguments?.getString("carvingId")
             com.mapchina.ui.carving.CarvingScreen(
                 regionId = regionId,
                 regionName = regionName,
                 viewModel = vm,
                 onBack = { navController.popBackStack() },
                 attractionId = attractionId,
-                attractionName = attractionName
+                attractionName = attractionName,
+                carvingId = carvingId
             )
         }
         composable<com.mapchina.ui.navigation.CarvingListScreen> { backStackEntry ->
@@ -295,6 +299,15 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                     val rId = regionId ?: ""
                     val rName = regionName ?: ""
                     navController.navigate(com.mapchina.ui.navigation.CarvingScreen(regionId = rId, regionName = rName, attractionId = attractionId))
+                },
+                onEditClick = { carving ->
+                    navController.navigate(com.mapchina.ui.navigation.CarvingScreen(
+                        regionId = carving.regionId,
+                        regionName = carving.regionName,
+                        attractionId = carving.attractionId,
+                        attractionName = carving.attractionName,
+                        carvingId = carving.id
+                    ))
                 },
                 onBack = { navController.popBackStack() }
             )

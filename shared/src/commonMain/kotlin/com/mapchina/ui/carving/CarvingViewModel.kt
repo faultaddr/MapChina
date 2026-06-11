@@ -30,6 +30,8 @@ class CarvingViewModel(
     private val _carvingList = MutableStateFlow<List<Carving>>(emptyList())
     val carvingList: StateFlow<List<Carving>> = _carvingList.asStateFlow()
 
+    private var editingCarvingId: String? = null
+
     fun loadCarvingsByRegion(regionId: String) {
         _carvingList.value = carvingRepository.getCarvingsByRegion(regionId)
     }
@@ -48,30 +50,48 @@ class CarvingViewModel(
         _existingStrokes.value = emptyList()
     }
 
+    fun loadCarvingForEdit(carvingId: String) {
+        editingCarvingId = carvingId
+        val carving = carvingRepository.getCarving(carvingId)
+        _currentCarving.value = carving
+        _existingStrokes.value = carving?.strokeData?.let { deserializeStrokes(it) } ?: emptyList()
+    }
+
     fun saveCarving(
         regionId: String,
         regionName: String,
         strokes: List<Stroke>,
+        brushType: CarvingBrushType = CarvingBrushType.IRON_CHISEL,
+        brushColorArgb: Int = 0xFF1A1612.toInt(),
         imagePath: String? = null,
+        previewAspectRatio: Float? = null,
         attractionId: String? = null,
         attractionName: String? = null
     ) {
         val now = Clock.System.now().toEpochMilliseconds()
-        val id = "carving_${regionId}_${attractionId ?: "region"}_${userId.hashCode().toUInt()}"
+        val strokeData = serializeStrokes(strokes, brushType, brushColorArgb)
+        val id = editingCarvingId ?: "carving_${regionId}_${attractionId ?: "region"}_$now"
+        val existingCarving = editingCarvingId?.let { carvingRepository.getCarving(it) }
         val carving = Carving(
             id = id,
             userId = userId,
             regionId = regionId,
             regionName = regionName,
             imagePath = imagePath,
-            strokeData = "",
-            createdAt = now,
+            strokeData = strokeData,
+            createdAt = existingCarving?.createdAt ?: now,
             attractionId = attractionId,
-            attractionName = attractionName
+            attractionName = attractionName,
+            previewAspectRatio = previewAspectRatio
         )
         vmScope.launch {
-            carvingRepository.insertCarving(carving)
+            if (editingCarvingId != null) {
+                carvingRepository.updateCarving(carving)
+            } else {
+                carvingRepository.insertCarving(carving)
+            }
             _currentCarving.value = carving
+            editingCarvingId = null
         }
     }
 

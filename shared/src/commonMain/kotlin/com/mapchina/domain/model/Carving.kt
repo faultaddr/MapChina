@@ -9,5 +9,6 @@ data class Carving(
     val strokeData: String?,
     val createdAt: Long,
     val attractionId: String? = null,
-    val attractionName: String? = null
+    val attractionName: String? = null,
+    val previewAspectRatio: Float? = null
 )

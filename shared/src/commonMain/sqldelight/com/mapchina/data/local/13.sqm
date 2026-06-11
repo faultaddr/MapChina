@@ -1,0 +1,1 @@
+ALTER TABLE carving ADD COLUMN preview_aspect_ratio REAL;

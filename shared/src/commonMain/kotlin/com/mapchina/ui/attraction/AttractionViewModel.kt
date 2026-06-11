@@ -123,17 +123,13 @@ class AttractionViewModel(
     }
 
     fun markVisit(attractionId: String, regionId: String, level: FootprintLevel) {
-        vmScope.launch {
-            footprintService.markAttractionVisit(userId, attractionId, regionId, level)
-            refreshAttractions()
-        }
+        footprintService.markAttractionVisit(userId, attractionId, regionId, level)
+        refreshAttractions()
     }
 
     fun removeVisit(attractionId: String) {
-        vmScope.launch {
-            footprintService.removeAttractionVisit(userId, attractionId)
-            refreshAttractions()
-        }
+        footprintService.removeAttractionVisit(userId, attractionId)
+        refreshAttractions()
     }
 
     fun createCustomAttraction(name: String, description: String?, regionId: String, latitude: Double, longitude: Double, imageUrl: String? = null) {

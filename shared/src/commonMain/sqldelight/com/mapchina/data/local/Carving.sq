@@ -7,7 +7,8 @@ CREATE TABLE carving (
     stroke_data TEXT,
     created_at INTEGER NOT NULL,
     attraction_id TEXT,
-    attraction_name TEXT
+    attraction_name TEXT,
+    preview_aspect_ratio REAL
 );
 
 selectById:
@@ -26,8 +27,11 @@ selectAll:
 SELECT * FROM carving ORDER BY created_at DESC;
 
 insertCarving:
-INSERT OR REPLACE INTO carving(id, user_id, region_id, region_name, image_path, stroke_data, created_at, attraction_id, attraction_name)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO carving(id, user_id, region_id, region_name, image_path, stroke_data, created_at, attraction_id, attraction_name, preview_aspect_ratio)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateCarving:
+UPDATE carving SET image_path = ?, stroke_data = ?, preview_aspect_ratio = ? WHERE id = ?;
 
 deleteById:
 DELETE FROM carving WHERE id = ?;

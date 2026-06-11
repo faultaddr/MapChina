@@ -120,12 +120,17 @@ fun MapScreen(
         viewModel.autoMarkFromGps()
     }
 
-    var showRegionCard by remember { mutableStateOf(false) }
     var showAttractionsSheet by remember { mutableStateOf(false) }
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
     val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
     var fabExpanded by remember { mutableStateOf(false) }
+
+    val bottomPanel by viewModel.bottomPanel.collectAsState()
+    val previewAttraction by viewModel.previewAttraction.collectAsState()
+
+    // Derive showRegionCard from bottomPanel for RegionCard visibility
+    val showRegionPanel = bottomPanel is BottomPanel.Region && selectedRegion != null
 
     val canDrillDown = selectedRegion?.let { viewModel.canDrillIntoRegion(it.regionId) } ?: (currentLevel == MapZoomLevel.NATIONAL || currentLevel == MapZoomLevel.PROVINCIAL || currentLevel == MapZoomLevel.CITY)
     val levelLabel = when (currentLevel) {
@@ -140,15 +145,15 @@ fun MapScreen(
 
     // Single tap on region → pulse + show card
     mapController.setOnRegionTapListener { regionId ->
-        if (showRegionCard && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
+        if (bottomPanel is BottomPanel.Region && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
         mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
-        showRegionCard = true
+        viewModel.showRegionPanel(regionId)
     }
 
     // Close region card → restore overlay
-    LaunchedEffect(showRegionCard) {
-        if (!showRegionCard) {
+    LaunchedEffect(bottomPanel) {
+        if (bottomPanel !is BottomPanel.Region) {
             mapController.restorePulsedOverlay()
         }
     }
@@ -157,7 +162,7 @@ fun MapScreen(
         if (cluster != null) {
             photoPreviewCluster = cluster
         } else {
-            navController.navigate(AttractionDetailScreen(markerId))
+            viewModel.showAttractionPreview(markerId)
         }
     }
 
@@ -221,7 +226,7 @@ fun MapScreen(
         // Bottom RegionCard
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         AnimatedVisibility(
-            visible = showRegionCard && selectedRegion != null,
+            visible = showRegionPanel,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -247,7 +252,7 @@ fun MapScreen(
                     },
                     onDrillDown = {
                         val regionId = selectedRegion!!.regionId
-                        showRegionCard = false
+                        viewModel.clearBottomPanel()
                         scope.launch {
                             delay(200)
                             viewModel.drillIntoRegion(regionId)
@@ -258,13 +263,39 @@ fun MapScreen(
                     },
                     onOpenCarving = {
                         val region = selectedRegion!!
-                        showRegionCard = false
+                        viewModel.clearBottomPanel()
                         navController.navigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
                     },
                     onClose = {
-                        showRegionCard = false
+                        viewModel.clearBottomPanel()
                         viewModel.clearSelection()
                     }
+                )
+            }
+        }
+
+        // Attraction preview card
+        AnimatedVisibility(
+            visible = bottomPanel is BottomPanel.AttractionPreview && previewAttraction != null,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(tween(200)),
+            exit = slideOutVertically(
+                targetOffsetY = { it / 2 },
+                animationSpec = tween(200)
+            ) + fadeOut(tween(150)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomBarOffset)
+        ) {
+            if (previewAttraction != null) {
+                AttractionPreviewCard(
+                    attraction = previewAttraction!!,
+                    onViewDetail = {
+                        navController.navigate(AttractionDetailScreen(previewAttraction!!.id))
+                    },
+                    onClose = { viewModel.clearBottomPanel() }
                 )
             }
         }
@@ -470,7 +501,7 @@ fun MapScreen(
                 showDartTravel = false
                 viewModel.navigateTo(cityId)
                 viewModel.selectRegion(cityId)
-                showRegionCard = true
+                viewModel.showRegionPanel(cityId)
                 showAttractionsSheet = true
             },
             onDismiss = { showDartTravel = false }

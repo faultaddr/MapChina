@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +31,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,12 +61,12 @@ import androidx.ink.strokes.Stroke
 import com.mapchina.ui.theme.MapChinaColors
 import org.jetbrains.compose.resources.painterResource
 import mapchina.shared.generated.resources.Res
-import mapchina.shared.generated.resources.stone_wall
+import mapchina.shared.generated.resources.cliff_face
 
 enum class CarvingBrushType(val label: String) {
-    CHISEL("刻刀"),
-    CALLIGRAPHY("毛笔"),
-    CHALK("粉笔")
+    IRON_CHISEL("铁錾"),
+    MONUMENTAL("榜书"),
+    WEATHERED("风化")
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalInkCustomBrushApi::class)
@@ -77,15 +77,20 @@ fun CarvingScreen(
     viewModel: CarvingViewModel,
     onBack: () -> Unit,
     attractionId: String? = null,
-    attractionName: String? = null
+    attractionName: String? = null,
+    carvingId: String? = null
 ) {
     var finishedStrokes by remember { mutableStateOf(listOf<Stroke>()) }
-    var brushType by remember { mutableStateOf(CarvingBrushType.CHISEL) }
-    var brushColor by remember { mutableStateOf(Color(0xFF3D2B1F)) }
+    var brushType by remember { mutableStateOf(CarvingBrushType.IRON_CHISEL) }
+    var brushColor by remember { mutableStateOf(Color(0xFF1A1612)) }
     var brushSize by remember { mutableStateOf(14f) }
 
-    LaunchedEffect(regionId) {
-        viewModel.loadCarvingForRegion(regionId)
+    LaunchedEffect(carvingId, regionId) {
+        if (carvingId != null) {
+            viewModel.loadCarvingForEdit(carvingId)
+        } else {
+            viewModel.loadCarvingForRegion(regionId)
+        }
     }
     val existingStrokes by viewModel.existingStrokes.collectAsState()
 
@@ -109,16 +114,20 @@ fun CarvingScreen(
             },
             actions = {
                 IconButton(onClick = {
-                    viewModel.saveCarving(regionId, regionName, finishedStrokes, attractionId = attractionId, attractionName = attractionName)
+                    viewModel.saveCarving(
+                        regionId, regionName, finishedStrokes,
+                        brushType = brushType,
+                        brushColorArgb = brushColor.toArgb(),
+                        attractionId = attractionId,
+                        attractionName = attractionName
+                    )
                     onBack()
                 }) {
                     Text("保存", color = MapChinaColors.Primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
                 if (finishedStrokes.isNotEmpty()) {
                     IconButton(onClick = {
-                        if (finishedStrokes.isNotEmpty()) {
-                            finishedStrokes = finishedStrokes.dropLast(1)
-                        }
+                        finishedStrokes = finishedStrokes.dropLast(1)
                     }) {
                         Text("撤销", color = MapChinaColors.TextSecondary, fontSize = 13.sp)
                     }
@@ -130,31 +139,31 @@ fun CarvingScreen(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.SurfaceOverlay)
         )
 
-        // Stone wall canvas
+        // Cliff face canvas
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // Layer 1: Base stone texture
+            // Layer 1: Base cliff texture
             Image(
-                painter = painterResource(Res.drawable.stone_wall),
+                painter = painterResource(Res.drawable.cliff_face),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
 
-            // Layer 2: Light gradient
+            // Layer 2: Warm centre glow + cool edge
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(
-                    brush = ComposeBrush.linearGradient(
+                    brush = ComposeBrush.radialGradient(
                         colors = listOf(
-                            Color(0x15FFF8E1),
+                            Color(0x15D4C5A0),
                             Color.Transparent,
-                            Color(0x0D000000)
+                            Color(0x0D1A2020)
                         ),
-                        start = Offset.Zero,
-                        end = Offset(size.width, size.height)
+                        center = Offset(size.width * 0.45f, size.height * 0.4f),
+                        radius = size.width * 0.6f
                     )
                 )
             }
@@ -174,56 +183,104 @@ fun CarvingScreen(
                 )
             }
 
-            // Layer 4: Render finished strokes — cliff carving effect
+            // Layer 4: Finished strokes — cliff carving effect
             if (finishedStrokes.isNotEmpty()) {
-                // Carving effect: 3 layers = deep shadow + groove + light edge
+                // 4a: Weathered edge blur
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
                         val path = strokeToPath(stroke)
-                        val width = stroke.brush.size
-                        val color = stroke.brush.colorIntArgb.toComposeColor()
-
-                        // Layer A: Deep shadow (offset down-right, wide, dark)
                         drawPath(
                             path = path,
-                            color = Color(0x99000000),
+                            color = Color(0x261A1612),
                             style = DrawStroke(
-                                width = width + 4f,
+                                width = stroke.brush.size + 12f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             )
                         )
                     }
+                }
+
+                // 4b: Deep shadow (offset +4,+4, wide, dark)
+                Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
+                        val path = strokeToPath(stroke, offsetDx = 4f, offsetDy = 4f)
+                        drawPath(
+                            path = path,
+                            color = Color(0x80000000),
+                            style = DrawStroke(
+                                width = stroke.brush.size + 10f,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Miter,
+                                miter = 3f
+                            )
+                        )
+                    }
+                }
+
+                // 4c: Groove colour (with dash for iron chisel + spalling)
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for ((index, stroke) in finishedStrokes.withIndex()) {
                         val path = strokeToPath(stroke)
                         val width = stroke.brush.size
                         val color = stroke.brush.colorIntArgb.toComposeColor()
 
-                        // Layer B: Dark groove (the carved trench itself)
+                        val pathEffect = when (brushType) {
+                            CarvingBrushType.IRON_CHISEL -> PathEffect.dashPathEffect(floatArrayOf(8f, 4f))
+                            else -> null
+                        }
+
+                        val rng = kotlin.random.Random(
+                            if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 31 + index else index
+                        )
+                        val spallAlpha = if (rng.nextFloat() < 0.15f) 0.3f + rng.nextFloat() * 0.3f else 1f
+
                         drawPath(
                             path = path,
-                            color = color,
+                            color = color.copy(alpha = spallAlpha),
                             style = DrawStroke(
-                                width = width,
+                                width = width + rng.nextFloat() * 4f - 2f,
                                 cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
+                                join = StrokeJoin.Miter,
+                                miter = 3f,
+                                pathEffect = pathEffect
                             )
                         )
                     }
-                    for (stroke in finishedStrokes) {
-                        val path = strokeToPath(stroke)
-                        val width = stroke.brush.size
+                }
 
-                        // Layer C: Light edge (offset up-left, thin, bright — light catching the upper rim)
+                // 4d: Upper-rim highlight (offset -2,-2, thin, warm white)
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for (stroke in finishedStrokes) {
+                        val path = strokeToPath(stroke, offsetDx = -2f, offsetDy = -2f)
                         drawPath(
                             path = path,
-                            color = Color(0x55FFFFFF),
+                            color = Color(0x40FFF8E1),
                             style = DrawStroke(
-                                width = width * 0.3f,
+                                width = stroke.brush.size * 0.2f,
                                 cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
+                                join = StrokeJoin.Miter,
+                                miter = 3f
                             )
                         )
+                    }
+                }
+
+                // 4e: Lichen patches
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for ((index, stroke) in finishedStrokes.withIndex()) {
+                        val rng = kotlin.random.Random(
+                            if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 31 + index + 7 else index + 7
+                        )
+                        if (rng.nextFloat() < 0.3f) {
+                            if (stroke.inputs.size == 0) continue
+                            val lastInput = stroke.inputs.get(stroke.inputs.size - 1)
+                            drawCircle(
+                                color = Color(0xFF2D4A2D).copy(alpha = 0.25f + rng.nextFloat() * 0.15f),
+                                radius = 4f + rng.nextFloat() * 4f,
+                                center = Offset(lastInput.x + rng.nextFloat() * 10f - 5f, lastInput.y + rng.nextFloat() * 10f - 5f)
+                            )
+                        }
                     }
                 }
             }
@@ -236,34 +293,41 @@ fun CarvingScreen(
                         .graphicsLayer { alpha = 0.6f }
                 ) {
                     for (stroke in existingStrokes) {
-                        val path = strokeToPath(stroke)
-                        val width = stroke.brush.size
-                        val color = stroke.brush.colorIntArgb.toComposeColor()
-
-                        // Weathered shadow
+                        val path = strokeToPath(stroke, offsetDx = 4f, offsetDy = 4f)
                         drawPath(
                             path = path,
-                            color = Color(0x66000000),
+                            color = Color(0x55000000),
                             style = DrawStroke(
-                                width = width + 3f,
+                                width = stroke.brush.size + 8f,
                                 cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
+                                join = StrokeJoin.Miter,
+                                miter = 3f
                             )
                         )
                     }
                     for (stroke in existingStrokes) {
                         val path = strokeToPath(stroke)
-                        val width = stroke.brush.size
-                        val color = stroke.brush.colorIntArgb.toComposeColor()
-
-                        // Weathered groove
                         drawPath(
                             path = path,
-                            color = color.copy(alpha = 0.7f),
+                            color = stroke.brush.colorIntArgb.toComposeColor().copy(alpha = 0.6f),
                             style = DrawStroke(
-                                width = width,
+                                width = stroke.brush.size,
                                 cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
+                                join = StrokeJoin.Miter,
+                                miter = 3f
+                            )
+                        )
+                    }
+                    for (stroke in existingStrokes) {
+                        val path = strokeToPath(stroke, offsetDx = -2f, offsetDy = -2f)
+                        drawPath(
+                            path = path,
+                            color = Color(0x25FFF8E1),
+                            style = DrawStroke(
+                                width = stroke.brush.size * 0.2f,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Miter,
+                                miter = 3f
                             )
                         )
                     }
@@ -271,12 +335,16 @@ fun CarvingScreen(
             }
 
             // Layer 6: In-progress strokes
-            InProgressStrokes(
-                defaultBrush = carvingBrush,
-                onStrokesFinished = { newStrokes ->
-                    finishedStrokes = finishedStrokes + newStrokes
-                }
-            )
+            // key() forces InProgressStrokes to recreate when brush changes,
+            // otherwise it ignores defaultBrush updates after initial composition
+            key(carvingBrush) {
+                InProgressStrokes(
+                    defaultBrush = carvingBrush,
+                    onStrokesFinished = { newStrokes ->
+                        finishedStrokes = finishedStrokes + newStrokes
+                    }
+                )
+            }
         }
 
         // Bottom toolbar
@@ -313,13 +381,13 @@ fun CarvingScreen(
                         .background(Color(0x33FFFFFF))
                 )
 
-                // Color selector
+                // Colour selector — cliff palette
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     val palette = listOf(
-                        Color(0xFF3D2B1F) to "深褐",
-                        Color(0xFF1A1A1A) to "墨黑",
+                        Color(0xFF1A1612) to "崖壁墨",
+                        Color(0xFF4A5568) to "青石灰",
                         Color(0xFF8B2500) to "朱砂",
-                        Color(0xFFD4C5A9) to "石灰"
+                        Color(0xFF9CA3AF) to "风化石"
                     )
                     palette.forEach { (color, _) ->
                         ColorDot(
@@ -374,31 +442,33 @@ fun CarvingScreen(
     }
 }
 
-private fun strokeToPath(stroke: Stroke): Path {
+internal fun strokeToPath(stroke: Stroke, offsetDx: Float = 0f, offsetDy: Float = 0f): Path {
     val inputs = stroke.inputs
     val path = Path()
-    if (inputs.size == 0) return path
+    if (inputs.isEmpty()) return path
 
     val first = inputs[0]
-    path.moveTo(first.x, first.y)
+    path.moveTo(first.x + offsetDx, first.y + offsetDy)
 
     if (inputs.size == 1) return path
 
     for (i in 1 until inputs.size) {
         val curr = inputs[i]
+        val cx = curr.x + offsetDx
+        val cy = curr.y + offsetDy
         if (i < inputs.size - 1) {
             val next = inputs[i + 1]
-            val midX = (curr.x + next.x) / 2f
-            val midY = (curr.y + next.y) / 2f
-            path.quadraticBezierTo(curr.x, curr.y, midX, midY)
+            val midX = (cx + next.x + offsetDx) / 2f
+            val midY = (cy + next.y + offsetDy) / 2f
+            path.quadraticBezierTo(cx, cy, midX, midY)
         } else {
-            path.lineTo(curr.x, curr.y)
+            path.lineTo(cx, cy)
         }
     }
     return path
 }
 
-private fun Int.toComposeColor(): Color {
+internal fun Int.toComposeColor(): Color {
     val a = (this shr 24) and 0xFF
     val r = (this shr 16) and 0xFF
     val g = (this shr 8) and 0xFF
@@ -413,9 +483,9 @@ private fun BrushTypeButton(
     onClick: () -> Unit
 ) {
     val icon = when (type) {
-        CarvingBrushType.CHISEL -> Icons.Default.Edit
-        CarvingBrushType.CALLIGRAPHY -> Icons.Default.Brush
-        CarvingBrushType.CHALK -> Icons.Default.Gesture
+        CarvingBrushType.IRON_CHISEL -> Icons.Default.Edit
+        CarvingBrushType.MONUMENTAL -> Icons.Default.Brush
+        CarvingBrushType.WEATHERED -> Icons.Default.Gesture
     }
 
     Column(
@@ -478,15 +548,10 @@ private fun rememberCarvingBrush(
 ): Brush {
     return remember(brushType, color, size) {
         val family = BrushFamily()
-        val epsilon = when (brushType) {
-            CarvingBrushType.CHISEL -> 0.1f
-            CarvingBrushType.CALLIGRAPHY -> 0.05f
-            CarvingBrushType.CHALK -> 0.3f
-        }
-        val adjustedSize = when (brushType) {
-            CarvingBrushType.CHISEL -> size * 0.6f
-            CarvingBrushType.CALLIGRAPHY -> size * 1.4f
-            CarvingBrushType.CHALK -> size * 1.8f
+        val (epsilon, adjustedSize) = when (brushType) {
+            CarvingBrushType.IRON_CHISEL -> 0.15f to size * 1.8f
+            CarvingBrushType.MONUMENTAL -> 0.05f to size * 2.2f
+            CarvingBrushType.WEATHERED -> 0.3f to size * 1.5f
         }
         Brush.Builder()
             .setFamily(family)

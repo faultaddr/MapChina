@@ -30,7 +30,13 @@ class CarvingRepository(private val database: MapChinaDatabase) {
         database.carvingQueries.insertCarving(
             carving.id, carving.userId, carving.regionId, carving.regionName,
             carving.imagePath, carving.strokeData, carving.createdAt,
-            carving.attractionId, carving.attractionName
+            carving.attractionId, carving.attractionName, carving.previewAspectRatio?.toDouble()
+        )
+    }
+
+    fun updateCarving(carving: Carving) {
+        database.carvingQueries.updateCarving(
+            carving.imagePath, carving.strokeData, carving.previewAspectRatio?.toDouble(), carving.id
         )
     }
 
@@ -48,6 +54,7 @@ class CarvingRepository(private val database: MapChinaDatabase) {
             strokeData = row.stroke_data,
             createdAt = row.created_at,
             attractionId = row.attraction_id,
-            attractionName = row.attraction_name
+            attractionName = row.attraction_name,
+            previewAspectRatio = row.preview_aspect_ratio?.toFloat()
         )
 }
