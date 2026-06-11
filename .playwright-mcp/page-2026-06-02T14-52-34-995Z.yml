@@ -1,0 +1,244 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e8]:
+        - link "Android Developers" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "Android Developers" [ref=e12]
+        - navigation "Upper tabs" [ref=e16]:
+          - generic [ref=e17]:
+            - link "Essentials" [ref=e18] [cursor=pointer]:
+              - /url: https://developer.android.com/get-started
+            - button "Dropdown menu for Essentials" [ref=e19] [cursor=pointer]: arrow_drop_down
+          - generic [ref=e20]:
+            - link "Design & Plan" [ref=e21] [cursor=pointer]:
+              - /url: https://developer.android.com/design
+            - button "Dropdown menu for Design & Plan" [ref=e22] [cursor=pointer]: arrow_drop_down
+          - generic [ref=e23]:
+            - link "Develop" [ref=e24] [cursor=pointer]:
+              - /url: https://developer.android.com/develop
+            - button "Dropdown menu for Develop" [ref=e25] [cursor=pointer]: arrow_drop_down
+          - generic [ref=e26]:
+            - link "Google Play" [ref=e27] [cursor=pointer]:
+              - /url: https://developer.android.com/distribute
+            - button "Dropdown menu for Google Play" [ref=e28] [cursor=pointer]: arrow_drop_down
+          - generic [ref=e29]:
+            - link "Blog" [ref=e30] [cursor=pointer]:
+              - /url: https://developer.android.com/blog
+            - button "Dropdown menu for Blog" [ref=e31] [cursor=pointer]: arrow_drop_down
+        - link "Android Studio" [ref=e32] [cursor=pointer]:
+          - /url: https://developer.android.com/studio
+    - text: filter_list close arrow_back arrow_forward arrow_forward arrow_forward arrow_forward arrow_forward
+    - generic [ref=e34]:
+      - main [ref=e35]:
+        - article [ref=e37]:
+          - article [ref=e38]:
+            - generic [ref=e40]:
+              - generic [ref=e41]: Sorry, we couldn't find that page.
+              - generic [ref=e42]:
+                - heading "Here are some helpful links instead:" [level=3] [ref=e43]
+                - list [ref=e44]:
+                  - listitem [ref=e45]:
+                    - link "Home" [ref=e46] [cursor=pointer]:
+                      - /url: /
+                  - listitem [ref=e47]:
+                    - link "Guides" [ref=e48] [cursor=pointer]:
+                      - /url: /guide
+                  - listitem [ref=e49]:
+                    - link "Android Studio" [ref=e50] [cursor=pointer]:
+                      - /url: /studio
+                  - listitem [ref=e51]:
+                    - link "Jetpack" [ref=e52] [cursor=pointer]:
+                      - /url: /jetpack
+                  - listitem [ref=e53]:
+                    - link "Kotlin" [ref=e54] [cursor=pointer]:
+                      - /url: /kotlin
+                  - listitem [ref=e55]:
+                    - link "API Reference" [ref=e56] [cursor=pointer]:
+                      - /url: /reference
+                  - listitem [ref=e57]:
+                    - link "Google Play Console" [ref=e58] [cursor=pointer]:
+                      - /url: /distribute/console
+      - navigation "Promotions" [ref=e60]:
+        - list [ref=e61]:
+          - listitem [ref=e62]:
+            - link "X X" [ref=e63] [cursor=pointer]:
+              - /url: //x.com/AndroidDev
+              - img "X" [ref=e65]
+              - text: X
+            - generic [ref=e66]: Follow @AndroidDev on X
+          - listitem [ref=e67]:
+            - link "YouTube YouTube" [ref=e68] [cursor=pointer]:
+              - /url: //www.youtube.com/user/androiddevelopers
+              - img "YouTube" [ref=e70]
+              - text: YouTube
+            - generic [ref=e71]: Check out Android Developers on YouTube
+          - listitem [ref=e72]:
+            - link "LinkedIn LinkedIn" [ref=e73] [cursor=pointer]:
+              - /url: //www.linkedin.com/showcase/androiddev
+              - img "LinkedIn" [ref=e75]
+              - text: LinkedIn
+            - generic [ref=e76]: Connect with the Android Developers community on LinkedIn
+      - navigation "Footer links" [ref=e78]:
+        - list [ref=e79]:
+          - listitem [ref=e80]:
+            - heading "More Android" [level=3] [ref=e81]
+            - list [ref=e82]:
+              - listitem [ref=e83]:
+                - link "Android" [ref=e84] [cursor=pointer]:
+                  - /url: //www.android.com
+              - listitem [ref=e85]:
+                - link "Android for Enterprise" [ref=e86] [cursor=pointer]:
+                  - /url: //www.android.com/enterprise/
+              - listitem [ref=e87]:
+                - link "Security" [ref=e88] [cursor=pointer]:
+                  - /url: //www.android.com/security-center/
+              - listitem [ref=e89]:
+                - link "Source" [ref=e90] [cursor=pointer]:
+                  - /url: //source.android.com
+              - listitem [ref=e91]:
+                - link "News" [ref=e92] [cursor=pointer]:
+                  - /url: /news
+              - listitem [ref=e93]:
+                - link "Blog" [ref=e94] [cursor=pointer]:
+                  - /url: //android-developers.googleblog.com/
+              - listitem [ref=e95]:
+                - link "Podcasts" [ref=e96] [cursor=pointer]:
+                  - /url: /podcasts
+          - listitem [ref=e97]:
+            - heading "Discover" [level=3] [ref=e98]
+            - list [ref=e99]:
+              - listitem [ref=e100]:
+                - link "Gaming" [ref=e101] [cursor=pointer]:
+                  - /url: /games
+              - listitem [ref=e102]:
+                - link "Machine Learning" [ref=e103] [cursor=pointer]:
+                  - /url: /ml
+              - listitem [ref=e104]:
+                - link "Health & Fitness" [ref=e105] [cursor=pointer]:
+                  - /url: /health-and-fitness
+              - listitem [ref=e106]:
+                - link "Camera & Media" [ref=e107] [cursor=pointer]:
+                  - /url: /media
+              - listitem [ref=e108]:
+                - link "Privacy" [ref=e109] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=e110]:
+                - link "5G" [ref=e111] [cursor=pointer]:
+                  - /url: /training/connectivity/5g
+          - listitem [ref=e112]:
+            - heading "Android Devices" [level=3] [ref=e113]
+            - list [ref=e114]:
+              - listitem [ref=e115]:
+                - link "Large screens" [ref=e116] [cursor=pointer]:
+                  - /url: /large-screens
+              - listitem [ref=e117]:
+                - link "Wear OS" [ref=e118] [cursor=pointer]:
+                  - /url: /wear
+              - listitem [ref=e119]:
+                - link "ChromeOS devices" [ref=e120] [cursor=pointer]:
+                  - /url: /chrome-os
+              - listitem [ref=e121]:
+                - link "Android for cars" [ref=e122] [cursor=pointer]:
+                  - /url: /cars
+              - listitem [ref=e123]:
+                - link "Android TV" [ref=e124] [cursor=pointer]:
+                  - /url: /tv
+          - listitem [ref=e125]:
+            - heading "Releases" [level=3] [ref=e126]
+            - list [ref=e127]:
+              - listitem [ref=e128]:
+                - link "Android 15" [ref=e129] [cursor=pointer]:
+                  - /url: /about/versions/15
+              - listitem [ref=e130]:
+                - link "Android 14" [ref=e131] [cursor=pointer]:
+                  - /url: /about/versions/14
+              - listitem [ref=e132]:
+                - link "Android 13" [ref=e133] [cursor=pointer]:
+                  - /url: /about/versions/13
+              - listitem [ref=e134]:
+                - link "Android 12" [ref=e135] [cursor=pointer]:
+                  - /url: /about/versions/12
+              - listitem [ref=e136]:
+                - link "Android 11" [ref=e137] [cursor=pointer]:
+                  - /url: /about/versions/11
+              - listitem [ref=e138]:
+                - link "Android 10" [ref=e139] [cursor=pointer]:
+                  - /url: /about/versions/10
+              - listitem [ref=e140]:
+                - link "Pie" [ref=e141] [cursor=pointer]:
+                  - /url: /about/versions/pie
+          - listitem [ref=e142]:
+            - heading "Documentation and Downloads" [level=3] [ref=e143]
+            - list [ref=e144]:
+              - listitem [ref=e145]:
+                - link "Android Studio guide" [ref=e146] [cursor=pointer]:
+                  - /url: /studio/intro
+              - listitem [ref=e147]:
+                - link "Developers guides" [ref=e148] [cursor=pointer]:
+                  - /url: /guide
+              - listitem [ref=e149]:
+                - link "API reference" [ref=e150] [cursor=pointer]:
+                  - /url: /reference
+              - listitem [ref=e151]:
+                - link "Download Studio" [ref=e152] [cursor=pointer]:
+                  - /url: /studio
+              - listitem [ref=e153]:
+                - link "Android NDK" [ref=e154] [cursor=pointer]:
+                  - /url: /ndk
+          - listitem [ref=e155]:
+            - heading "Support" [level=3] [ref=e156]
+            - list [ref=e157]:
+              - listitem [ref=e158]:
+                - link "Report platform bug" [ref=e159] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=190923&template=841312
+              - listitem [ref=e160]:
+                - link "Report documentation bug" [ref=e161] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=192697
+              - listitem [ref=e162]:
+                - link "Google Play support" [ref=e163] [cursor=pointer]:
+                  - /url: //support.google.com/googleplay/android-developer
+              - listitem [ref=e164]:
+                - link "Join research studies" [ref=e165] [cursor=pointer]:
+                  - /url: https://g.co/userresearch/androiddeveloperfooter
+      - generic [ref=e167]:
+        - navigation "Other Google Developers websites" [ref=e168]:
+          - link "Google Developers" [ref=e169] [cursor=pointer]:
+            - /url: https://developers.google.com/
+            - img "Google Developers" [ref=e171]
+          - list [ref=e172]:
+            - listitem [ref=e173]:
+              - link "Android" [ref=e174] [cursor=pointer]:
+                - /url: //developer.android.com
+            - listitem [ref=e175]:
+              - link "Chrome" [ref=e176] [cursor=pointer]:
+                - /url: //developer.chrome.com/home
+            - listitem [ref=e177]:
+              - link "Firebase" [ref=e178] [cursor=pointer]:
+                - /url: //firebase.google.com
+            - listitem [ref=e179]:
+              - link "Google Cloud Platform" [ref=e180] [cursor=pointer]:
+                - /url: //cloud.google.com
+            - listitem [ref=e181]:
+              - link "All products" [ref=e182] [cursor=pointer]:
+                - /url: //developers.google.com/products/
+        - navigation "Utility links" [ref=e183]:
+          - list [ref=e184]:
+            - listitem [ref=e185]:
+              - link "Privacy" [ref=e186] [cursor=pointer]:
+                - /url: //policies.google.com/privacy
+            - listitem [ref=e187]:
+              - text: "|"
+              - link "License" [ref=e188] [cursor=pointer]:
+                - /url: /license
+            - listitem [ref=e189]:
+              - text: "|"
+              - link "Brand guidelines" [ref=e190] [cursor=pointer]:
+                - /url: /distribute/marketing-tools/brand-guidelines
+            - text: "|"
+            - listitem [ref=e191]:
+              - generic [ref=e192]: Get news and tips by email
+              - link "Subscribe" [ref=e193] [cursor=pointer]:
+                - /url: /updates

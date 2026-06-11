@@ -71,7 +71,7 @@ class EndToEndTest {
         val userId = "testUser"
 
         // 1. Browse provinces at national level
-        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, userId)
+        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, null, null, null, null, null, userId)
         val provinces = mapViewModel.regions.value
         assertEquals(34, provinces.size)
 
@@ -107,7 +107,9 @@ class EndToEndTest {
         assertEquals(FootprintLevel.DEEP, updatedAttraction?.visitLevel)
 
         // 8. Check coverage stats
-        val statsViewModel = StatsViewModel(footprintService, attractionRepo, footprintRepo, userId)
+        val statsAuthService = com.mapchina.domain.service.AuthService()
+        statsAuthService.onLogin(com.mapchina.data.model.UserDto(userId, "", "Test", null, 0L))
+        val statsViewModel = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, statsAuthService)
         statsViewModel.refreshStats()
         val stats = statsViewModel.stats.value
         assertTrue(stats.visitedProvinces >= 2)
@@ -165,7 +167,9 @@ class EndToEndTest {
         assertTrue(result.newlyUnlocked.isNotEmpty())
         assertTrue(result.scoreAdded > 0)
 
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, userId)
+        val achAuthService = com.mapchina.domain.service.AuthService()
+        achAuthService.onLogin(com.mapchina.data.model.UserDto(userId, "", "U1", null, 0L))
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, achAuthService)
         vm.refresh()
         assertTrue(vm.ui.value.unlockedCount > 0)
     }
@@ -175,7 +179,9 @@ class EndToEndTest {
         AchievementSeeder.seedAchievements(achievementRepo)
         achievementService.evaluateAndSettle("u1")
 
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, "u1")
+        val achAuthService2 = com.mapchina.domain.service.AuthService()
+        achAuthService2.onLogin(com.mapchina.data.model.UserDto("u1", "", "U1", null, 0L))
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, achAuthService2)
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.totalCount > 0)

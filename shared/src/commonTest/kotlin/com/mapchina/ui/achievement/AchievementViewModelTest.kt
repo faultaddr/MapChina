@@ -30,7 +30,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_loadsAllAchievements() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo)
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.allAchievements.isNotEmpty())
@@ -39,7 +39,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_noUnlockedInitially() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo)
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
         vm.refresh()
         val ui = vm.ui.value
         assertEquals(0, ui.unlockedCount)
@@ -47,7 +47,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_categorizesRegionAndScenic() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo)
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.regionAchievements.isNotEmpty())
@@ -56,7 +56,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_nextTargetIsClosestLocked() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo)
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
         vm.refresh()
         val ui = vm.ui.value
         assertNotNull(ui.nextTarget)

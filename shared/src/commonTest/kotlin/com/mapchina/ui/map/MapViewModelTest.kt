@@ -32,7 +32,7 @@ class MapViewModelTest {
         val attractionRepo = AttractionRepository(database)
         val attractionService = AttractionService(attractionRepo)
         footprintService = FootprintService(footprintRepo, regionRepo, null)
-        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, "testUser")
+        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, null, null, null, null, null, "testUser")
     }
 
     @Test
@@ -45,18 +45,7 @@ class MapViewModelTest {
         assertEquals(0, viewModel.currentPath.value.size)
     }
 
-    @Test
-    fun initialViewMode_isMap() {
-        assertEquals(ViewMode.MAP, viewModel.viewMode.value)
-    }
-
-    @Test
-    fun toggleViewMode_switchesBetweenMapAndBlock() {
-        viewModel.toggleViewMode()
-        assertEquals(ViewMode.BLOCK, viewModel.viewMode.value)
-        viewModel.toggleViewMode()
-        assertEquals(ViewMode.MAP, viewModel.viewMode.value)
-    }
+    // ViewMode tests removed — ViewMode enum no longer exists
 
     @Test
     fun drillIntoProvince_updatesCurrentLevel() {

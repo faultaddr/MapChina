@@ -1,0 +1,991 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=e6]:
+      - heading "Navigation Menu" [level=2] [ref=e7]
+      - generic [ref=e8]:
+        - link "Homepage" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img [ref=e11]
+        - generic [ref=e13]:
+          - navigation "Global" [ref=e16]:
+            - list [ref=e17]:
+              - listitem [ref=e18]:
+                - button "Platform" [ref=e20] [cursor=pointer]:
+                  - text: Platform
+                  - img [ref=e21]
+              - listitem [ref=e23]:
+                - button "Solutions" [ref=e25] [cursor=pointer]:
+                  - text: Solutions
+                  - img [ref=e26]
+              - listitem [ref=e28]:
+                - button "Resources" [ref=e30] [cursor=pointer]:
+                  - text: Resources
+                  - img [ref=e31]
+              - listitem [ref=e33]:
+                - button "Open Source" [ref=e35] [cursor=pointer]:
+                  - text: Open Source
+                  - img [ref=e36]
+              - listitem [ref=e38]:
+                - button "Enterprise" [ref=e40] [cursor=pointer]:
+                  - text: Enterprise
+                  - img [ref=e41]
+              - listitem [ref=e43]:
+                - link "Pricing" [ref=e44] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+                  - generic [ref=e45]: Pricing
+          - generic [ref=e46]:
+            - button "Search or jump to…" [ref=e49] [cursor=pointer]:
+              - img [ref=e51]
+            - generic [ref=e53]:
+              - link "Sign in" [ref=e54] [cursor=pointer]:
+                - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fandroidx%2Fandroidx%2Ftree%2Fandroidx-main%2Fink%2Fink-authoring%2Fink-authoring-compose%2Fsrc%2Fmain%2Fkotlin%2Fandroidx%2Fink%2Fauthoring%2Fcompose
+              - generic [ref=e56]:
+                - heading "Sign in to GitHub" [level=4] [ref=e57]
+                - generic [ref=e58]:
+                  - text: Username or email address
+                  - textbox "Username or email address" [active] [ref=e59]
+                  - generic [ref=e60]:
+                    - text: Password
+                    - textbox "Password" [ref=e61]
+                    - link "Forgot password?" [ref=e62] [cursor=pointer]:
+                      - /url: /password_reset
+                    - button "Sign in" [ref=e63] [cursor=pointer]
+                - link "or continue with other methods" [ref=e66] [cursor=pointer]:
+                  - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fandroidx%2Fandroidx%2Ftree%2Fandroidx-main%2Fink%2Fink-authoring%2Fink-authoring-compose%2Fsrc%2Fmain%2Fkotlin%2Fandroidx%2Fink%2Fauthoring%2Fcompose
+                  - generic [ref=e68]: or continue with other methods
+            - link "Sign up" [ref=e69] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Ffiles%2Fdisambiguate&source=header-repo&source_repo=androidx%2Fandroidx
+            - button "Appearance settings" [ref=e72] [cursor=pointer]:
+              - img
+  - main [ref=e76]:
+    - generic [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e80]:
+          - img [ref=e81]
+          - link "androidx" [ref=e84] [cursor=pointer]:
+            - /url: /androidx
+          - generic [ref=e85]: /
+          - strong [ref=e86]:
+            - link "androidx" [ref=e87] [cursor=pointer]:
+              - /url: /androidx/androidx
+          - generic [ref=e88]: Public
+        - generic [ref=e89]:
+          - list:
+            - listitem [ref=e90]:
+              - link "You must be signed in to change notification settings" [ref=e91] [cursor=pointer]:
+                - /url: /login?return_to=%2Fandroidx%2Fandroidx
+                - img [ref=e92]
+                - text: Notifications
+            - listitem [ref=e94]:
+              - link "Fork 1.3k" [ref=e95] [cursor=pointer]:
+                - /url: /login?return_to=%2Fandroidx%2Fandroidx
+                - img [ref=e96]
+                - text: Fork
+                - generic "1,325" [ref=e98]: 1.3k
+            - listitem [ref=e99]:
+              - link "You must be signed in to star a repository" [ref=e101] [cursor=pointer]:
+                - /url: /login?return_to=%2Fandroidx%2Fandroidx
+                - img [ref=e102]
+                - text: Star
+                - generic "5999 users starred this repository" [ref=e104]: 6k
+      - navigation "Repository" [ref=e105]:
+        - list [ref=e106]:
+          - listitem [ref=e107]:
+            - link "Code" [ref=e108] [cursor=pointer]:
+              - /url: /androidx/androidx
+              - img [ref=e109]
+              - generic [ref=e111]: Code
+          - listitem [ref=e112]:
+            - link "Pull requests 53" [ref=e113] [cursor=pointer]:
+              - /url: /androidx/androidx/pulls
+              - img [ref=e114]
+              - generic [ref=e116]: Pull requests
+              - generic "53" [ref=e117]
+          - listitem [ref=e118]:
+            - link "Actions" [ref=e119] [cursor=pointer]:
+              - /url: /androidx/androidx/actions
+              - img [ref=e120]
+              - generic [ref=e122]: Actions
+          - listitem [ref=e123]:
+            - link "Security and quality" [ref=e124] [cursor=pointer]:
+              - /url: /androidx/androidx/security
+              - img [ref=e125]
+              - generic [ref=e127]: Security and quality
+          - listitem [ref=e128]:
+            - link "Insights" [ref=e129] [cursor=pointer]:
+              - /url: /androidx/androidx/pulse
+              - img [ref=e130]
+              - generic [ref=e132]: Insights
+    - generic [ref=e140]:
+      - generic [ref=e142]:
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - generic [ref=e147]:
+              - heading "Collapse file tree" [level=2] [ref=e148]:
+                - button "Collapse file tree" [expanded] [ref=e149] [cursor=pointer]:
+                  - img [ref=e150]
+              - heading "Files" [level=2] [ref=e153]
+            - generic [ref=e154]:
+              - button "androidx-main branch" [ref=e156] [cursor=pointer]:
+                - generic [ref=e157]:
+                  - generic [ref=e159]:
+                    - img [ref=e161]
+                    - generic [ref=e164]: androidx-main
+                  - generic:
+                    - img
+              - button "Search this repository (forward slash)" [ref=e166] [cursor=pointer]:
+                - img [ref=e167]
+          - generic [ref=e170]:
+            - img [ref=e172]
+            - combobox "Go to file" [ref=e174]
+          - navigation "File Tree Navigation" [ref=e180]:
+            - tree "Files" [ref=e182]:
+              - treeitem ".agents" [level=1] [ref=e183]:
+                - generic [ref=e184] [cursor=pointer]:
+                  - img [ref=e186]
+                  - generic [ref=e188]:
+                    - img [ref=e192]
+                    - generic [ref=e194]: .agents
+              - treeitem ".github" [level=1] [ref=e195]:
+                - generic [ref=e196] [cursor=pointer]:
+                  - img [ref=e198]
+                  - generic [ref=e200]:
+                    - img [ref=e204]
+                    - generic [ref=e206]: .github
+              - treeitem ".idea" [level=1] [ref=e207]:
+                - generic [ref=e208] [cursor=pointer]:
+                  - img [ref=e210]
+                  - generic [ref=e212]:
+                    - img [ref=e216]
+                    - generic [ref=e218]: .idea
+              - treeitem "a2ui" [level=1] [ref=e219]:
+                - generic [ref=e220] [cursor=pointer]:
+                  - img [ref=e222]
+                  - generic [ref=e224]:
+                    - img [ref=e228]
+                    - generic [ref=e230]: a2ui
+              - treeitem "activity" [level=1] [ref=e231]:
+                - generic [ref=e232] [cursor=pointer]:
+                  - img [ref=e234]
+                  - generic [ref=e236]:
+                    - img [ref=e240]
+                    - generic [ref=e242]: activity
+              - treeitem "androidx-settings-plugins" [level=1] [ref=e243]:
+                - generic [ref=e244] [cursor=pointer]:
+                  - img [ref=e246]
+                  - generic [ref=e248]:
+                    - img [ref=e252]
+                    - generic [ref=e254]: androidx-settings-plugins
+              - treeitem "annotation" [level=1] [ref=e255]:
+                - generic [ref=e256] [cursor=pointer]:
+                  - img [ref=e258]
+                  - generic [ref=e260]:
+                    - img [ref=e264]
+                    - generic [ref=e266]: annotation
+              - treeitem "appcompat" [level=1] [ref=e267]:
+                - generic [ref=e268] [cursor=pointer]:
+                  - img [ref=e270]
+                  - generic [ref=e272]:
+                    - img [ref=e276]
+                    - generic [ref=e278]: appcompat
+              - treeitem "appfunctions" [level=1] [ref=e279]:
+                - generic [ref=e280] [cursor=pointer]:
+                  - img [ref=e282]
+                  - generic [ref=e284]:
+                    - img [ref=e288]
+                    - generic [ref=e290]: appfunctions
+              - treeitem "appsearch" [level=1] [ref=e291]:
+                - generic [ref=e292] [cursor=pointer]:
+                  - img [ref=e294]
+                  - generic [ref=e296]:
+                    - img [ref=e300]
+                    - generic [ref=e302]: appsearch
+              - treeitem "appstate" [level=1] [ref=e303]:
+                - generic [ref=e304] [cursor=pointer]:
+                  - img [ref=e306]
+                  - generic [ref=e308]:
+                    - img [ref=e312]
+                    - generic [ref=e314]: appstate
+              - treeitem "arch" [level=1] [ref=e315]:
+                - generic [ref=e316] [cursor=pointer]:
+                  - img [ref=e318]
+                  - generic [ref=e320]:
+                    - img [ref=e324]
+                    - generic [ref=e326]: arch
+              - treeitem "asynclayoutinflater" [level=1] [ref=e327]:
+                - generic [ref=e328] [cursor=pointer]:
+                  - img [ref=e330]
+                  - generic [ref=e332]:
+                    - img [ref=e336]
+                    - generic [ref=e338]: asynclayoutinflater
+              - treeitem "autofill" [level=1] [ref=e339]:
+                - generic [ref=e340] [cursor=pointer]:
+                  - img [ref=e342]
+                  - generic [ref=e344]:
+                    - img [ref=e348]
+                    - generic [ref=e350]: autofill
+              - treeitem "benchmark" [level=1] [ref=e351]:
+                - generic [ref=e352] [cursor=pointer]:
+                  - img [ref=e354]
+                  - generic [ref=e356]:
+                    - img [ref=e360]
+                    - generic [ref=e362]: benchmark
+              - treeitem "binarycompatibilityvalidator" [level=1] [ref=e363]:
+                - generic [ref=e364] [cursor=pointer]:
+                  - img [ref=e366]
+                  - generic [ref=e368]:
+                    - img [ref=e372]
+                    - generic [ref=e374]: binarycompatibilityvalidator
+              - treeitem "biometric" [level=1] [ref=e375]:
+                - generic [ref=e376] [cursor=pointer]:
+                  - img [ref=e378]
+                  - generic [ref=e380]:
+                    - img [ref=e384]
+                    - generic [ref=e386]: biometric
+              - treeitem "browser" [level=1] [ref=e387]:
+                - generic [ref=e388] [cursor=pointer]:
+                  - img [ref=e390]
+                  - generic [ref=e392]:
+                    - img [ref=e396]
+                    - generic [ref=e398]: browser
+              - treeitem "buildSrc-tests" [level=1] [ref=e399]:
+                - generic [ref=e400] [cursor=pointer]:
+                  - img [ref=e402]
+                  - generic [ref=e404]:
+                    - img [ref=e408]
+                    - generic [ref=e410]: buildSrc-tests
+              - treeitem "buildSrc" [level=1] [ref=e411]:
+                - generic [ref=e412] [cursor=pointer]:
+                  - img [ref=e414]
+                  - generic [ref=e416]:
+                    - img [ref=e420]
+                    - generic [ref=e422]: buildSrc
+              - treeitem "busytown" [level=1] [ref=e423]:
+                - generic [ref=e424] [cursor=pointer]:
+                  - img [ref=e426]
+                  - generic [ref=e428]:
+                    - img [ref=e432]
+                    - generic [ref=e434]: busytown
+              - treeitem "camera" [level=1] [ref=e435]:
+                - generic [ref=e436] [cursor=pointer]:
+                  - img [ref=e438]
+                  - generic [ref=e440]:
+                    - img [ref=e444]
+                    - generic [ref=e446]: camera
+              - treeitem "car" [level=1] [ref=e447]:
+                - generic [ref=e448] [cursor=pointer]:
+                  - img [ref=e450]
+                  - generic [ref=e452]:
+                    - img [ref=e456]
+                    - generic [ref=e458]: car
+              - treeitem "cardview" [level=1] [ref=e459]:
+                - generic [ref=e460] [cursor=pointer]:
+                  - img [ref=e462]
+                  - generic [ref=e464]:
+                    - img [ref=e468]
+                    - generic [ref=e470]: cardview
+              - treeitem "collection" [level=1] [ref=e471]:
+                - generic [ref=e472] [cursor=pointer]:
+                  - img [ref=e474]
+                  - generic [ref=e476]:
+                    - img [ref=e480]
+                    - generic [ref=e482]: collection
+              - treeitem "compose" [level=1] [ref=e483]:
+                - generic [ref=e484] [cursor=pointer]:
+                  - img [ref=e486]
+                  - generic [ref=e488]:
+                    - img [ref=e492]
+                    - generic [ref=e494]: compose
+              - treeitem "concurrent" [level=1] [ref=e495]:
+                - generic [ref=e496] [cursor=pointer]:
+                  - img [ref=e498]
+                  - generic [ref=e500]:
+                    - img [ref=e504]
+                    - generic [ref=e506]: concurrent
+              - treeitem "constraintlayout" [level=1] [ref=e507]:
+                - generic [ref=e508] [cursor=pointer]:
+                  - img [ref=e510]
+                  - generic [ref=e512]:
+                    - img [ref=e516]
+                    - generic [ref=e518]: constraintlayout
+              - treeitem "coordinatorlayout" [level=1] [ref=e519]:
+                - generic [ref=e520] [cursor=pointer]:
+                  - img [ref=e522]
+                  - generic [ref=e524]:
+                    - img [ref=e528]
+                    - generic [ref=e530]: coordinatorlayout
+              - treeitem "core" [level=1] [ref=e531]:
+                - generic [ref=e532] [cursor=pointer]:
+                  - img [ref=e534]
+                  - generic [ref=e536]:
+                    - img [ref=e540]
+                    - generic [ref=e542]: core
+              - treeitem "credentials" [level=1] [ref=e543]:
+                - generic [ref=e544] [cursor=pointer]:
+                  - img [ref=e546]
+                  - generic [ref=e548]:
+                    - img [ref=e552]
+                    - generic [ref=e554]: credentials
+              - treeitem "cursoradapter" [level=1] [ref=e555]:
+                - generic [ref=e556] [cursor=pointer]:
+                  - img [ref=e558]
+                  - generic [ref=e560]:
+                    - img [ref=e564]
+                    - generic [ref=e566]: cursoradapter
+              - treeitem "customview" [level=1] [ref=e567]:
+                - generic [ref=e568] [cursor=pointer]:
+                  - img [ref=e570]
+                  - generic [ref=e572]:
+                    - img [ref=e576]
+                    - generic [ref=e578]: customview
+              - treeitem "datastore" [level=1] [ref=e579]:
+                - generic [ref=e580] [cursor=pointer]:
+                  - img [ref=e582]
+                  - generic [ref=e584]:
+                    - img [ref=e588]
+                    - generic [ref=e590]: datastore
+              - treeitem "development" [level=1] [ref=e591]:
+                - generic [ref=e592] [cursor=pointer]:
+                  - img [ref=e594]
+                  - generic [ref=e596]:
+                    - img [ref=e600]
+                    - generic [ref=e602]: development
+              - treeitem "docs-public" [level=1] [ref=e603]:
+                - generic [ref=e604] [cursor=pointer]:
+                  - img [ref=e606]
+                  - generic [ref=e608]:
+                    - img [ref=e612]
+                    - generic [ref=e614]: docs-public
+              - treeitem "docs-tip-of-tree" [level=1] [ref=e615]:
+                - generic [ref=e616] [cursor=pointer]:
+                  - img [ref=e618]
+                  - generic [ref=e620]:
+                    - img [ref=e624]
+                    - generic [ref=e626]: docs-tip-of-tree
+              - treeitem "docs" [level=1] [ref=e627]:
+                - generic [ref=e628] [cursor=pointer]:
+                  - img [ref=e630]
+                  - generic [ref=e632]:
+                    - img [ref=e636]
+                    - generic [ref=e638]: docs
+              - treeitem "documentfile" [level=1] [ref=e639]:
+                - generic [ref=e640] [cursor=pointer]:
+                  - img [ref=e642]
+                  - generic [ref=e644]:
+                    - img [ref=e648]
+                    - generic [ref=e650]: documentfile
+              - treeitem "draganddrop" [level=1] [ref=e651]:
+                - generic [ref=e652] [cursor=pointer]:
+                  - img [ref=e654]
+                  - generic [ref=e656]:
+                    - img [ref=e660]
+                    - generic [ref=e662]: draganddrop
+              - treeitem "drawerlayout" [level=1] [ref=e663]:
+                - generic [ref=e664] [cursor=pointer]:
+                  - img [ref=e666]
+                  - generic [ref=e668]:
+                    - img [ref=e672]
+                    - generic [ref=e674]: drawerlayout
+              - treeitem "dynamicanimation" [level=1] [ref=e675]:
+                - generic [ref=e676] [cursor=pointer]:
+                  - img [ref=e678]
+                  - generic [ref=e680]:
+                    - img [ref=e684]
+                    - generic [ref=e686]: dynamicanimation
+              - treeitem "emoji" [level=1] [ref=e687]:
+                - generic [ref=e688] [cursor=pointer]:
+                  - img [ref=e690]
+                  - generic [ref=e692]:
+                    - img [ref=e696]
+                    - generic [ref=e698]: emoji
+              - treeitem "emoji2" [level=1] [ref=e699]:
+                - generic [ref=e700] [cursor=pointer]:
+                  - img [ref=e702]
+                  - generic [ref=e704]:
+                    - img [ref=e708]
+                    - generic [ref=e710]: emoji2
+              - treeitem "enterprise" [level=1] [ref=e711]:
+                - generic [ref=e712] [cursor=pointer]:
+                  - img [ref=e714]
+                  - generic [ref=e716]:
+                    - img [ref=e720]
+                    - generic [ref=e722]: enterprise
+              - treeitem "exifinterface" [level=1] [ref=e723]:
+                - generic [ref=e724] [cursor=pointer]:
+                  - img [ref=e726]
+                  - generic [ref=e728]:
+                    - img [ref=e732]
+                    - generic [ref=e734]: exifinterface
+              - treeitem "external" [level=1] [ref=e735]:
+                - generic [ref=e736] [cursor=pointer]:
+                  - img [ref=e738]
+                  - generic [ref=e740]:
+                    - img [ref=e744]
+                    - generic [ref=e746]: external
+              - treeitem "fragment" [level=1] [ref=e747]:
+                - generic [ref=e748] [cursor=pointer]:
+                  - img [ref=e750]
+                  - generic [ref=e752]:
+                    - img [ref=e756]
+                    - generic [ref=e758]: fragment
+              - treeitem "glance" [level=1] [ref=e759]:
+                - generic [ref=e760] [cursor=pointer]:
+                  - img [ref=e762]
+                  - generic [ref=e764]:
+                    - img [ref=e768]
+                    - generic [ref=e770]: glance
+              - treeitem "gradle" [level=1] [ref=e771]:
+                - generic [ref=e772] [cursor=pointer]:
+                  - img [ref=e774]
+                  - generic [ref=e776]:
+                    - img [ref=e780]
+                    - generic [ref=e782]: gradle
+              - treeitem "graphics" [level=1] [ref=e783]:
+                - generic [ref=e784] [cursor=pointer]:
+                  - img [ref=e786]
+                  - generic [ref=e788]:
+                    - img [ref=e792]
+                    - generic [ref=e794]: graphics
+              - treeitem "gridlayout" [level=1] [ref=e795]:
+                - generic [ref=e796] [cursor=pointer]:
+                  - img [ref=e798]
+                  - generic [ref=e800]:
+                    - img [ref=e804]
+                    - generic [ref=e806]: gridlayout
+              - treeitem "health" [level=1] [ref=e807]:
+                - generic [ref=e808] [cursor=pointer]:
+                  - img [ref=e810]
+                  - generic [ref=e812]:
+                    - img [ref=e816]
+                    - generic [ref=e818]: health
+              - treeitem "heifwriter" [level=1] [ref=e819]:
+                - generic [ref=e820] [cursor=pointer]:
+                  - img [ref=e822]
+                  - generic [ref=e824]:
+                    - img [ref=e828]
+                    - generic [ref=e830]: heifwriter
+              - treeitem "hilt" [level=1] [ref=e831]:
+                - generic [ref=e832] [cursor=pointer]:
+                  - img [ref=e834]
+                  - generic [ref=e836]:
+                    - img [ref=e840]
+                    - generic [ref=e842]: hilt
+              - treeitem "ink" [level=1] [ref=e843]:
+                - generic [ref=e844] [cursor=pointer]:
+                  - img [ref=e846]
+                  - generic [ref=e848]:
+                    - img [ref=e852]
+                    - generic [ref=e854]: ink
+              - treeitem "input" [level=1] [ref=e855]:
+                - generic [ref=e856] [cursor=pointer]:
+                  - img [ref=e858]
+                  - generic [ref=e860]:
+                    - img [ref=e864]
+                    - generic [ref=e866]: input
+              - treeitem "inspection" [level=1] [ref=e867]:
+                - generic [ref=e868] [cursor=pointer]:
+                  - img [ref=e870]
+                  - generic [ref=e872]:
+                    - img [ref=e876]
+                    - generic [ref=e878]: inspection
+              - treeitem "interpolator" [level=1] [ref=e879]:
+                - generic [ref=e880] [cursor=pointer]:
+                  - img [ref=e882]
+                  - generic [ref=e884]:
+                    - img [ref=e888]
+                    - generic [ref=e890]: interpolator
+              - treeitem "javascriptengine" [level=1] [ref=e891]:
+                - generic [ref=e892] [cursor=pointer]:
+                  - img [ref=e894]
+                  - generic [ref=e896]:
+                    - img [ref=e900]
+                    - generic [ref=e902]: javascriptengine
+              - treeitem "kotlin-js-store" [level=1] [ref=e903]:
+                - generic [ref=e904] [cursor=pointer]:
+                  - img [ref=e906]
+                  - generic [ref=e908]:
+                    - img [ref=e912]
+                    - generic [ref=e914]: kotlin-js-store
+              - treeitem "kruth" [level=1] [ref=e915]:
+                - generic [ref=e916] [cursor=pointer]:
+                  - img [ref=e918]
+                  - generic [ref=e920]:
+                    - img [ref=e924]
+                    - generic [ref=e926]: kruth
+              - treeitem "leanback" [level=1] [ref=e927]:
+                - generic [ref=e928] [cursor=pointer]:
+                  - img [ref=e930]
+                  - generic [ref=e932]:
+                    - img [ref=e936]
+                    - generic [ref=e938]: leanback
+              - treeitem "lifecycle" [level=1] [ref=e939]:
+                - generic [ref=e940] [cursor=pointer]:
+                  - img [ref=e942]
+                  - generic [ref=e944]:
+                    - img [ref=e948]
+                    - generic [ref=e950]: lifecycle
+              - treeitem "lint-checks" [level=1] [ref=e951]:
+                - generic [ref=e952] [cursor=pointer]:
+                  - img [ref=e954]
+                  - generic [ref=e956]:
+                    - img [ref=e960]
+                    - generic [ref=e962]: lint-checks
+              - treeitem "lint" [level=1] [ref=e963]:
+                - generic [ref=e964] [cursor=pointer]:
+                  - img [ref=e966]
+                  - generic [ref=e968]:
+                    - img [ref=e972]
+                    - generic [ref=e974]: lint
+              - treeitem "loader" [level=1] [ref=e975]:
+                - generic [ref=e976] [cursor=pointer]:
+                  - img [ref=e978]
+                  - generic [ref=e980]:
+                    - img [ref=e984]
+                    - generic [ref=e986]: loader
+              - treeitem "mediarouter" [level=1] [ref=e987]:
+                - generic [ref=e988] [cursor=pointer]:
+                  - img [ref=e990]
+                  - generic [ref=e992]:
+                    - img [ref=e996]
+                    - generic [ref=e998]: mediarouter
+              - treeitem "metrics" [level=1] [ref=e999]:
+                - generic [ref=e1000] [cursor=pointer]:
+                  - img [ref=e1002]
+                  - generic [ref=e1004]:
+                    - img [ref=e1008]
+                    - generic [ref=e1010]: metrics
+              - treeitem "navigation" [level=1] [ref=e1011]:
+                - generic [ref=e1012] [cursor=pointer]:
+                  - img [ref=e1014]
+                  - generic [ref=e1016]:
+                    - img [ref=e1020]
+                    - generic [ref=e1022]: navigation
+              - treeitem "navigation3" [level=1] [ref=e1023]:
+                - generic [ref=e1024] [cursor=pointer]:
+                  - img [ref=e1026]
+                  - generic [ref=e1028]:
+                    - img [ref=e1032]
+                    - generic [ref=e1034]: navigation3
+              - treeitem "navigationevent" [level=1] [ref=e1035]:
+                - generic [ref=e1036] [cursor=pointer]:
+                  - img [ref=e1038]
+                  - generic [ref=e1040]:
+                    - img [ref=e1044]
+                    - generic [ref=e1046]: navigationevent
+              - treeitem "paging" [level=1] [ref=e1047]:
+                - generic [ref=e1048] [cursor=pointer]:
+                  - img [ref=e1050]
+                  - generic [ref=e1052]:
+                    - img [ref=e1056]
+                    - generic [ref=e1058]: paging
+              - treeitem "palette" [level=1] [ref=e1059]:
+                - generic [ref=e1060] [cursor=pointer]:
+                  - img [ref=e1062]
+                  - generic [ref=e1064]:
+                    - img [ref=e1068]
+                    - generic [ref=e1070]: palette
+              - treeitem "pdf" [level=1] [ref=e1071]:
+                - generic [ref=e1072] [cursor=pointer]:
+                  - img [ref=e1074]
+                  - generic [ref=e1076]:
+                    - img [ref=e1080]
+                    - generic [ref=e1082]: pdf
+              - treeitem "percentlayout" [level=1] [ref=e1083]:
+                - generic [ref=e1084] [cursor=pointer]:
+                  - img [ref=e1086]
+                  - generic [ref=e1088]:
+                    - img [ref=e1092]
+                    - generic [ref=e1094]: percentlayout
+              - treeitem "photopicker" [level=1] [ref=e1095]:
+                - generic [ref=e1096] [cursor=pointer]:
+                  - img [ref=e1098]
+                  - generic [ref=e1100]:
+                    - img [ref=e1104]
+                    - generic [ref=e1106]: photopicker
+              - treeitem "placeholder-tests" [level=1] [ref=e1107]:
+                - generic [ref=e1108] [cursor=pointer]:
+                  - img [ref=e1110]
+                  - generic [ref=e1112]:
+                    - img [ref=e1116]
+                    - generic [ref=e1118]: placeholder-tests
+              - treeitem "placeholder" [level=1] [ref=e1119]:
+                - generic [ref=e1120] [cursor=pointer]:
+                  - img [ref=e1122]
+                  - generic [ref=e1124]:
+                    - img [ref=e1128]
+                    - generic [ref=e1130]: placeholder
+              - treeitem "playground-common" [level=1] [ref=e1131]:
+                - generic [ref=e1132] [cursor=pointer]:
+                  - img [ref=e1134]
+                  - generic [ref=e1136]:
+                    - img [ref=e1140]
+                    - generic [ref=e1142]: playground-common
+              - treeitem "playground-projects" [level=1] [ref=e1143]:
+                - generic [ref=e1144] [cursor=pointer]:
+                  - img [ref=e1146]
+                  - generic [ref=e1148]:
+                    - img [ref=e1152]
+                    - generic [ref=e1154]: playground-projects
+              - treeitem "preference" [level=1] [ref=e1155]:
+                - generic [ref=e1156] [cursor=pointer]:
+                  - img [ref=e1158]
+                  - generic [ref=e1160]:
+                    - img [ref=e1164]
+                    - generic [ref=e1166]: preference
+              - treeitem "print" [level=1] [ref=e1167]:
+                - generic [ref=e1168] [cursor=pointer]:
+                  - img [ref=e1170]
+                  - generic [ref=e1172]:
+                    - img [ref=e1176]
+                    - generic [ref=e1178]: print
+              - treeitem "privacysandbox" [level=1] [ref=e1179]:
+                - generic [ref=e1180] [cursor=pointer]:
+                  - img [ref=e1182]
+                  - generic [ref=e1184]:
+                    - img [ref=e1188]
+                    - generic [ref=e1190]: privacysandbox
+              - treeitem "profileinstaller" [level=1] [ref=e1191]:
+                - generic [ref=e1192] [cursor=pointer]:
+                  - img [ref=e1194]
+                  - generic [ref=e1196]:
+                    - img [ref=e1200]
+                    - generic [ref=e1202]: profileinstaller
+              - treeitem "recommendation" [level=1] [ref=e1203]:
+                - generic [ref=e1204] [cursor=pointer]:
+                  - img [ref=e1206]
+                  - generic [ref=e1208]:
+                    - img [ref=e1212]
+                    - generic [ref=e1214]: recommendation
+              - treeitem "recyclerview" [level=1] [ref=e1215]:
+                - generic [ref=e1216] [cursor=pointer]:
+                  - img [ref=e1218]
+                  - generic [ref=e1220]:
+                    - img [ref=e1224]
+                    - generic [ref=e1226]: recyclerview
+              - treeitem "resourceinspection" [level=1] [ref=e1227]:
+                - generic [ref=e1228] [cursor=pointer]:
+                  - img [ref=e1230]
+                  - generic [ref=e1232]:
+                    - img [ref=e1236]
+                    - generic [ref=e1238]: resourceinspection
+              - treeitem "room3" [level=1] [ref=e1239]:
+                - generic [ref=e1240] [cursor=pointer]:
+                  - img [ref=e1242]
+                  - generic [ref=e1244]:
+                    - img [ref=e1248]
+                    - generic [ref=e1250]: room3
+              - treeitem "safeparcel" [level=1] [ref=e1251]:
+                - generic [ref=e1252] [cursor=pointer]:
+                  - img [ref=e1254]
+                  - generic [ref=e1256]:
+                    - img [ref=e1260]
+                    - generic [ref=e1262]: safeparcel
+              - treeitem "samples" [level=1] [ref=e1263]:
+                - generic [ref=e1264] [cursor=pointer]:
+                  - img [ref=e1266]
+                  - generic [ref=e1268]:
+                    - img [ref=e1272]
+                    - generic [ref=e1274]: samples
+              - treeitem "savedstate" [level=1] [ref=e1275]:
+                - generic [ref=e1276] [cursor=pointer]:
+                  - img [ref=e1278]
+                  - generic [ref=e1280]:
+                    - img [ref=e1284]
+                    - generic [ref=e1286]: savedstate
+              - treeitem "security" [level=1] [ref=e1287]:
+                - generic [ref=e1288] [cursor=pointer]:
+                  - img [ref=e1290]
+                  - generic [ref=e1292]:
+                    - img [ref=e1296]
+                    - generic [ref=e1298]: security
+              - treeitem "sharetarget" [level=1] [ref=e1299]:
+                - generic [ref=e1300] [cursor=pointer]:
+                  - img [ref=e1302]
+                  - generic [ref=e1304]:
+                    - img [ref=e1308]
+                    - generic [ref=e1310]: sharetarget
+              - treeitem "slidingpanelayout" [level=1] [ref=e1311]:
+                - generic [ref=e1312] [cursor=pointer]:
+                  - img [ref=e1314]
+                  - generic [ref=e1316]:
+                    - img [ref=e1320]
+                    - generic [ref=e1322]: slidingpanelayout
+              - treeitem "sqlite" [level=1] [ref=e1323]:
+                - generic [ref=e1324] [cursor=pointer]:
+                  - img [ref=e1326]
+                  - generic [ref=e1328]:
+                    - img [ref=e1332]
+                    - generic [ref=e1334]: sqlite
+              - treeitem "stableaidl" [level=1] [ref=e1335]:
+                - generic [ref=e1336] [cursor=pointer]:
+                  - img [ref=e1338]
+                  - generic [ref=e1340]:
+                    - img [ref=e1344]
+                    - generic [ref=e1346]: stableaidl
+              - treeitem "startup" [level=1] [ref=e1347]:
+                - generic [ref=e1348] [cursor=pointer]:
+                  - img [ref=e1350]
+                  - generic [ref=e1352]:
+                    - img [ref=e1356]
+                    - generic [ref=e1358]: startup
+              - treeitem "swiperefreshlayout" [level=1] [ref=e1359]:
+                - generic [ref=e1360] [cursor=pointer]:
+                  - img [ref=e1362]
+                  - generic [ref=e1364]:
+                    - img [ref=e1368]
+                    - generic [ref=e1370]: swiperefreshlayout
+              - treeitem "test" [level=1] [ref=e1371]:
+                - generic [ref=e1372] [cursor=pointer]:
+                  - img [ref=e1374]
+                  - generic [ref=e1376]:
+                    - img [ref=e1380]
+                    - generic [ref=e1382]: test
+              - treeitem "testutils" [level=1] [ref=e1383]:
+                - generic [ref=e1384] [cursor=pointer]:
+                  - img [ref=e1386]
+                  - generic [ref=e1388]:
+                    - img [ref=e1392]
+                    - generic [ref=e1394]: testutils
+              - treeitem "text" [level=1] [ref=e1395]:
+                - generic [ref=e1396] [cursor=pointer]:
+                  - img [ref=e1398]
+                  - generic [ref=e1400]:
+                    - img [ref=e1404]
+                    - generic [ref=e1406]: text
+              - treeitem "tracing" [level=1] [ref=e1407]:
+                - generic [ref=e1408] [cursor=pointer]:
+                  - img [ref=e1410]
+                  - generic [ref=e1412]:
+                    - img [ref=e1416]
+                    - generic [ref=e1418]: tracing
+              - treeitem "transition" [level=1] [ref=e1419]:
+                - generic [ref=e1420] [cursor=pointer]:
+                  - img [ref=e1422]
+                  - generic [ref=e1424]:
+                    - img [ref=e1428]
+                    - generic [ref=e1430]: transition
+              - treeitem "tv" [level=1] [ref=e1431]:
+                - generic [ref=e1432] [cursor=pointer]:
+                  - img [ref=e1434]
+                  - generic [ref=e1436]:
+                    - img [ref=e1440]
+                    - generic [ref=e1442]: tv
+              - treeitem "tvprovider" [level=1] [ref=e1443]:
+                - generic [ref=e1444] [cursor=pointer]:
+                  - img [ref=e1446]
+                  - generic [ref=e1448]:
+                    - img [ref=e1452]
+                    - generic [ref=e1454]: tvprovider
+              - treeitem "vectordrawable" [level=1] [ref=e1455]:
+                - generic [ref=e1456] [cursor=pointer]:
+                  - img [ref=e1458]
+                  - generic [ref=e1460]:
+                    - img [ref=e1464]
+                    - generic [ref=e1466]: vectordrawable
+              - treeitem "versionedparcelable" [level=1] [ref=e1467]:
+                - generic [ref=e1468] [cursor=pointer]:
+                  - img [ref=e1470]
+                  - generic [ref=e1472]:
+                    - img [ref=e1476]
+                    - generic [ref=e1478]: versionedparcelable
+              - treeitem "viewpager" [level=1] [ref=e1479]:
+                - generic [ref=e1480] [cursor=pointer]:
+                  - img [ref=e1482]
+                  - generic [ref=e1484]:
+                    - img [ref=e1488]
+                    - generic [ref=e1490]: viewpager
+              - treeitem "viewpager2" [level=1] [ref=e1491]:
+                - generic [ref=e1492] [cursor=pointer]:
+                  - img [ref=e1494]
+                  - generic [ref=e1496]:
+                    - img [ref=e1500]
+                    - generic [ref=e1502]: viewpager2
+              - treeitem "wear" [level=1] [ref=e1503]:
+                - generic [ref=e1504] [cursor=pointer]:
+                  - img [ref=e1506]
+                  - generic [ref=e1508]:
+                    - img [ref=e1512]
+                    - generic [ref=e1514]: wear
+              - treeitem "webgpu" [level=1] [ref=e1515]:
+                - generic [ref=e1516] [cursor=pointer]:
+                  - img [ref=e1518]
+                  - generic [ref=e1520]:
+                    - img [ref=e1524]
+                    - generic [ref=e1526]: webgpu
+              - treeitem "webkit" [level=1] [ref=e1527]:
+                - generic [ref=e1528] [cursor=pointer]:
+                  - img [ref=e1530]
+                  - generic [ref=e1532]:
+                    - img [ref=e1536]
+                    - generic [ref=e1538]: webkit
+              - treeitem "window" [level=1] [ref=e1539]:
+                - generic [ref=e1540] [cursor=pointer]:
+                  - img [ref=e1542]
+                  - generic [ref=e1544]:
+                    - img [ref=e1548]
+                    - generic [ref=e1550]: window
+              - treeitem "work" [level=1] [ref=e1551]:
+                - generic [ref=e1552] [cursor=pointer]:
+                  - img [ref=e1554]
+                  - generic [ref=e1556]:
+                    - img [ref=e1560]
+                    - generic [ref=e1562]: work
+              - treeitem "xr" [level=1] [ref=e1563]:
+                - generic [ref=e1564] [cursor=pointer]:
+                  - img [ref=e1566]
+                  - generic [ref=e1568]:
+                    - img [ref=e1572]
+                    - generic [ref=e1574]: xr
+              - treeitem ".gitignore" [level=1] [ref=e1575]:
+                - generic [ref=e1577] [cursor=pointer]:
+                  - img [ref=e1580]
+                  - generic [ref=e1582]: .gitignore
+              - treeitem "AGENTS.md" [level=1] [ref=e1583]:
+                - generic [ref=e1585] [cursor=pointer]:
+                  - img [ref=e1588]
+                  - generic [ref=e1590]: AGENTS.md
+              - treeitem "CONTRIBUTING.md" [level=1] [ref=e1591]:
+                - generic [ref=e1593] [cursor=pointer]:
+                  - img [ref=e1596]
+                  - generic [ref=e1598]: CONTRIBUTING.md
+              - treeitem "LICENSE.txt" [level=1] [ref=e1599]:
+                - generic [ref=e1601] [cursor=pointer]:
+                  - img [ref=e1604]
+                  - generic [ref=e1606]: LICENSE.txt
+              - treeitem "MOLECULE_UI_OWNERS" [level=1] [ref=e1607]:
+                - generic [ref=e1609] [cursor=pointer]:
+                  - img [ref=e1612]
+                  - generic [ref=e1614]: MOLECULE_UI_OWNERS
+              - treeitem "OWNERS" [level=1] [ref=e1615]:
+                - generic [ref=e1617] [cursor=pointer]:
+                  - img [ref=e1620]
+                  - generic [ref=e1622]: OWNERS
+              - treeitem "PREUPLOAD.cfg" [level=1] [ref=e1623]:
+                - generic [ref=e1625] [cursor=pointer]:
+                  - img [ref=e1628]
+                  - generic [ref=e1630]: PREUPLOAD.cfg
+              - treeitem "README.md" [level=1] [ref=e1631]:
+                - generic [ref=e1633] [cursor=pointer]:
+                  - img [ref=e1636]
+                  - generic [ref=e1638]: README.md
+              - treeitem "TAG_OWNERS" [level=1] [ref=e1639]:
+                - generic [ref=e1641] [cursor=pointer]:
+                  - img [ref=e1644]
+                  - generic [ref=e1646]: TAG_OWNERS
+              - treeitem "TEXT_OWNERS" [level=1] [ref=e1647]:
+                - generic [ref=e1649] [cursor=pointer]:
+                  - img [ref=e1652]
+                  - generic [ref=e1654]: TEXT_OWNERS
+              - treeitem "build.gradle" [level=1] [ref=e1655]:
+                - generic [ref=e1657] [cursor=pointer]:
+                  - img [ref=e1660]
+                  - generic [ref=e1662]: build.gradle
+              - treeitem "cleanBuild.sh" [level=1] [ref=e1663]:
+                - generic [ref=e1665] [cursor=pointer]:
+                  - img [ref=e1668]
+                  - generic [ref=e1670]: cleanBuild.sh
+              - treeitem "code-review.md" [level=1] [ref=e1671]:
+                - generic [ref=e1673] [cursor=pointer]:
+                  - img [ref=e1676]
+                  - generic [ref=e1678]: code-review.md
+              - treeitem "gradle.properties" [level=1] [ref=e1679]:
+                - generic [ref=e1681] [cursor=pointer]:
+                  - img [ref=e1684]
+                  - generic [ref=e1686]: gradle.properties
+              - treeitem "gradlew" [level=1] [ref=e1687]:
+                - generic [ref=e1689] [cursor=pointer]:
+                  - img [ref=e1692]
+                  - generic [ref=e1694]: gradlew
+              - treeitem "libraryversions.toml" [level=1] [ref=e1695]:
+                - generic [ref=e1697] [cursor=pointer]:
+                  - img [ref=e1700]
+                  - generic [ref=e1702]: libraryversions.toml
+              - treeitem "license-baseline.txt" [level=1] [ref=e1703]:
+                - generic [ref=e1705] [cursor=pointer]:
+                  - img [ref=e1708]
+                  - generic [ref=e1710]: license-baseline.txt
+              - treeitem "settings.gradle" [level=1] [ref=e1711]:
+                - generic [ref=e1713] [cursor=pointer]:
+                  - img [ref=e1716]
+                  - generic [ref=e1718]: settings.gradle
+              - treeitem "studiow" [level=1] [ref=e1719]:
+                - generic [ref=e1721] [cursor=pointer]:
+                  - img [ref=e1724]
+                  - generic [ref=e1726]: studiow
+              - treeitem "updateAbi.log" [level=1] [ref=e1727]:
+                - generic [ref=e1729] [cursor=pointer]:
+                  - img [ref=e1732]
+                  - generic [ref=e1734]: updateAbi.log
+        - slider "Draggable pane splitter" [ref=e1736]
+      - generic [ref=e1739]:
+        - generic [ref=e1743]:
+          - generic [ref=e1745]:
+            - navigation "Breadcrumbs" [ref=e1746]:
+              - heading "Breadcrumbs" [level=2] [ref=e1747]
+              - list [ref=e1748]:
+                - listitem [ref=e1749]:
+                  - link "androidx" [ref=e1750] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main
+                - listitem [ref=e1751]:
+                  - text: /
+                  - link "ink" [ref=e1752] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink
+                - listitem [ref=e1753]:
+                  - text: /
+                  - link "ink-authoring" [ref=e1754] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring
+                - listitem [ref=e1755]:
+                  - text: /
+                  - link "ink-authoring-compose" [ref=e1756] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose
+                - listitem [ref=e1757]:
+                  - text: /
+                  - link "src" [ref=e1758] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src
+                - listitem [ref=e1759]:
+                  - text: /
+                  - link "main" [ref=e1760] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src/main
+                - listitem [ref=e1761]:
+                  - text: /
+                  - link "kotlin" [ref=e1762] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src/main/kotlin
+                - listitem [ref=e1763]:
+                  - text: /
+                  - link "androidx" [ref=e1764] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src/main/kotlin/androidx
+                - listitem [ref=e1765]:
+                  - text: /
+                  - link "ink" [ref=e1766] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src/main/kotlin/androidx/ink
+                - listitem [ref=e1767]:
+                  - text: /
+                  - link "authoring" [ref=e1768] [cursor=pointer]:
+                    - /url: /androidx/androidx/tree/androidx-main/ink/ink-authoring/ink-authoring-compose/src/main/kotlin/androidx/ink/authoring
+            - generic [ref=e1769]:
+              - text: /
+              - heading "compose" [level=1] [ref=e1770]
+              - text: /
+            - button "Copy path" [ref=e1771] [cursor=pointer]:
+              - img [ref=e1772]
+          - generic [ref=e1777]:
+            - heading "Directory actions" [level=2] [ref=e1778]
+            - heading "More options" [level=2] [ref=e1779]
+            - button "More options" [ref=e1780] [cursor=pointer]:
+              - img [ref=e1781]
+        - generic [ref=e1784]:
+          - img [ref=e1785]
+          - generic [ref=e1787]:
+            - generic [ref=e1788]: 404 - page not found
+            - generic [ref=e1789]:
+              - text: The
+              - paragraph [ref=e1790]: androidx-main
+              - text: branch of
+              - paragraph [ref=e1791]: androidx
+              - text: does not contain the path
+              - paragraph [ref=e1792]: ink/ink-authoring/ink-authoring-compose/src/main/kotlin/androidx/ink/authoring/compose.
+          - link "go to Overview" [ref=e1793] [cursor=pointer]:
+            - /url: /androidx/androidx
+            - generic [ref=e1795]: Return to the repository overview

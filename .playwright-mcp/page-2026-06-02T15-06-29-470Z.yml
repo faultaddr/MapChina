@@ -1,0 +1,1019 @@
+- generic [ref=e2]:
+  - link "Skip Navigation" [ref=e3] [cursor=pointer]:
+    - /url: "#app-main"
+  - navigation "Global" [ref=e4]:
+    - list [ref=e6]:
+      - listitem [ref=e7]:
+        - link "Apple Developer" [ref=e8] [cursor=pointer]:
+          - /url: /
+      - listitem [ref=e9]:
+        - generic [ref=e11]:
+          - list [ref=e13]:
+            - listitem [ref=e14]:
+              - link "Get Started" [ref=e15] [cursor=pointer]:
+                - /url: /get-started/
+                - generic [ref=e16]:
+                  - generic: Get Started
+            - listitem:
+              - button "Get Started menu":
+                - generic:
+                  - img
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Platforms" [ref=e20] [cursor=pointer]:
+                - /url: /platforms/
+                - generic [ref=e21]:
+                  - generic: Platforms
+            - listitem:
+              - button "Platforms menu":
+                - generic:
+                  - img
+          - list [ref=e23]:
+            - listitem [ref=e24]:
+              - link "Technologies" [ref=e25] [cursor=pointer]:
+                - /url: /technologies/
+                - generic [ref=e26]:
+                  - generic: Technologies
+            - listitem:
+              - button "Technologies menu":
+                - generic:
+                  - img
+          - list [ref=e28]:
+            - listitem [ref=e29]:
+              - link "Community" [ref=e30] [cursor=pointer]:
+                - /url: /community/
+                - generic [ref=e31]:
+                  - generic: Community
+            - listitem:
+              - button "Community menu":
+                - generic:
+                  - img
+          - list [ref=e33]:
+            - listitem [ref=e34]:
+              - link "Documentation" [ref=e35] [cursor=pointer]:
+                - /url: /documentation/
+                - generic [ref=e36]:
+                  - generic: Documentation
+            - listitem:
+              - button "Documentation menu":
+                - generic:
+                  - img
+          - list [ref=e38]:
+            - listitem [ref=e39]:
+              - link "Downloads" [ref=e40] [cursor=pointer]:
+                - /url: /download/
+                - generic [ref=e41]:
+                  - generic: Downloads
+            - listitem:
+              - button "Downloads menu":
+                - generic:
+                  - img
+          - list [ref=e43]:
+            - listitem [ref=e44]:
+              - link "Support" [ref=e45] [cursor=pointer]:
+                - /url: /support/
+                - generic [ref=e46]:
+                  - generic: Support
+            - listitem:
+              - button "Support menu":
+                - generic:
+                  - img
+      - listitem [ref=e47]:
+        - button "Search" [ref=e48] [cursor=pointer]:
+          - generic:
+            - img
+      - listitem [ref=e49]:
+        - link "Sign in" [ref=e51] [cursor=pointer]:
+          - /url: /login/?return=%2Fdocumentation%2Fpencilkit%2Fpkcanvasview
+  - generic [ref=e53]:
+    - navigation "API Reference" [ref=e54]:
+      - generic [ref=e57]:
+        - button "Open Documentation Navigator" [ref=e60] [cursor=pointer]:
+          - img [ref=e62]
+        - link "Documentation" [ref=e65] [cursor=pointer]:
+          - /url: /documentation
+        - list [ref=e68]:
+          - listitem [ref=e69]:
+            - generic [ref=e70]:
+              - combobox
+              - generic [ref=e71]: "Language:"
+              - combobox "Language:" [ref=e72] [cursor=pointer]:
+                - option "Swift" [selected]
+                - option "Objective-C"
+              - img [ref=e73]
+    - generic [ref=e75]:
+      - navigation "PencilKit" [ref=e79]:
+        - generic [ref=e82]:
+          - button "All Technologies" [ref=e84] [cursor=pointer]:
+            - img [ref=e85]
+            - text: All Technologies
+          - generic [ref=e87]:
+            - link "PencilKit" [ref=e88] [cursor=pointer]:
+              - /url: /documentation/pencilkit
+              - heading "PencilKit" [level=2] [ref=e89]
+            - generic "Documentation Navigator" [ref=e90]:
+              - generic [ref=e91]:
+                - heading [level=3] [ref=e98]:
+                  - paragraph [ref=e99]: Canvas
+                - generic [ref=e103]:
+                  - img [ref=e107]
+                  - link [ref=e112] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/drawing-with-pencilkit
+                    - paragraph [ref=e113]: Drawing with PencilKit
+                - heading "Canvas" [level=3] [ref=e120]:
+                  - paragraph [ref=e121]: Canvas
+                - generic [ref=e125]:
+                  - img [ref=e129]
+                  - link "Drawing with PencilKit" [ref=e134] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/drawing-with-pencilkit
+                    - paragraph [ref=e135]: Drawing with PencilKit
+                - generic [ref=e139]:
+                  - img [ref=e143]
+                  - link "Customizing Scribble with Interactions" [ref=e148] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/customizing-scribble-with-interactions
+                    - paragraph [ref=e149]: Customizing Scribble with Interactions
+                - generic [ref=e153]:
+                  - img [ref=e157]
+                  - link "Inspecting, Modifying, and Constructing PencilKit Drawings" [ref=e162] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/inspecting-modifying-and-constructing-pencilkit-drawings
+                    - paragraph [ref=e163]: Inspecting, Modifying, and Constructing PencilKit Drawings
+                - generic [ref=e167]:
+                  - button "PKCanvasView" [expanded] [ref=e169] [cursor=pointer]:
+                    - img [ref=e170]
+                  - img [ref=e174]:
+                    - generic [ref=e177]: C
+                  - link "PKCanvasView" [ref=e179] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview
+                    - paragraph [ref=e180]: PKCanvasView
+                - heading "Responding to drawing-related changes" [level=3] [ref=e187]:
+                  - paragraph [ref=e188]: Responding to drawing-related changes
+                - generic [ref=e192]:
+                  - img [ref=e196]:
+                    - generic [ref=e199]: P
+                  - 'link "var delegate: (any PKCanvasViewDelegate)?" [ref=e201] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/delegate
+                    - paragraph [ref=e202]: "var delegate: (any PKCanvasViewDelegate)?"
+                - generic [ref=e206]:
+                  - button "PKCanvasViewDelegate" [ref=e208] [cursor=pointer]:
+                    - img [ref=e209]
+                  - img [ref=e213]:
+                    - generic [ref=e215]:
+                      - generic [ref=e217]: r
+                      - generic [ref=e218]: P
+                  - link "PKCanvasViewDelegate" [ref=e220] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasviewdelegate
+                    - paragraph [ref=e221]: PKCanvasViewDelegate
+                - heading "Configuring the drawing environment" [level=3] [ref=e228]:
+                  - paragraph [ref=e229]: Configuring the drawing environment
+                - generic [ref=e233]:
+                  - img [ref=e237]:
+                    - generic [ref=e240]: P
+                  - 'link "var tool: any PKTool" [ref=e242] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/tool-1kj57
+                    - paragraph [ref=e243]: "var tool: any PKTool"
+                - generic [ref=e247]:
+                  - img [ref=e251]:
+                    - generic [ref=e254]: P
+                  - 'link "var isRulerActive: Bool" [ref=e256] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/isruleractive
+                    - paragraph [ref=e257]: "var isRulerActive: Bool"
+                - generic [ref=e261]:
+                  - img [ref=e265]:
+                    - generic [ref=e268]: P
+                  - generic [ref=e269]:
+                    - 'link "var allowsFingerDrawing: Bool" [ref=e270] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/allowsfingerdrawing
+                      - paragraph [ref=e271]: "var allowsFingerDrawing: Bool"
+                    - text: Deprecated
+                - generic [ref=e275]:
+                  - img [ref=e279]:
+                    - generic [ref=e282]: P
+                  - 'link "var drawingPolicy: PKCanvasViewDrawingPolicy" [ref=e284] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/drawingpolicy
+                    - paragraph [ref=e285]: "var drawingPolicy: PKCanvasViewDrawingPolicy"
+                - generic [ref=e289]:
+                  - button "PKCanvasViewDrawingPolicy" [ref=e291] [cursor=pointer]:
+                    - img [ref=e292]
+                  - img [ref=e296]:
+                    - generic [ref=e299]: E
+                  - link "PKCanvasViewDrawingPolicy" [ref=e301] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasviewdrawingpolicy
+                    - paragraph [ref=e302]: PKCanvasViewDrawingPolicy
+                - heading "Getting the drawing gesture recognizer" [level=3] [ref=e309]:
+                  - paragraph [ref=e310]: Getting the drawing gesture recognizer
+                - generic [ref=e314]:
+                  - img [ref=e318]:
+                    - generic [ref=e321]: P
+                  - 'link "var drawingGestureRecognizer: UIGestureRecognizer" [ref=e323] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/drawinggesturerecognizer
+                    - paragraph [ref=e324]: "var drawingGestureRecognizer: UIGestureRecognizer"
+                - heading "Getting the captured data" [level=3] [ref=e331]:
+                  - paragraph [ref=e332]: Getting the captured data
+                - generic [ref=e336]:
+                  - img [ref=e340]:
+                    - generic [ref=e343]: P
+                  - 'link "var drawing: PKDrawing" [ref=e345] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/drawing
+                    - paragraph [ref=e346]: "var drawing: PKDrawing"
+                - heading "Supporting PencilKit versions" [level=3] [ref=e353]:
+                  - paragraph [ref=e354]: Supporting PencilKit versions
+                - generic [ref=e358]:
+                  - img [ref=e362]:
+                    - generic [ref=e365]: P
+                  - 'link "var maximumSupportedContentVersion: PKContentVersion" [ref=e367] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/maximumsupportedcontentversion
+                    - paragraph [ref=e368]: "var maximumSupportedContentVersion: PKContentVersion"
+                - heading "Instance Properties" [level=3] [ref=e375]:
+                  - paragraph [ref=e376]: Instance Properties
+                - generic [ref=e380]:
+                  - img [ref=e384]:
+                    - generic [ref=e387]: P
+                  - 'link "var isDrawingEnabled: Bool" [ref=e389] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/isdrawingenabled
+                    - paragraph [ref=e390]: "var isDrawingEnabled: Bool"
+                - generic [ref=e394]:
+                  - button "PKDrawing" [ref=e396] [cursor=pointer]:
+                    - img [ref=e397]
+                  - img [ref=e401]:
+                    - generic [ref=e404]: S
+                  - link "PKDrawing" [ref=e406] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkdrawing-swift.struct
+                    - paragraph [ref=e407]: PKDrawing
+                - generic [ref=e411]:
+                  - button "PKStroke" [ref=e413] [cursor=pointer]:
+                    - img [ref=e414]
+                  - img [ref=e418]:
+                    - generic [ref=e421]: S
+                  - link "PKStroke" [ref=e423] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkstroke-swift.struct
+                    - paragraph [ref=e424]: PKStroke
+            - generic [ref=e425]: 41 items were found. Tab back to navigate through them.
+            - generic:
+              - paragraph
+          - generic [ref=e427]:
+            - search [ref=e429]:
+              - generic [ref=e431]:
+                - button [ref=e432]:
+                  - img [ref=e433]
+                - generic "Filter" [ref=e436]:
+                  - combobox "Filter" [ref=e437]
+            - button "Open Quick Navigation" [ref=e439] [cursor=pointer]: /
+        - generic [ref=e440]: Navigator is ready
+      - generic [ref=e443]:
+        - main [ref=e444]:
+          - generic [ref=e447]:
+            - list "Breadcrumbs" [ref=e448]:
+              - listitem [ref=e449]:
+                - link "PencilKit" [ref=e450] [cursor=pointer]:
+                  - /url: /documentation/pencilkit
+              - listitem [ref=e451]:
+                - text: /
+                - generic [ref=e452]: PKCanvasView
+            - generic [ref=e453]:
+              - generic [ref=e454]: Class
+              - heading "PKCanvasView" [level=1] [ref=e455]:
+                - generic [ref=e456]:
+                  - text: PKCanvas
+                  - text: View
+            - generic [ref=e457]: A view that captures Apple Pencil input and displays the rendered results in an iOS app.
+            - complementary "Availability" [ref=e458]:
+              - generic "iOS 13.0+, Available on iOS 13.0 and later" [ref=e460]: iOS 13.0+
+              - generic "iPadOS 13.0+, Available on iPadOS 13.0 and later" [ref=e462]: iPadOS 13.0+
+              - generic "Mac Catalyst 13.1+, Available on Mac Catalyst 13.1 and later" [ref=e464]: Mac Catalyst 13.1+
+              - generic "visionOS 1.0+, Available on visionOS 1.0 and later" [ref=e466]: visionOS 1.0+
+            - code [ref=e474]: start of code block class PKCanvasView end of code block
+          - generic [ref=e476]:
+            - generic [ref=e478]:
+              - generic [ref=e479]:
+                - heading "Mentioned in in page link" [level=2] [ref=e480]:
+                  - link "Mentioned in in page link" [ref=e481] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#mentions
+                - link "Supporting backward compatibility for ink types" [ref=e483] [cursor=pointer]:
+                  - /url: /documentation/pencilkit/supporting-backward-compatibility-for-ink-types
+                  - img [ref=e485]
+                  - text: Supporting backward compatibility for ink types
+              - generic [ref=e488]:
+                - heading "Overview in page link" [level=2] [ref=e489]:
+                  - link "Overview in page link" [ref=e490] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#overview
+                - paragraph [ref=e491]:
+                  - text: A
+                  - link "PKCanvasView" [ref=e492] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview
+                    - code [ref=e493]:
+                      - text: PKCanvas
+                      - text: View
+                  - text: object captures content drawn using Apple Pencil or the user’s finger and displays it in your app. The canvas view handles all of the touch events and data coming from Apple Pencil, and renders that information using the tool you specify. The canvas stores the captured input in a
+                  - link "PKDrawingReference" [ref=e494] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkdrawingreference
+                    - code [ref=e495]:
+                      - text: PKDrawing
+                      - text: Reference
+                  - text: object.
+                - paragraph [ref=e496]:
+                  - link "PKCanvasView" [ref=e497] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview
+                    - code [ref=e498]:
+                      - text: PKCanvas
+                      - text: View
+                  - text: is a scroll view, so you can make the drawable area bigger than the canvas view’s frame rectangle. To do that, set the inherited
+                  - link "contentSize" [ref=e499] [cursor=pointer]:
+                    - /url: /documentation/UIKit/UIScrollView/contentSize
+                    - code [ref=e500]:
+                      - text: content
+                      - text: Size
+                  - text: property to the size you want. The canvas view automatically scales its underlying content to match the size you specify. Users scroll around the canvas using a two-finger pan gesture. (If the
+                  - link "allowsFingerDrawing" [ref=e501] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview/allowsfingerdrawing
+                    - code [ref=e502]:
+                      - text: allows
+                      - text: Finger
+                      - text: Drawing
+                  - text: property is
+                  - code [ref=e503]: "false"
+                  - text: ", users scroll with only one finger.)"
+                - paragraph [ref=e504]:
+                  - text: A canvas view conforms to the
+                  - link "PKToolPickerObserver" [ref=e505] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pktoolpickerobserver
+                    - code [ref=e506]:
+                      - text: PKTool
+                      - text: Picker
+                      - text: Observer
+                  - text: protocol, so you can add it as an observer of the window’s tool picker. The tool picker displays a floating palette of tools that the user can choose from. As the user interacts with items in the palette, such as changing ink colors, or line widths, the canvas automatically updates its drawing environment accordingly.
+            - generic [ref=e508]:
+              - heading "Topics in page link" [level=2] [ref=e509]:
+                - link "Topics in page link" [ref=e510] [cursor=pointer]:
+                  - /url: /documentation/pencilkit/pkcanvasview#topics
+              - generic [ref=e511]:
+                - heading "Responding to drawing-related changes in page link" [level=3] [ref=e513]:
+                  - link "Responding to drawing-related changes in page link" [ref=e514] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Responding-to-drawing-related-changes
+                - generic [ref=e515]:
+                  - generic [ref=e516]:
+                    - 'link "var delegate: (any PKCanvasViewDelegate)?" [ref=e517] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/delegate
+                      - code [ref=e518]:
+                        - text: var
+                        - text: delegate
+                        - text: ": (any"
+                        - generic [ref=e519]:
+                          - text: PKCanvas
+                          - text: View
+                          - text: Delegate
+                        - text: )?
+                    - generic [ref=e521]: The object you use to respond to changes in the drawn content or with the selected tool.
+                  - generic [ref=e522]:
+                    - link "protocol PKCanvasViewDelegate" [ref=e523] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkcanvasviewdelegate
+                      - code [ref=e524]:
+                        - text: protocol
+                        - generic [ref=e525]:
+                          - text: PKCanvas
+                          - text: View
+                          - text: Delegate
+                    - generic [ref=e527]: Methods for monitoring drawing related changes in a canvas view.
+              - generic [ref=e528]:
+                - heading "Configuring the drawing environment in page link" [level=3] [ref=e530]:
+                  - link "Configuring the drawing environment in page link" [ref=e531] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Configuring-the-drawing-environment
+                - generic [ref=e532]:
+                  - generic [ref=e533]:
+                    - 'link "var tool: any PKTool" [ref=e534] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/tool-1kj57
+                      - code [ref=e535]:
+                        - text: var
+                        - text: tool
+                        - text: ": any"
+                        - text: PKTool
+                    - generic [ref=e537]: The currently selected tool used for drawing.
+                  - generic [ref=e538]:
+                    - 'link "var isRulerActive: Bool" [ref=e539] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/isruleractive
+                      - code [ref=e540]:
+                        - text: var
+                        - generic [ref=e541]:
+                          - text: is
+                          - text: Ruler
+                          - text: Active
+                        - text: ":"
+                        - text: Bool
+                    - generic [ref=e543]: A Boolean value that indicates whether a ruler view is visible on the canvas.
+                  - generic [ref=e544]:
+                    - 'link "var allowsFingerDrawing: Bool" [ref=e545] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/allowsfingerdrawing
+                      - code [ref=e546]:
+                        - text: var
+                        - generic [ref=e547]:
+                          - text: allows
+                          - text: Finger
+                          - text: Drawing
+                        - text: ":"
+                        - text: Bool
+                    - generic [ref=e549]: A Boolean value that indicates whether the canvas accepts input from the user’s finger in addition to Apple Pencil.
+                    - text: Deprecated
+                  - generic [ref=e550]:
+                    - 'link "var drawingPolicy: PKCanvasViewDrawingPolicy" [ref=e551] [cursor=pointer]':
+                      - /url: /documentation/pencilkit/pkcanvasview/drawingpolicy
+                      - code [ref=e552]:
+                        - text: var
+                        - generic [ref=e553]:
+                          - text: drawing
+                          - text: Policy
+                        - text: ":"
+                        - generic [ref=e554]:
+                          - text: PKCanvas
+                          - text: View
+                          - text: Drawing
+                          - text: Policy
+                    - generic [ref=e556]: The policy that controls the types of touches allowed when drawing on the canvas.
+                  - generic [ref=e557]:
+                    - link "enum PKCanvasViewDrawingPolicy" [ref=e558] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkcanvasviewdrawingpolicy
+                      - code [ref=e559]:
+                        - text: enum
+                        - generic [ref=e560]:
+                          - text: PKCanvas
+                          - text: View
+                          - text: Drawing
+                          - text: Policy
+                    - generic [ref=e562]: Constants that you use to specify the type of drawing gestures your app permits while the user draws on the canvas.
+              - generic [ref=e563]:
+                - heading "Getting the drawing gesture recognizer in page link" [level=3] [ref=e565]:
+                  - link "Getting the drawing gesture recognizer in page link" [ref=e566] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Getting-the-drawing-gesture-recognizer
+                - generic [ref=e568]:
+                  - 'link "var drawingGestureRecognizer: UIGestureRecognizer" [ref=e569] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/drawinggesturerecognizer
+                    - code [ref=e570]:
+                      - text: var
+                      - generic [ref=e571]:
+                        - text: drawing
+                        - text: Gesture
+                        - text: Recognizer
+                      - text: ":"
+                      - generic [ref=e572]:
+                        - text: UIGesture
+                        - text: Recognizer
+                  - generic [ref=e574]: The gesture recognizer that the canvas uses to track touch events.
+              - generic [ref=e575]:
+                - heading "Getting the captured data in page link" [level=3] [ref=e577]:
+                  - link "Getting the captured data in page link" [ref=e578] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Getting-the-captured-data
+                - generic [ref=e580]:
+                  - 'link "var drawing: PKDrawing" [ref=e581] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/drawing
+                    - code [ref=e582]:
+                      - text: var
+                      - text: drawing
+                      - text: ":"
+                      - text: PKDrawing
+                  - generic [ref=e584]: The data object that the canvas uses to store drawn content.
+              - generic [ref=e585]:
+                - heading "Supporting PencilKit versions in page link" [level=3] [ref=e587]:
+                  - link "Supporting PencilKit versions in page link" [ref=e588] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Supporting-PencilKit-versions
+                - generic [ref=e590]:
+                  - 'link "var maximumSupportedContentVersion: PKContentVersion" [ref=e591] [cursor=pointer]':
+                    - /url: /documentation/pencilkit/pkcanvasview/maximumsupportedcontentversion
+                    - code [ref=e592]:
+                      - text: var
+                      - generic [ref=e593]:
+                        - text: maximum
+                        - text: Supported
+                        - text: Content
+                        - text: Version
+                      - text: ":"
+                      - generic [ref=e594]:
+                        - text: PKContent
+                        - text: Version
+                  - generic [ref=e596]: The maximum version of PencilKit to support.
+              - generic [ref=e597]:
+                - heading "Instance Properties in page link" [level=3] [ref=e599]:
+                  - link "Instance Properties in page link" [ref=e600] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Instance-Properties
+                - 'link "var isDrawingEnabled: Bool" [ref=e603] [cursor=pointer]':
+                  - /url: /documentation/pencilkit/pkcanvasview/isdrawingenabled
+                  - code [ref=e604]:
+                    - text: var
+                    - generic [ref=e605]:
+                      - text: is
+                      - text: Drawing
+                      - text: Enabled
+                    - text: ":"
+                    - text: Bool
+            - generic [ref=e607]:
+              - heading "Relationships in page link" [level=2] [ref=e608]:
+                - link "Relationships in page link" [ref=e609] [cursor=pointer]:
+                  - /url: /documentation/pencilkit/pkcanvasview#relationships
+              - generic [ref=e610]:
+                - heading "Inherits From in page link" [level=3] [ref=e612]:
+                  - link "Inherits From in page link" [ref=e613] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#inherits-from
+                - list [ref=e615]:
+                  - listitem [ref=e616]:
+                    - link "UIScrollView" [ref=e617] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIScrollView
+                      - code [ref=e618]:
+                        - text: UIScroll
+                        - text: View
+              - generic [ref=e619]:
+                - heading "Conforms To in page link" [level=3] [ref=e621]:
+                  - link "Conforms To in page link" [ref=e622] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#conforms-to
+                - list [ref=e624]:
+                  - listitem [ref=e625]:
+                    - link "CALayerDelegate" [ref=e626] [cursor=pointer]:
+                      - /url: /documentation/QuartzCore/CALayerDelegate
+                      - code [ref=e627]:
+                        - text: CALayer
+                        - text: Delegate
+                  - listitem [ref=e628]:
+                    - link "CVarArg" [ref=e629] [cursor=pointer]:
+                      - /url: /documentation/Swift/CVarArg
+                      - code [ref=e630]:
+                        - text: CVar
+                        - text: Arg
+                  - listitem [ref=e631]:
+                    - link "CustomDebugStringConvertible" [ref=e632] [cursor=pointer]:
+                      - /url: /documentation/Swift/CustomDebugStringConvertible
+                      - code [ref=e633]:
+                        - text: Custom
+                        - text: Debug
+                        - text: String
+                        - text: Convertible
+                  - listitem [ref=e634]:
+                    - link "CustomStringConvertible" [ref=e635] [cursor=pointer]:
+                      - /url: /documentation/Swift/CustomStringConvertible
+                      - code [ref=e636]:
+                        - text: Custom
+                        - text: String
+                        - text: Convertible
+                  - listitem [ref=e637]:
+                    - link "Equatable" [ref=e638] [cursor=pointer]:
+                      - /url: /documentation/Swift/Equatable
+                      - code [ref=e639]: Equatable
+                  - listitem [ref=e640]:
+                    - link "Hashable" [ref=e641] [cursor=pointer]:
+                      - /url: /documentation/Swift/Hashable
+                      - code [ref=e642]: Hashable
+                  - listitem [ref=e643]:
+                    - link "NSCoding" [ref=e644] [cursor=pointer]:
+                      - /url: /documentation/Foundation/NSCoding
+                      - code [ref=e645]: NSCoding
+                  - listitem [ref=e646]:
+                    - link "NSObjectProtocol" [ref=e647] [cursor=pointer]:
+                      - /url: /documentation/ObjectiveC/NSObjectProtocol
+                      - code [ref=e648]:
+                        - text: NSObject
+                        - text: Protocol
+                  - listitem [ref=e649]:
+                    - link "NSTouchBarProvider" [ref=e650] [cursor=pointer]:
+                      - /url: /documentation/AppKit/NSTouchBarProvider
+                      - code [ref=e651]:
+                        - text: NSTouch
+                        - text: Bar
+                        - text: Provider
+                  - listitem [ref=e652]:
+                    - link "PKToolPickerObserver" [ref=e653] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pktoolpickerobserver
+                      - code [ref=e654]:
+                        - text: PKTool
+                        - text: Picker
+                        - text: Observer
+                  - listitem [ref=e655]:
+                    - link "UIAccessibilityIdentification" [ref=e656] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIAccessibilityIdentification
+                      - code [ref=e657]:
+                        - text: UIAccessibility
+                        - text: Identification
+                  - listitem [ref=e658]:
+                    - link "UIActivityItemsConfigurationProviding" [ref=e659] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIActivityItemsConfigurationProviding
+                      - code [ref=e660]:
+                        - text: UIActivity
+                        - text: Items
+                        - text: Configuration
+                        - text: Providing
+                  - listitem [ref=e661]:
+                    - link "UIAppearance" [ref=e662] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIAppearance
+                      - code [ref=e663]: UIAppearance
+                  - listitem [ref=e664]:
+                    - link "UIAppearanceContainer" [ref=e665] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIAppearanceContainer
+                      - code [ref=e666]:
+                        - text: UIAppearance
+                        - text: Container
+                  - listitem [ref=e667]:
+                    - link "UICoordinateSpace" [ref=e668] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UICoordinateSpace
+                      - code [ref=e669]:
+                        - text: UICoordinate
+                        - text: Space
+                  - listitem [ref=e670]:
+                    - link "UIDynamicItem" [ref=e671] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIDynamicItem
+                      - code [ref=e672]:
+                        - text: UIDynamic
+                        - text: Item
+                  - listitem [ref=e673]:
+                    - link "UIFocusEnvironment" [ref=e674] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIFocusEnvironment
+                      - code [ref=e675]:
+                        - text: UIFocus
+                        - text: Environment
+                  - listitem [ref=e676]:
+                    - link "UIFocusItem" [ref=e677] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIFocusItem
+                      - code [ref=e678]:
+                        - text: UIFocus
+                        - text: Item
+                  - listitem [ref=e679]:
+                    - link "UIFocusItemContainer" [ref=e680] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIFocusItemContainer
+                      - code [ref=e681]:
+                        - text: UIFocus
+                        - text: Item
+                        - text: Container
+                  - listitem [ref=e682]:
+                    - link "UIFocusItemScrollableContainer" [ref=e683] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIFocusItemScrollableContainer
+                      - code [ref=e684]:
+                        - text: UIFocus
+                        - text: Item
+                        - text: Scrollable
+                        - text: Container
+                  - listitem [ref=e685]:
+                    - link "UILargeContentViewerItem" [ref=e686] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UILargeContentViewerItem
+                      - code [ref=e687]:
+                        - text: UILarge
+                        - text: Content
+                        - text: Viewer
+                        - text: Item
+                  - listitem [ref=e688]:
+                    - link "UIPasteConfigurationSupporting" [ref=e689] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIPasteConfigurationSupporting
+                      - code [ref=e690]:
+                        - text: UIPaste
+                        - text: Configuration
+                        - text: Supporting
+                  - listitem [ref=e691]:
+                    - link "UIPopoverPresentationControllerSourceItem" [ref=e692] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIPopoverPresentationControllerSourceItem
+                      - code [ref=e693]:
+                        - text: UIPopover
+                        - text: Presentation
+                        - text: Controller
+                        - text: Source
+                        - text: Item
+                  - listitem [ref=e694]:
+                    - link "UIResponderStandardEditActions" [ref=e695] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIResponderStandardEditActions
+                      - code [ref=e696]:
+                        - text: UIResponder
+                        - text: Standard
+                        - text: Edit
+                        - text: Actions
+                  - listitem [ref=e697]:
+                    - link "UITraitChangeObservable" [ref=e698] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UITraitChangeObservable-67e94
+                      - code [ref=e699]:
+                        - text: UITrait
+                        - text: Change
+                        - text: Observable
+                  - listitem [ref=e700]:
+                    - link "UITraitEnvironment" [ref=e701] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UITraitEnvironment
+                      - code [ref=e702]:
+                        - text: UITrait
+                        - text: Environment
+                  - listitem [ref=e703]:
+                    - link "UIUserActivityRestoring" [ref=e704] [cursor=pointer]:
+                      - /url: /documentation/UIKit/UIUserActivityRestoring
+                      - code [ref=e705]:
+                        - text: UIUser
+                        - text: Activity
+                        - text: Restoring
+            - generic [ref=e707]:
+              - heading "See Also in page link" [level=2] [ref=e708]:
+                - link "See Also in page link" [ref=e709] [cursor=pointer]:
+                  - /url: /documentation/pencilkit/pkcanvasview#see-also
+              - generic [ref=e710]:
+                - heading "Canvas in page link" [level=3] [ref=e712]:
+                  - link "Canvas in page link" [ref=e713] [cursor=pointer]:
+                    - /url: /documentation/pencilkit/pkcanvasview#Canvas
+                - generic [ref=e714]:
+                  - generic [ref=e715]:
+                    - link "Drawing with PencilKit" [ref=e716] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/drawing-with-pencilkit
+                      - img [ref=e718]
+                      - generic [ref=e722]:
+                        - text: Drawing with Pencil
+                        - text: Kit
+                    - generic [ref=e724]: Add expressive, low-latency drawing to your app using PencilKit.
+                  - generic [ref=e725]:
+                    - link "Customizing Scribble with Interactions" [ref=e726] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/customizing-scribble-with-interactions
+                      - img [ref=e728]
+                      - generic [ref=e732]: Customizing Scribble with Interactions
+                    - generic [ref=e734]: Enable writing on a non-text-input view by adding interactions.
+                  - generic [ref=e735]:
+                    - link "Inspecting, Modifying, and Constructing PencilKit Drawings" [ref=e736] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/inspecting-modifying-and-constructing-pencilkit-drawings
+                      - img [ref=e738]
+                      - generic [ref=e742]:
+                        - text: Inspecting, Modifying, and Constructing Pencil
+                        - text: Kit Drawings
+                    - generic [ref=e744]: Score users’ ability to match PencilKit drawings generated from text, by accessing the strokes and points inside PencilKit drawings.
+                  - generic [ref=e745]:
+                    - link "struct PKDrawing" [ref=e746] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkdrawing-swift.struct
+                      - code [ref=e747]:
+                        - text: struct
+                        - text: PKDrawing
+                    - generic [ref=e749]: A structure representing the drawing information captured by a canvas view.
+                  - generic [ref=e750]:
+                    - link "struct PKStroke" [ref=e751] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkstroke-swift.struct
+                      - code [ref=e752]:
+                        - text: struct
+                        - text: PKStroke
+                    - generic [ref=e754]: A structure that represents the paths, boundaries, and other properties of a stroke drawn on a canvas.
+                  - generic [ref=e755]:
+                    - link "struct PKStrokePath" [ref=e756] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkstrokepath-swift.struct
+                      - code [ref=e757]:
+                        - text: struct
+                        - generic [ref=e758]:
+                          - text: PKStroke
+                          - text: Path
+                    - generic [ref=e760]: A structure that captures the components of a stroke and provides methods to find and interpolate points along the stroke’s path.
+                  - generic [ref=e761]:
+                    - link "struct PKStrokePoint" [ref=e762] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkstrokepoint-swift.struct
+                      - code [ref=e763]:
+                        - text: struct
+                        - generic [ref=e764]:
+                          - text: PKStroke
+                          - text: Point
+                    - generic [ref=e766]: A structure that represents the properties of a specific point along a stroke’s path.
+                  - generic [ref=e767]:
+                    - link "struct PKInk" [ref=e768] [cursor=pointer]:
+                      - /url: /documentation/pencilkit/pkink-swift.struct
+                      - code [ref=e769]:
+                        - text: struct
+                        - text: PKInk
+                    - generic [ref=e771]: A structure that represents an ink that specifies its type, color, and width.
+        - generic [ref=e772]: Current page is PKCanvasView
+  - contentinfo [ref=e774]:
+    - navigation [ref=e775]:
+      - link "Apple" [ref=e776] [cursor=pointer]:
+        - /url: https://www.apple.com
+        - text: 
+        - generic [ref=e777]: Apple
+      - list [ref=e779]:
+        - listitem [ref=e780]:
+          - link "Developer" [ref=e781] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e782]:
+          - link "Documentation" [ref=e783] [cursor=pointer]:
+            - /url: /documentation/
+      - generic [ref=e784]:
+        - generic [ref=e785]:
+          - generic [ref=e786]:
+            - heading "Platforms" [level=3] [ref=e787]
+            - list [ref=e788]:
+              - listitem [ref=e789]:
+                - link "iOS" [ref=e790] [cursor=pointer]:
+                  - /url: /ios/
+              - listitem [ref=e791]:
+                - link "iPadOS" [ref=e792] [cursor=pointer]:
+                  - /url: /ipados/
+              - listitem [ref=e793]:
+                - link "macOS" [ref=e794] [cursor=pointer]:
+                  - /url: /macos/
+              - listitem [ref=e795]:
+                - link "tvOS" [ref=e796] [cursor=pointer]:
+                  - /url: /tvos/
+              - listitem [ref=e797]:
+                - link "visionOS" [ref=e798] [cursor=pointer]:
+                  - /url: /visionos/
+              - listitem [ref=e799]:
+                - link "watchOS" [ref=e800] [cursor=pointer]:
+                  - /url: /watchos/
+          - generic [ref=e801]:
+            - heading "Tools" [level=3] [ref=e802]
+            - list [ref=e803]:
+              - listitem [ref=e804]:
+                - link "Swift" [ref=e805] [cursor=pointer]:
+                  - /url: /swift/
+              - listitem [ref=e806]:
+                - link "SwiftUI" [ref=e807] [cursor=pointer]:
+                  - /url: /swiftui/
+              - listitem [ref=e808]:
+                - link "Swift Playground" [ref=e809] [cursor=pointer]:
+                  - /url: /swift-playground/
+              - listitem [ref=e810]:
+                - link "TestFlight" [ref=e811] [cursor=pointer]:
+                  - /url: /testflight/
+              - listitem [ref=e812]:
+                - link "Xcode" [ref=e813] [cursor=pointer]:
+                  - /url: /xcode/
+              - listitem [ref=e814]:
+                - link "Xcode Cloud" [ref=e815] [cursor=pointer]:
+                  - /url: /xcode-cloud/
+              - listitem [ref=e816]:
+                - link "SF Symbols" [ref=e817] [cursor=pointer]:
+                  - /url: /sf-symbols/
+        - generic [ref=e819]:
+          - heading "Topics & Technologies" [level=3] [ref=e820]
+          - list [ref=e821]:
+            - listitem [ref=e822]:
+              - link "Accessibility" [ref=e823] [cursor=pointer]:
+                - /url: /accessibility/
+            - listitem [ref=e824]:
+              - link "Accessories" [ref=e825] [cursor=pointer]:
+                - /url: /accessories/
+            - listitem [ref=e826]:
+              - link "App Extension" [ref=e827] [cursor=pointer]:
+                - /url: /app-extensions/
+            - listitem [ref=e828]:
+              - link "App Store" [ref=e829] [cursor=pointer]:
+                - /url: /app-store/
+            - listitem [ref=e830]:
+              - link "Audio & Video" [ref=e831] [cursor=pointer]:
+                - /url: /audio/
+            - listitem [ref=e832]:
+              - link "Augmented Reality" [ref=e833] [cursor=pointer]:
+                - /url: /augmented-reality/
+            - listitem [ref=e834]:
+              - link "Design" [ref=e835] [cursor=pointer]:
+                - /url: /design/
+            - listitem [ref=e836]:
+              - link "Distribution" [ref=e837] [cursor=pointer]:
+                - /url: /distribute/
+            - listitem [ref=e838]:
+              - link "Education" [ref=e839] [cursor=pointer]:
+                - /url: /education/
+            - listitem [ref=e840]:
+              - link "Fonts" [ref=e841] [cursor=pointer]:
+                - /url: /fonts/
+            - listitem [ref=e842]:
+              - link "Games" [ref=e843] [cursor=pointer]:
+                - /url: /games/
+            - listitem [ref=e844]:
+              - link "Health & Fitness" [ref=e845] [cursor=pointer]:
+                - /url: /health-fitness/
+            - listitem [ref=e846]:
+              - link "In-App Purchase" [ref=e847] [cursor=pointer]:
+                - /url: /in-app-purchase/
+            - listitem [ref=e848]:
+              - link "Localization" [ref=e849] [cursor=pointer]:
+                - /url: /localization/
+            - listitem [ref=e850]:
+              - link "Maps & Location" [ref=e851] [cursor=pointer]:
+                - /url: /maps/
+            - listitem [ref=e852]:
+              - link "Machine Learning & AI" [ref=e853] [cursor=pointer]:
+                - /url: /machine-learning/
+            - listitem [ref=e854]:
+              - link "Open Source" [ref=e855] [cursor=pointer]:
+                - /url: https://opensource.apple.com/
+            - listitem [ref=e856]:
+              - link "Security" [ref=e857] [cursor=pointer]:
+                - /url: /security/
+            - listitem [ref=e858]:
+              - link "Safari & Web" [ref=e859] [cursor=pointer]:
+                - /url: /safari/
+        - generic [ref=e860]:
+          - generic [ref=e861]:
+            - heading "Resources" [level=3] [ref=e862]
+            - list [ref=e863]:
+              - listitem
+              - listitem [ref=e864]:
+                - link "Documentation" [ref=e865] [cursor=pointer]:
+                  - /url: /documentation/
+              - listitem [ref=e866]:
+                - link "Tutorials" [ref=e867] [cursor=pointer]:
+                  - /url: /learn/
+              - listitem [ref=e868]:
+                - link "Downloads" [ref=e869] [cursor=pointer]:
+                  - /url: /download/
+              - listitem [ref=e870]:
+                - link "Forums" [ref=e871] [cursor=pointer]:
+                  - /url: /forums/
+              - listitem [ref=e872]:
+                - link "Videos" [ref=e873] [cursor=pointer]:
+                  - /url: /videos/
+          - generic [ref=e874]:
+            - heading "Support" [level=3] [ref=e875]
+            - list [ref=e876]:
+              - listitem [ref=e877]:
+                - link "Support Articles" [ref=e878] [cursor=pointer]:
+                  - /url: /support/articles/
+              - listitem [ref=e879]:
+                - link "Contact Us" [ref=e880] [cursor=pointer]:
+                  - /url: /contact/
+              - listitem [ref=e881]:
+                - link "Bug Reporting" [ref=e882] [cursor=pointer]:
+                  - /url: /bug-reporting/
+              - listitem [ref=e883]:
+                - link "System Status" [ref=e884] [cursor=pointer]:
+                  - /url: /system-status/
+          - generic [ref=e885]:
+            - heading "Account" [level=3] [ref=e886]
+            - list [ref=e887]:
+              - listitem [ref=e888]:
+                - link "Apple Developer" [ref=e889] [cursor=pointer]:
+                  - /url: /account/
+              - listitem [ref=e890]:
+                - link "App Store Connect" [ref=e891] [cursor=pointer]:
+                  - /url: https://appstoreconnect.apple.com/
+              - listitem [ref=e892]:
+                - link "Certificates, IDs, & Profiles" [ref=e893] [cursor=pointer]:
+                  - /url: /account/ios/certificate/
+              - listitem [ref=e894]:
+                - link "Feedback Assistant" [ref=e895] [cursor=pointer]:
+                  - /url: https://feedbackassistant.apple.com/
+        - generic [ref=e896]:
+          - generic [ref=e897]:
+            - heading "Programs" [level=3] [ref=e898]
+            - list [ref=e899]:
+              - listitem [ref=e900]:
+                - link "Apple Developer Program" [ref=e901] [cursor=pointer]:
+                  - /url: /programs/
+              - listitem [ref=e902]:
+                - link "Apple Developer Enterprise Program" [ref=e903] [cursor=pointer]:
+                  - /url: /programs/enterprise/
+              - listitem [ref=e904]:
+                - link "App Store Small Business Program" [ref=e905] [cursor=pointer]:
+                  - /url: /app-store/small-business-program/
+              - listitem [ref=e906]:
+                - link "MFi Program" [ref=e907] [cursor=pointer]:
+                  - /url: https://mfi.apple.com/
+              - listitem [ref=e908]:
+                - link "News Partner Program" [ref=e909] [cursor=pointer]:
+                  - /url: /programs/news-partner/
+              - listitem [ref=e910]:
+                - link "Video Partner Program" [ref=e911] [cursor=pointer]:
+                  - /url: /programs/video-partner/
+              - listitem [ref=e912]:
+                - link "Security Bounty Program" [ref=e913] [cursor=pointer]:
+                  - /url: /security-bounty/
+              - listitem [ref=e914]:
+                - link "Security Research Device Program" [ref=e915] [cursor=pointer]:
+                  - /url: /programs/security-research-device/
+          - generic [ref=e916]:
+            - heading "Events" [level=3] [ref=e917]
+            - list [ref=e918]:
+              - listitem [ref=e919]:
+                - link "Meet with Apple" [ref=e920] [cursor=pointer]:
+                  - /url: /events/
+              - listitem [ref=e921]:
+                - link "Apple Developer Centers" [ref=e922] [cursor=pointer]:
+                  - /url: /events/developer-centers/
+              - listitem [ref=e923]:
+                - link "App Store Awards" [ref=e924] [cursor=pointer]:
+                  - /url: /app-store/app-store-awards/
+              - listitem [ref=e925]:
+                - link "Apple Design Awards" [ref=e926] [cursor=pointer]:
+                  - /url: /design/awards/
+              - listitem [ref=e927]:
+                - link "Apple Developer Academies" [ref=e928] [cursor=pointer]:
+                  - /url: /academies/
+              - listitem [ref=e929]:
+                - link "WWDC" [ref=e930] [cursor=pointer]:
+                  - /url: /wwdc/
+    - generic [ref=e931]:
+      - generic [ref=e932]:
+        - generic [ref=e933]:
+          - text: To submit feedback on documentation, visit
+          - link "Feedback Assistant" [ref=e934] [cursor=pointer]:
+            - /url: applefeedback://new?form_identifier=developertools.fba&answers%5B%3Aarea%5D=seedADC%3Adevpubs&answers%5B%3Adoc_type_req%5D=Technology%20Documentation&answers%5B%3Adocumentation_link_req%5D=https%3A%2F%2Fdeveloper.apple.com%2Fdocumentation%2Fpencilkit%2Fpkcanvasview
+          - text: .
+        - radiogroup "Select a color scheme preference" [ref=e936]:
+          - generic [ref=e937]: Select a color scheme preference
+          - generic [ref=e938]:
+            - radio "Light" [ref=e939]
+            - generic [ref=e940]: Light
+          - generic [ref=e941]:
+            - radio "Dark" [ref=e942]
+            - generic [ref=e943]: Dark
+          - generic [ref=e944]:
+            - radio "Auto" [checked] [ref=e945]
+            - generic [ref=e946]: Auto
+      - generic [ref=e947]:
+        - generic [ref=e948]:
+          - text: Copyright © 2026
+          - link "Apple Inc." [ref=e949] [cursor=pointer]:
+            - /url: https://www.apple.com
+          - text: All rights reserved.
+        - generic [ref=e950]:
+          - link "Terms of Use" [ref=e951] [cursor=pointer]:
+            - /url: https://www.apple.com/legal/internet-services/terms/site.html
+          - link "Privacy Policy" [ref=e952] [cursor=pointer]:
+            - /url: https://www.apple.com/legal/privacy/
+          - link "Agreements and Guidelines" [ref=e953] [cursor=pointer]:
+            - /url: /support/terms/
