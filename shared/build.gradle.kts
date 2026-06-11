@@ -46,7 +46,6 @@ kotlin {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
             implementation("app.cash.sqldelight:android-driver:2.0.2")
             implementation("io.insert-koin:koin-android:4.0.4")
-            implementation("com.amap.api:3dmap:10.0.600")
             implementation("androidx.exifinterface:exifinterface:1.4.2")
             implementation("androidx.ink:ink-authoring-compose:1.0.0")
             implementation("androidx.ink:ink-authoring:1.0.0")
