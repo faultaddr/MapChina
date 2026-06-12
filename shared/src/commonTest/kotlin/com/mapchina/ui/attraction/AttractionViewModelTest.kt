@@ -9,6 +9,7 @@ import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.service.FootprintService
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,18 +36,18 @@ class AttractionViewModelTest {
     }
 
     @Test
-    fun searchAttractions_blankQuery_returnsEmpty() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+    fun searchAttractions_blankQuery_returnsAll() {
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         vm.searchAttractions("")
-        assertEquals(0, vm.attractions.value.size)
+        assertEquals(3, vm.attractions.value.size)
 
         vm.searchAttractions("  ")
-        assertEquals(0, vm.attractions.value.size)
+        assertEquals(3, vm.attractions.value.size)
     }
 
     @Test
     fun searchAttractions_matchingQuery_returnsResults() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         vm.searchAttractions("故宫")
         val results = vm.attractions.value
         assertEquals(1, results.size)
@@ -55,14 +56,14 @@ class AttractionViewModelTest {
 
     @Test
     fun searchAttractions_noMatch_returnsEmpty() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         vm.searchAttractions("不存在的景点")
         assertEquals(0, vm.attractions.value.size)
     }
 
     @Test
     fun loadAttractionsByRegion_returnsCorrectAttractions() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         vm.loadAttractionsByRegion("110101")
         val results = vm.attractions.value
         assertEquals(1, results.size)
@@ -71,7 +72,7 @@ class AttractionViewModelTest {
 
     @Test
     fun markVisit_updatesAttractionState() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, null, "u1")
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, null, "u1", UnconfinedTestDispatcher())
         vm.searchAttractions("故宫")
         vm.markVisit("a1", "110101", FootprintLevel.DEEP)
 
@@ -81,14 +82,14 @@ class AttractionViewModelTest {
 
     @Test
     fun getAttractionById_returnsAttraction() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         val attraction = vm.getAttractionById("a1")
         assertEquals("故宫博物院", attraction?.name)
     }
 
     @Test
     fun getAttractionById_unknown_returnsNull() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = UnconfinedTestDispatcher())
         val attraction = vm.getAttractionById("nonexistent")
         assertEquals(null, attraction)
     }

@@ -1,5 +1,7 @@
 package com.mapchina.ui.community
 
+import kotlin.time.Clock
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -211,7 +213,7 @@ private fun CommentInput(text: String, onTextChange: (String) -> Unit, onSend: (
 
 private fun formatTime(timestamp: Long): String {
     return try {
-        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val now = Clock.System.now().toEpochMilliseconds()
         val diff = now - timestamp
         when {
             diff < 60_000 -> "刚刚"

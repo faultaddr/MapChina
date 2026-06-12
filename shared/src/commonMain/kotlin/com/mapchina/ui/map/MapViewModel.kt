@@ -19,6 +19,7 @@ import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayStyle
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,9 +72,10 @@ class MapViewModel(
     private val locationProvider: LocationProvider? = null,
     private val regionMatcher: RegionMatcher? = null,
     private val achievementRepository: AchievementRepository? = null,
-    private val userId: String = ""
+    private val userId: String = "",
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     fun onCleared() {
         vmScope.cancel()
@@ -139,9 +141,9 @@ class MapViewModel(
     private var lastSyncedRegionIds: Set<String> = emptySet()
 
     // Persisted camera state (survives MapController recreation)
-    private var savedCameraLat: Double = 34.5
-    private var savedCameraLng: Double = 106.0
-    private var savedCameraZoom: Float = 3.8f
+    private var savedCameraLat: Double = 35.5
+    private var savedCameraLng: Double = 104.0
+    private var savedCameraZoom: Float = 3.5f
     var mapController: MapController?
         get() = _mapController
         set(value) {
@@ -264,11 +266,11 @@ class MapViewModel(
     fun navigateToNational() {
         _currentLevel.value = MapZoomLevel.NATIONAL
         _currentPath.value = emptyList()
-        savedCameraLat = 34.5
-        savedCameraLng = 106.0
-        savedCameraZoom = 3.8f
+        savedCameraLat = 35.5
+        savedCameraLng = 104.0
+        savedCameraZoom = 3.5f
         setProgrammaticCamera()
-        mapController?.setCamera(34.5, 106.0, 3.8f, true)
+        mapController?.setCamera(35.5, 104.0, 3.5f, true)
         vmScope.launch {
             loadTopLevelRegions()
             _attractions.value = emptyList()
@@ -307,11 +309,11 @@ class MapViewModel(
         } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
-            savedCameraLat = 34.5
-            savedCameraLng = 106.0
-            savedCameraZoom = 3.8f
+            savedCameraLat = 35.5
+            savedCameraLng = 104.0
+            savedCameraZoom = 3.5f
             setProgrammaticCamera()
-            mapController?.setCamera(34.5, 106.0, 3.8f, true)
+            mapController?.setCamera(35.5, 104.0, 3.5f, true)
 
             vmScope.launch {
                 loadTopLevelRegions()

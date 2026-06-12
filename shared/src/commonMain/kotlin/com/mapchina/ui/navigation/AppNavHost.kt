@@ -1,5 +1,7 @@
 package com.mapchina.ui.navigation
 
+import kotlin.time.Clock
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -129,18 +131,18 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                                 phone = phone,
                                 nickname = resp.nickname,
                                 avatar = null,
-                                createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                                createdAt = Clock.System.now().toEpochMilliseconds()
                             ))
                             navController.popBackStack()
                         } catch (e: Exception) {
                             loginError = e.message ?: "登录失败"
-                            e.printStackTrace()
+                            
                         }
                     }
                 },
                 onSendCode = { phone ->
                     scope.launch {
-                        try { apiClient.sendLoginCode(phone) } catch (e: Exception) { e.printStackTrace() }
+                        try { apiClient.sendLoginCode(phone) } catch (e: Exception) {  }
                     }
                 }
             )

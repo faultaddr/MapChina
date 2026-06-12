@@ -5,6 +5,7 @@ import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.UserLevelInfo
 import com.mapchina.domain.service.AuthService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -24,9 +25,10 @@ data class ProfileUi(
 class ProfileViewModel(
     private val authService: AuthService,
     private val userScoreRepository: UserScoreRepository,
-    val settingsRepository: SettingsRepository? = null
+    val settingsRepository: SettingsRepository? = null,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _profile = MutableStateFlow(ProfileUi("", null, null))
     val profile: StateFlow<ProfileUi> = _profile.asStateFlow()

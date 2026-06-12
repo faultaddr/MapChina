@@ -49,7 +49,7 @@ import com.mapchina.domain.model.JournalPhoto
 import com.mapchina.ui.theme.MapChinaColors
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 

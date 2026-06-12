@@ -4,6 +4,7 @@ import com.mapchina.data.remote.CommentDto
 import com.mapchina.data.remote.CommunityPostDto
 import com.mapchina.data.remote.MapChinaApiClient
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,9 +27,10 @@ data class PostDetailUi(
 )
 
 class CommunityViewModel(
-    private val apiClient: MapChinaApiClient
+    private val apiClient: MapChinaApiClient,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _feedUi = MutableStateFlow(CommunityFeedUi())
     val feedUi: StateFlow<CommunityFeedUi> = _feedUi.asStateFlow()

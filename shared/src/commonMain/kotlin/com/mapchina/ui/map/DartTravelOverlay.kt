@@ -156,7 +156,7 @@ fun DartTravelOverlay(
         if (phase == 1) {
             particles.clear()
             for (i in 0..23) {
-                val angle = (i.toFloat() / 24) * 2 * Math.PI.toFloat() + Random.nextFloat() * 0.2f
+                val angle = (i.toFloat() / 24) * 2 * kotlin.math.PI.toFloat() + Random.nextFloat() * 0.2f
                 particles.add(Particle(
                     angle = angle,
                     speed = 0.6f + Random.nextFloat() * 1.3f,
@@ -362,7 +362,7 @@ private fun DrawScope.drawLandingEffects(
     if (ringProgress > 0.25f) {
         val sa = (ringProgress - 0.25f) / 0.75f * particleAlpha
         for (i in 0..7) {
-            val angle = (i.toFloat() / 8) * 2 * Math.PI.toFloat() + ringProgress * 0.4f
+            val angle = (i.toFloat() / 8) * 2 * kotlin.math.PI.toFloat() + ringProgress * 0.4f
             val d = maxR * 0.5f * ringProgress
             drawCircle(color = GlowGoldBright.copy(alpha = sa * 0.6f), radius = px.sparkleR, center = Offset(center.x + cos(angle) * d, center.y + sin(angle) * d))
         }

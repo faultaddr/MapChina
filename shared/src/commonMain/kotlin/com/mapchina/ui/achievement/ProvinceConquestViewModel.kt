@@ -5,6 +5,7 @@ import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.ProvinceConquestInfo
 import com.mapchina.domain.service.AchievementService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,9 +30,10 @@ data class ProvinceDetailUi(
 class ProvinceConquestViewModel(
     private val achievementService: AchievementService,
     private val achievementRepository: AchievementRepository,
-    private val userId: String = ""
+    private val userId: String = "",
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val _ui = MutableStateFlow(ProvinceConquestUi())
     val ui: StateFlow<ProvinceConquestUi> = _ui.asStateFlow()
 

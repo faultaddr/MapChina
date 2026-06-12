@@ -11,6 +11,7 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.FootprintService
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,7 +40,7 @@ class StatsViewModelTest {
 
     @Test
     fun initialStats_allZero() {
-        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, com.mapchina.domain.service.AuthService())
+        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, com.mapchina.domain.service.AuthService(), UnconfinedTestDispatcher())
         val stats = vm.stats.value
         assertEquals(0, stats.visitedProvinces)
         assertEquals(0, stats.visitedAttractions)
@@ -52,7 +53,7 @@ class StatsViewModelTest {
 
         val authService = com.mapchina.domain.service.AuthService()
         authService.onLogin(com.mapchina.data.model.UserDto("u1", "", "U1", null, 0L))
-        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService)
+        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService, UnconfinedTestDispatcher())
         vm.refreshStats()
         val stats = vm.stats.value
         assertTrue(stats.visitedProvinces >= 2)
@@ -67,7 +68,7 @@ class StatsViewModelTest {
 
         val authService = com.mapchina.domain.service.AuthService()
         authService.onLogin(com.mapchina.data.model.UserDto("u1", "", "U1", null, 0L))
-        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService)
+        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService, UnconfinedTestDispatcher())
         vm.refreshStats()
         val stats = vm.stats.value
         assertEquals(1, stats.levelDistribution.a5Visited)
@@ -81,7 +82,7 @@ class StatsViewModelTest {
 
         val authService = com.mapchina.domain.service.AuthService()
         authService.onLogin(com.mapchina.data.model.UserDto("u1", "", "U1", null, 0L))
-        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService)
+        val vm = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, authService, UnconfinedTestDispatcher())
         vm.refreshStats()
         val stats = vm.stats.value
         assertEquals(1, stats.visitLevelCounts[FootprintLevel.DEEP])

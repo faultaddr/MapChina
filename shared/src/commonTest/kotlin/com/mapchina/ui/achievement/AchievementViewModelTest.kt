@@ -5,13 +5,12 @@ import com.mapchina.data.local.TestDatabaseDriverFactory
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.AchievementCategory
-import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.service.AchievementSeeder
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AchievementViewModelTest {
@@ -30,7 +29,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_loadsAllAchievements() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService(), UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.allAchievements.isNotEmpty())
@@ -39,7 +38,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_noUnlockedInitially() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService(), UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertEquals(0, ui.unlockedCount)
@@ -47,7 +46,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_categorizesRegionAndScenic() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService(), UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.regionAchievements.isNotEmpty())
@@ -56,7 +55,7 @@ class AchievementViewModelTest {
 
     @Test
     fun refresh_nextTargetIsClosestLocked() {
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService())
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, com.mapchina.domain.service.AuthService(), UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertNotNull(ui.nextTarget)

@@ -15,6 +15,7 @@ import com.mapchina.domain.service.AchievementSeeder
 import com.mapchina.domain.service.AchievementService
 import com.mapchina.domain.service.AtlasSeeder
 import com.mapchina.domain.service.AtlasService
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,7 +45,7 @@ class ProvinceConquestViewModelTest {
 
     @Test
     fun refresh_loadsProvinceConquestInfo() {
-        val vm = ProvinceConquestViewModel(achievementService, achievementRepo)
+        val vm = ProvinceConquestViewModel(achievementService, achievementRepo, dispatcher = UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.provinces.isNotEmpty())
@@ -52,7 +53,7 @@ class ProvinceConquestViewModelTest {
 
     @Test
     fun refresh_countsTotalProvinces() {
-        val vm = ProvinceConquestViewModel(achievementService, achievementRepo)
+        val vm = ProvinceConquestViewModel(achievementService, achievementRepo, dispatcher = UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.totalProvinceCount >= 2)
@@ -60,7 +61,7 @@ class ProvinceConquestViewModelTest {
 
     @Test
     fun loadProvinceDetail_showsAchievements() {
-        val vm = ProvinceConquestViewModel(achievementService, achievementRepo)
+        val vm = ProvinceConquestViewModel(achievementService, achievementRepo, dispatcher = UnconfinedTestDispatcher())
         vm.loadProvinceDetail("51")
         val detail = vm.detailUi.value
         assertTrue(detail.provinceAchievements.isNotEmpty())

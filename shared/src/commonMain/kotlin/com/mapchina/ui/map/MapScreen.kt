@@ -152,6 +152,22 @@ fun MapScreen(
         viewModel.showRegionPanel(regionId)
     }
 
+    // Double tap on region → drill into region
+    mapController.setOnRegionDoubleTapListener { regionId ->
+        viewModel.drillIntoRegion(regionId)
+    }
+
+    // Viewport constraint: lock pan at national level, free at drill-down levels
+    LaunchedEffect(currentLevel) {
+        if (currentLevel == MapZoomLevel.NATIONAL) {
+            mapController.viewport.panEnabled = false
+            mapController.viewport.setChinaBounds()
+        } else {
+            mapController.viewport.panEnabled = true
+            mapController.viewport.clearBounds()
+        }
+    }
+
     // Close region card → restore overlay
     LaunchedEffect(bottomPanel) {
         if (bottomPanel !is BottomPanel.Region) {
@@ -485,7 +501,7 @@ fun MapScreen(
         if (showDartTravel) {
             dartTravelReady = false
             dartTravelKey++
-            mapController.setCamera(34.5, 106.0, 3.8f, true)
+            mapController.setCamera(35.5, 104.0, 3.5f, true)
             kotlinx.coroutines.delay(800)
             dartTravelReady = true
         } else {
@@ -761,11 +777,20 @@ private fun PhotoPreviewOverlay(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "%.4f, %.4f".format(cluster.latitude, cluster.longitude),
+                "${formatCoord(cluster.latitude)}, ${formatCoord(cluster.longitude)}",
                 color = MapChinaColors.TextTertiary,
                 fontSize = 11.sp
             )
         }
     }
+}
+
+private fun formatCoord(value: Double): String {
+    val rounded = kotlin.math.round(value * 10000) / 10000
+    val s = rounded.toString()
+    val dot = s.indexOf('.')
+    if (dot == -1) return "$s.0000"
+    val after = s.length - dot - 1
+    return if (after >= 4) s else s + "0".repeat(4 - after)
 }
 

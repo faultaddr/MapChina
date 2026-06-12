@@ -79,7 +79,7 @@ import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.koin.compose.koinInject
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

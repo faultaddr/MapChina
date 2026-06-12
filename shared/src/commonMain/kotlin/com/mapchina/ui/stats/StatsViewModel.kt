@@ -7,6 +7,7 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.FootprintService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,9 +62,10 @@ class StatsViewModel(
     private val attractionRepository: AttractionRepository,
     private val footprintRepository: FootprintRepository,
     private val regionRepository: RegionRepository,
-    private val authService: com.mapchina.domain.service.AuthService
+    private val authService: com.mapchina.domain.service.AuthService,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     fun onCleared() {
         vmScope.cancel()

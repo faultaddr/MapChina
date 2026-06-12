@@ -96,7 +96,7 @@ fun CustomAttractionScreen(
             Text("位置", color = MapChinaColors.TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "%.4f, %.4f".format(latitude, longitude),
+                "${formatCoord(latitude)}, ${formatCoord(longitude)}",
                 color = MapChinaColors.TextTertiary,
                 fontSize = 12.sp
             )
@@ -147,3 +147,12 @@ private fun outlinedTextFieldColors() = androidx.compose.material3.OutlinedTextF
     focusedContainerColor = MapChinaColors.Background,
     unfocusedContainerColor = MapChinaColors.Background
 )
+
+private fun formatCoord(value: Double): String {
+    val rounded = kotlin.math.round(value * 10000) / 10000
+    val s = rounded.toString()
+    val dot = s.indexOf('.')
+    if (dot == -1) return "$s.0000"
+    val after = s.length - dot - 1
+    return if (after >= 4) s else s + "0".repeat(4 - after)
+}
