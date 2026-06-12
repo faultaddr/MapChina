@@ -31,6 +31,10 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -41,4 +45,13 @@ dependencies {
     implementation("io.coil-kt.coil3:coil:3.1.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    testImplementation("org.robolectric:robolectric:4.14")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.10.0")
+    testImplementation("androidx.compose.ui:ui-test-manifest:1.10.0")
+    testImplementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+    testImplementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("androidx.test:runner:1.6.2")
+    testImplementation("junit:junit:4.13.2")
 }
