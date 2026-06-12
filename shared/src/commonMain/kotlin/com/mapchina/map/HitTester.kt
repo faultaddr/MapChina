@@ -6,14 +6,17 @@ class HitTester(
     private val bounds: Map<String, Rect>,
     private val coords: Map<String, List<List<Pair<Double, Double>>>>
 ) {
-    fun hitTest(x: Float, y: Float): String? {
+    fun hitTest(screenX: Float, screenY: Float, projection: GeoProjection): String? {
+        val (lng, lat) = projection.unproject(screenX, screenY)
+
         val candidates = bounds.filter { (_, rect) ->
-            x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+            screenX >= rect.left && screenX <= rect.right &&
+                screenY >= rect.top && screenY <= rect.bottom
         }
         for ((id, _) in candidates) {
             val rings = coords[id] ?: continue
             for (ring in rings) {
-                if (pointInPolygonD(x.toDouble(), y.toDouble(), ring)) {
+                if (pointInPolygon(lng, lat, ring)) {
                     return id
                 }
             }
@@ -21,18 +24,18 @@ class HitTester(
         return null
     }
 
-    private fun pointInPolygonD(x: Double, y: Double, polygon: List<Pair<Double, Double>>): Boolean {
+    private fun pointInPolygon(testLng: Double, testLat: Double, polygon: List<Pair<Double, Double>>): Boolean {
         if (polygon.size < 3) return false
         var inside = false
-        var i = 0
         var j = polygon.size - 1
-        while (i < polygon.size) {
+        for (i in polygon.indices) {
             val xi = polygon[i].first; val yi = polygon[i].second
             val xj = polygon[j].first; val yj = polygon[j].second
-            if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+            if (((yi > testLat) != (yj > testLat)) &&
+                (testLng < (xj - xi) * (testLat - yi) / (yj - yi) + xi)) {
                 inside = !inside
             }
-            j = i++
+            j = i
         }
         return inside
     }

@@ -9,11 +9,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import com.mapchina.ui.theme.MapChinaColors
 
@@ -25,16 +25,23 @@ fun ChinaMapView(
     val renderState by controller.renderState.collectAsState()
     val pathCache = remember { GeoPathCache() }
 
-    Box(modifier = modifier.mapGestures(
-        viewport = controller.viewport,
-        onTap = { offset -> controller.handleTap(offset) },
-        onLongPress = { offset -> controller.handleLongPress(offset) }
-    )) {
+    Box(modifier = modifier
+        .onSizeChanged { size ->
+            controller.viewport.canvasWidth = size.width.toFloat()
+            controller.viewport.canvasHeight = size.height.toFloat()
+        }
+        .mapGestures(
+            viewport = controller.viewport,
+            onTap = { offset -> controller.handleTap(offset) },
+            onDoubleTap = { offset -> controller.handleDoubleTap(offset) },
+            onLongPress = { offset -> controller.handleLongPress(offset) }
+        )
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val projection = controller.viewport.toProjection(size.width, size.height)
 
-            // L0: Background
-            drawRect(MapChinaColors.Background)
+            // L0: Background (ocean)
+            drawRect(renderState.oceanColor)
 
             // L1/L2: Region overlays
             pathCache.buildIfChanged(renderState.overlays, projection, controller.viewport.zoomLevel)
@@ -46,7 +53,7 @@ fun ChinaMapView(
                 val data = renderState.overlays[regionId] ?: continue
                 val fillColor = data.style.toFillColor()
                 val strokeColor = data.style.toStrokeColor()
-                val strokeWidth = if (controller.viewport.zoomLevel < 6) 0.5.dp.toPx() else 1.dp.toPx()
+                val strokeWidth = if (controller.viewport.zoomLevel < 6f) 1.5.dp.toPx() else 1.dp.toPx()
 
                 for (path in overlayPaths) {
                     drawPath(path, color = fillColor)

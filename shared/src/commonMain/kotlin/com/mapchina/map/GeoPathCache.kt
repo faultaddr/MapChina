@@ -3,12 +3,23 @@ package com.mapchina.map
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
+import kotlin.math.ln
+import kotlin.math.tan
+import kotlin.math.PI
 
 class GeoPathCache {
     private var cachedPaths: Map<String, List<Path>> = emptyMap()
     private var cachedBounds: Map<String, Rect> = emptyMap()
-    private var lastProjection: GeoProjection? = null
+    private var lastCenterLng: Double = Double.NaN
+    private var lastCenterLat: Double = Double.NaN
+    private var lastScale: Float = -1f
+    private var lastMercScale: Float = -1f
+    private var lastWidth: Float = -1f
+    private var lastHeight: Float = -1f
+    private var lastEpsilon: Double = -1.0
     private var lastOverlayKeys: Set<String>? = null
+
+    private var precomputedRings: List<PrecomputedRing> = emptyList()
 
     val paths: Map<String, List<Path>> get() = cachedPaths
     val bounds: Map<String, Rect> get() = cachedBounds
@@ -19,57 +30,102 @@ class GeoPathCache {
         zoomLevel: Float
     ): GeoPathCache {
         val currentKeys = overlays.keys
-        if (projection == lastProjection && currentKeys == lastOverlayKeys) return this
-
         val epsilon = when {
             zoomLevel < 6 -> 0.05
             zoomLevel < 10 -> 0.01
             else -> 0.0
         }
 
-        val newPaths = mutableMapOf<String, List<Path>>()
+        val sameZoom = (epsilon == lastEpsilon || lastEpsilon < 0.0 && epsilon == 0.0) &&
+            lastScale == projection.scale && lastMercScale == projection.mercScale &&
+            lastWidth == projection.canvasWidth && lastHeight == projection.canvasHeight
+
+        val keysChanged = currentKeys != lastOverlayKeys
+
+        if (keysChanged || !sameZoom) {
+            precomputeRings(overlays, epsilon)
+        }
+
+        if (keysChanged || !sameZoom ||
+            lastCenterLng != projection.viewCenterLng ||
+            lastCenterLat != projection.viewCenterLat) {
+            buildPaths(projection)
+        }
+
+        lastCenterLng = projection.viewCenterLng
+        lastCenterLat = projection.viewCenterLat
+        lastScale = projection.scale
+        lastMercScale = projection.mercScale
+        lastWidth = projection.canvasWidth
+        lastHeight = projection.canvasHeight
+        lastEpsilon = epsilon
+        lastOverlayKeys = currentKeys
+
+        return this
+    }
+
+    private fun precomputeRings(overlays: Map<String, OverlayData>, epsilon: Double) {
+        precomputedRings = overlays.map { (id, data) ->
+            val rings = data.coords.map { ring ->
+                val simplified = if (epsilon > 0) DouglasPeucker.simplify(ring, epsilon) else ring
+                val mercYList = simplified.map { (lng, lat) ->
+                    PrecomputedPoint(lng, lat, ln(tan(PI / 4 + lat * PI / 360)))
+                }
+                PrecomputedRing(id, mercYList)
+            }
+            rings
+        }.flatten()
+    }
+
+    private fun buildPaths(projection: GeoProjection) {
+        val newPaths = mutableMapOf<String, MutableList<Path>>()
         val newBounds = mutableMapOf<String, Rect>()
 
-        for ((id, data) in overlays) {
-            val paths = mutableListOf<Path>()
+        val cx = projection.viewCenterLng
+        val cy = projection.viewCenterLat
+        val s = projection.scale
+        val ms = projection.mercScale
+        val cw = projection.canvasWidth
+        val ch = projection.canvasHeight
+        val centerMercY = ln(tan(PI / 4 + cy * PI / 360))
+
+        for (ring in precomputedRings) {
+            val path = Path()
+            path.fillType = PathFillType.EvenOdd
             var minX = Float.MAX_VALUE
             var minY = Float.MAX_VALUE
             var maxX = Float.MIN_VALUE
             var maxY = Float.MIN_VALUE
 
-            for (ring in data.coords) {
-                val simplified = if (epsilon > 0) DouglasPeucker.simplify(ring, epsilon) else ring
-                val path = Path()
-                path.fillType = PathFillType.EvenOdd
-                for ((i, point) in simplified.withIndex()) {
-                    val offset = projection.project(point.first, point.second)
-                    if (offset.x < minX) minX = offset.x
-                    if (offset.y < minY) minY = offset.y
-                    if (offset.x > maxX) maxX = offset.x
-                    if (offset.y > maxY) maxY = offset.y
-                    if (i == 0) path.moveTo(offset.x, offset.y)
-                    else path.lineTo(offset.x, offset.y)
-                }
-                path.close()
-                paths.add(path)
-            }
+            val halfW = cw / 2f
+            val halfH = ch / 2f
 
-            newPaths[id] = paths
+            for ((i, pt) in ring.points.withIndex()) {
+                val x = ((pt.lng - cx) * s + halfW).toFloat()
+                val y = (-(pt.mercY - centerMercY) * ms + halfH).toFloat()
+                if (x < minX) minX = x
+                if (y < minY) minY = y
+                if (x > maxX) maxX = x
+                if (y > maxY) maxY = y
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            path.close()
+
+            newPaths.getOrPut(ring.regionId) { mutableListOf() }.add(path)
             if (minX < Float.MAX_VALUE) {
-                newBounds[id] = Rect(minX, minY, maxX, maxY)
+                newBounds[ring.regionId] = Rect(minX, minY, maxX, maxY)
             }
         }
 
         cachedPaths = newPaths
         cachedBounds = newBounds
-        lastProjection = projection
-        lastOverlayKeys = currentKeys
-        return this
     }
 
     fun getVisibleRegions(viewport: Rect): List<String> {
-        return cachedBounds.filter { (_, rect) ->
-            rect.overlaps(viewport)
-        }.keys.toList()
+        return cachedBounds.filter { (_, rect) -> rect.overlaps(viewport) }.keys.toList()
     }
 }
+
+private data class PrecomputedPoint(val lng: Double, val lat: Double, val mercY: Double)
+
+private data class PrecomputedRing(val regionId: String, val points: List<PrecomputedPoint>)

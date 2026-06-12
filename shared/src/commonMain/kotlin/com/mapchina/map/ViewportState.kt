@@ -19,9 +19,15 @@ class ViewportState(
 ) {
     companion object {
         const val BASE_ZOOM = 3.5f
-        const val BASE_SCALE = 2.0f
+        const val BASE_SCALE = 12.0f
         const val MIN_ZOOM = 3f
         const val MAX_ZOOM = 15f
+
+        // China bounding box with padding for national-level constraint
+        const val CHINA_MIN_LNG = 68.0
+        const val CHINA_MAX_LNG = 140.0
+        const val CHINA_MIN_LAT = 14.0
+        const val CHINA_MAX_LAT = 57.0
     }
 
     var centerLng by mutableStateOf(initialCenterLng)
@@ -33,12 +39,25 @@ class ViewportState(
     internal var canvasWidth: Float = 400f
     internal var canvasHeight: Float = 800f
 
+    // Viewport constraint
+    var panEnabled by mutableStateOf(true)
+
+    // Bounding box constraint (null = unconstrained)
+    var boundsMinLng: Double? = null
+    var boundsMaxLng: Double? = null
+    var boundsMinLat: Double? = null
+    var boundsMaxLat: Double? = null
+
     fun panBy(delta: Offset) {
+        if (!panEnabled) return
         val s = derivedScale
+        val ms = s * (180.0 / PI).toFloat()
         centerLng -= delta.x / s
-        val currentMerc = ln(tan(PI / 4 + Math.toRadians(centerLat) / 2))
-        val newMerc = currentMerc + delta.y / s
-        centerLat = Math.toDegrees(2 * atan(exp(newMerc)) - PI / 2).coerceIn(-85.0, 85.0)
+        val currentMerc = ln(tan(PI / 4 + centerLat * PI / 360))
+        val newMerc = currentMerc + delta.y / ms
+        centerLat = (2 * atan(exp(newMerc)) - PI / 2) * 180 / PI
+        centerLat = centerLat.coerceIn(-85.0, 85.0)
+        clampToBounds()
     }
 
     fun zoomBy(delta: Float, pivot: Offset) {
@@ -48,22 +67,38 @@ class ViewportState(
 
         val oldScale = BASE_SCALE * 2f.pow(oldZoom - BASE_ZOOM)
         val newScale = derivedScale
+        val oldMercScale = oldScale * (180.0 / PI).toFloat()
+        val newMercScale = newScale * (180.0 / PI).toFloat()
         val pivotLng = centerLng + (pivot.x - canvasWidth / 2) / oldScale
-        val pivotMerc = ln(tan(PI / 4 + Math.toRadians(centerLat) / 2)) -
-            (pivot.y - canvasHeight / 2) / oldScale
-        val pivotLat = Math.toDegrees(2 * atan(exp(pivotMerc)) - PI / 2)
+        val pivotMerc = ln(tan(PI / 4 + centerLat * PI / 360)) -
+            (pivot.y - canvasHeight / 2) / oldMercScale
+        val pivotLat = (2 * atan(exp(pivotMerc)) - PI / 2) * 180 / PI
 
         centerLng = pivotLng - (pivot.x - canvasWidth / 2) / newScale
-        val newPivotMerc = ln(tan(PI / 4 + Math.toRadians(pivotLat) / 2))
-        centerLat = Math.toDegrees(
-            2 * atan(exp(newPivotMerc + (pivot.y - canvasHeight / 2) / newScale)) - PI / 2
-        ).coerceIn(-85.0, 85.0)
+        val newPivotMerc = ln(tan(PI / 4 + pivotLat * PI / 360))
+        centerLat = (2 * atan(exp(newPivotMerc + (pivot.y - canvasHeight / 2) / newMercScale)) - PI / 2) * 180 / PI
+        centerLat = centerLat.coerceIn(-85.0, 85.0)
+        clampToBounds()
     }
 
     fun moveTo(lng: Double, lat: Double, zoom: Float, animated: Boolean = false) {
         centerLng = lng
         centerLat = lat.coerceIn(-85.0, 85.0)
         zoomLevel = zoom.coerceIn(MIN_ZOOM, MAX_ZOOM)
+    }
+
+    fun setChinaBounds() {
+        boundsMinLng = CHINA_MIN_LNG
+        boundsMaxLng = CHINA_MAX_LNG
+        boundsMinLat = CHINA_MIN_LAT
+        boundsMaxLat = CHINA_MAX_LAT
+    }
+
+    fun clearBounds() {
+        boundsMinLng = null
+        boundsMaxLng = null
+        boundsMinLat = null
+        boundsMaxLat = null
     }
 
     fun toProjection(width: Float, height: Float): GeoProjection {
@@ -76,5 +111,33 @@ class ViewportState(
             canvasWidth = width,
             canvasHeight = height
         )
+    }
+
+    private fun clampToBounds() {
+        val minLng = boundsMinLng
+        val maxLng = boundsMaxLng
+        val minLat = boundsMinLat
+        val maxLat = boundsMaxLat
+        if (minLng != null && maxLng != null) {
+            val halfSpanLng = (canvasWidth / 2) / derivedScale
+            val minCenterLng = minLng + halfSpanLng
+            val maxCenterLng = maxLng - halfSpanLng
+            if (minCenterLng < maxCenterLng) {
+                centerLng = centerLng.coerceIn(minCenterLng, maxCenterLng)
+            }
+        }
+        if (minLat != null && maxLat != null) {
+            val ms = derivedScale * (180.0 / PI).toFloat()
+            val halfSpanMerc = (canvasHeight / 2) / ms
+            val minMerc = ln(tan(PI / 4 + minLat * PI / 360))
+            val maxMerc = ln(tan(PI / 4 + maxLat * PI / 360))
+            val minCenterMerc = minMerc + halfSpanMerc
+            val maxCenterMerc = maxMerc - halfSpanMerc
+            if (minCenterMerc < maxCenterMerc) {
+                val currentMerc = ln(tan(PI / 4 + centerLat * PI / 360))
+                val clampedMerc = currentMerc.coerceIn(minCenterMerc, maxCenterMerc)
+                centerLat = (2 * atan(exp(clampedMerc)) - PI / 2) * 180 / PI
+            }
+        }
     }
 }

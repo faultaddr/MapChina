@@ -5,12 +5,20 @@ import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.atan
+import kotlin.math.exp
+import kotlin.math.ln
+import kotlin.math.log2
+import kotlin.math.PI
+import kotlin.math.tan
 
 class MapController {
 
@@ -24,6 +32,7 @@ class MapController {
     val pulseAlpha: Float get() = _pulseAnimatable.value
 
     private var regionTapListener: ((String) -> Unit)? = null
+    private var regionDoubleTapListener: ((String) -> Unit)? = null
     private var markerTapListener: ((String) -> Unit)? = null
     private var cameraZoomChangeListener: ((Float) -> Unit)? = null
     private var cameraPositionListener: ((Double, Double, Float) -> Unit)? = null
@@ -31,6 +40,8 @@ class MapController {
 
     private val hitTestBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
     private val hitTestCoords = mutableMapOf<String, List<List<Pair<Double, Double>>>>()
+
+    private var animJob: Job? = null
 
     // ---- Overlay operations ----
 
@@ -127,11 +138,17 @@ class MapController {
         _renderState.update { it.copy(polylines = emptyMap()) }
     }
 
+    // ---- Ocean background ----
+
+    fun setOceanColor(color: androidx.compose.ui.graphics.Color) {
+        _renderState.update { it.copy(oceanColor = color) }
+    }
+
     // ---- Camera operations ----
 
     fun setCamera(lat: Double, lng: Double, zoomLevel: Float, animated: Boolean) {
         if (animated) {
-            animateCameraMove(viewport, lng, lat, zoomLevel, animationScope)
+            animateCamera(lng, lat, zoomLevel)
         } else {
             viewport.moveTo(lng, lat, zoomLevel)
         }
@@ -146,6 +163,7 @@ class MapController {
     // ---- Callbacks ----
 
     fun setOnRegionTapListener(listener: ((String) -> Unit)?) { regionTapListener = listener }
+    fun setOnRegionDoubleTapListener(listener: ((String) -> Unit)?) { regionDoubleTapListener = listener }
     fun setOnMarkerTapListener(listener: ((String) -> Unit)?) { markerTapListener = listener }
     fun setOnCameraZoomChangeListener(listener: ((Float) -> Unit)?) { cameraZoomChangeListener = listener }
     fun setOnCameraPositionListener(listener: ((Double, Double, Float) -> Unit)?) { cameraPositionListener = listener }
@@ -154,14 +172,15 @@ class MapController {
     // ---- Internal event handling ----
 
     internal fun handleTap(offset: Offset) {
+        val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
         val tester = HitTester(hitTestBounds, hitTestCoords)
-        val regionId = tester.hitTest(offset.x, offset.y)
+        val regionId = tester.hitTest(offset.x, offset.y, projection)
         if (regionId != null) {
             regionTapListener?.invoke(regionId)
+            return
         }
 
         val rs = _renderState.value
-        val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
         val tapThreshold = 20f
         for (marker in rs.markers.values) {
             val screenPos = projection.project(marker.lng, marker.lat)
@@ -183,9 +202,19 @@ class MapController {
         }
     }
 
-    internal fun handleLongPress(offset: Offset) {
-        // Future: long-press on marker for context menu
+    internal fun handleDoubleTap(offset: Offset) {
+        val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
+        val tester = HitTester(hitTestBounds, hitTestCoords)
+        val regionId = tester.hitTest(offset.x, offset.y, projection)
+
+        if (regionId != null) {
+            regionDoubleTapListener?.invoke(regionId) ?: zoomToRegion(regionId)
+        } else {
+            viewport.zoomBy(1f, offset)
+        }
     }
+
+    internal fun handleLongPress(offset: Offset) {}
 
     internal fun updateHitTestBounds(bounds: Map<String, androidx.compose.ui.geometry.Rect>) {
         hitTestBounds.clear()
@@ -194,6 +223,80 @@ class MapController {
 
     internal fun notifyMapReady() {
         mapReadyListener?.invoke()
+    }
+
+    // ---- Region zoom ----
+
+    private fun zoomToRegion(regionId: String) {
+        val allRings = hitTestCoords[regionId] ?: return
+        if (allRings.isEmpty()) return
+
+        var minLng = Double.MAX_VALUE; var maxLng = -Double.MAX_VALUE
+        var minLat = Double.MAX_VALUE; var maxLat = -Double.MAX_VALUE
+
+        for (ring in allRings) {
+            for ((lng, lat) in ring) {
+                if (lng < minLng) minLng = lng
+                if (lng > maxLng) maxLng = lng
+                if (lat < minLat) minLat = lat
+                if (lat > maxLat) maxLat = lat
+            }
+        }
+
+        val targetLng = (minLng + maxLng) / 2.0
+        val targetLat = (minLat + maxLat) / 2.0
+
+        val w = viewport.canvasWidth
+        val h = viewport.canvasHeight
+        if (w <= 0f || h <= 0f) return
+
+        val lngSpan = maxLng - minLng
+        if (lngSpan <= 0.0) {
+            animateCamera(targetLng, targetLat, viewport.zoomLevel + 3f)
+            return
+        }
+
+        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
+        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
+        val mercSpan = mercMax - mercMin
+
+        val padding = 0.7f
+        val scaleFromLng = (w * padding) / lngSpan.toFloat()
+        val scaleFromLat = if (mercSpan > 0.0)
+            (h * padding) / (mercSpan.toFloat() * (180.0 / PI).toFloat())
+        else
+            Float.MAX_VALUE
+
+        val targetScale = minOf(scaleFromLng, scaleFromLat)
+        val targetZoom = (ViewportState.BASE_ZOOM +
+            log2((targetScale / ViewportState.BASE_SCALE).toDouble()).toFloat())
+            .coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM)
+
+        animateCamera(targetLng, targetLat, targetZoom)
+    }
+
+    // ---- Animation ----
+
+    private fun animateCamera(targetLng: Double, targetLat: Double, targetZoom: Float) {
+        animJob?.cancel()
+        val startLng = viewport.centerLng
+        val startLat = viewport.centerLat
+        val startZoom = viewport.zoomLevel
+
+        if (startLng == targetLng && startLat == targetLat && startZoom == targetZoom) return
+
+        animJob = animationScope.launch {
+            val steps = 15
+            val stepMs = 25L
+            for (i in 1..steps) {
+                val t = i.toFloat() / steps
+                val eased = t * t * (3f - 2f * t)
+                viewport.centerLng = startLng + (targetLng - startLng) * eased
+                viewport.centerLat = startLat + (targetLat - startLat) * eased
+                viewport.zoomLevel = startZoom + (targetZoom - startZoom) * eased
+                delay(stepMs)
+            }
+        }
     }
 
     // ---- Lifecycle ----

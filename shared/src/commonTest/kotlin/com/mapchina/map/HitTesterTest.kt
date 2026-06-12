@@ -1,6 +1,7 @@
 package com.mapchina.map
 
 import androidx.compose.ui.geometry.Rect
+import kotlin.math.PI
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -13,13 +14,22 @@ class HitTesterTest {
     )
     private val squareBounds = Rect(0f, 0f, 10f, 10f)
 
+    // Projection where (x,y) screen maps to roughly (x,y) geo
+    private val testProj = GeoProjection(
+        viewCenterLng = 5.0,
+        viewCenterLat = 5.0,
+        scale = 1f,
+        canvasWidth = 10f,
+        canvasHeight = 10f
+    )
+
     @Test
     fun hit_inside_square_returns_region_id() {
         val tester = HitTester(
             bounds = mapOf("region_a" to squareBounds),
             coords = mapOf("region_a" to squareCoords)
         )
-        assertEquals("region_a", tester.hitTest(5f, 5f))
+        assertEquals("region_a", tester.hitTest(5f, 5f, testProj))
     }
 
     @Test
@@ -28,7 +38,7 @@ class HitTesterTest {
             bounds = mapOf("region_a" to squareBounds),
             coords = mapOf("region_a" to squareCoords)
         )
-        assertNull(tester.hitTest(15f, 15f))
+        assertNull(tester.hitTest(15f, 15f, testProj))
     }
 
     @Test
@@ -37,7 +47,7 @@ class HitTesterTest {
             bounds = mapOf("region_a" to squareBounds),
             coords = mapOf("region_a" to squareCoords)
         )
-        tester.hitTest(10f, 5f)
+        tester.hitTest(10f, 5f, testProj)
     }
 
     @Test
@@ -47,13 +57,13 @@ class HitTesterTest {
             bounds = mapOf("big" to squareBounds, "small" to Rect(2f, 2f, 8f, 8f)),
             coords = mapOf("big" to squareCoords, "small" to smallSquare)
         )
-        val result = tester.hitTest(5f, 5f)
+        val result = tester.hitTest(5f, 5f, testProj)
         assertTrue(result == "big" || result == "small")
     }
 
     @Test
     fun empty_bounds_returns_null() {
         val tester = HitTester(bounds = emptyMap(), coords = emptyMap())
-        assertNull(tester.hitTest(5f, 5f))
+        assertNull(tester.hitTest(5f, 5f, testProj))
     }
 }

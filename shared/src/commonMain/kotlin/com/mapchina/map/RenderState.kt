@@ -8,7 +8,8 @@ data class RenderState(
     val attractionMarkers: Map<String, AttractionMarkerData> = emptyMap(),
     val imageMarkers: Map<String, ImageMarkerData> = emptyMap(),
     val polylines: Map<String, PolylineData> = emptyMap(),
-    val pulseTarget: String? = null
+    val pulseTarget: String? = null,
+    val oceanColor: Color = Color(0xFFE8F4F8)
 )
 
 data class OverlayData(
