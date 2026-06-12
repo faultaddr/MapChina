@@ -10,6 +10,11 @@ plugins {
 kotlin {
     androidTarget()
 
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+        languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             baseName = "shared"
@@ -27,7 +32,7 @@ kotlin {
             implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
             implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.8.0-alpha10")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation("io.ktor:ktor-client-core:3.3.3")
             implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
@@ -40,7 +45,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
