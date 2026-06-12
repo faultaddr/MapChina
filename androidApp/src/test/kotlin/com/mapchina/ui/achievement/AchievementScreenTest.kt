@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
+import com.mapchina.ui.theme.Copy
 import org.junit.Test
 
 @RunWith(RobolectricTestRunner::class)
@@ -37,12 +38,12 @@ class AchievementScreenTest {
     @OptIn(ExperimentalTestApi::class)
     @Test fun achievementScreen_displaysProvinceConquest() = runComposeUiTest {
         setContent { AchievementScreen() }
-        onNodeWithText("省份征服").assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_PROVINCE_TITLE).assertIsDisplayed()
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test fun achievementScreen_displaysAtlasLink() = runComposeUiTest {
         setContent { AchievementScreen() }
-        onNodeWithText("主题图鉴").assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_ATLAS_TITLE).assertIsDisplayed()
     }
 }

@@ -24,3 +24,4 @@ import kotlinx.serialization.Serializable
 @Serializable data class CustomAttractionScreen(val regionId: String, val latitude: String = "0.0", val longitude: String = "0.0") : Screen()
 @Serializable data object CommunityScreen : Screen()
 @Serializable data class PostDetailScreen(val postId: String) : Screen()
+@Serializable data object StatsScreen : Screen()

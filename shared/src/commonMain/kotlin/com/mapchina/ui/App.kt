@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,6 +63,10 @@ import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.Screen
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaTheme
+import com.mapchina.ui.theme.Copy
+import com.mapchina.ui.theme.MapChinaMotion
+import com.mapchina.ui.theme.MapChinaRadius
+import com.mapchina.ui.theme.MapChinaTypography
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import mapchina.shared.generated.resources.Res
@@ -70,10 +75,10 @@ import mapchina.shared.generated.resources.splash
 data class BottomNavItem(val screen: Screen, val label: String, val icon: ImageVector)
 
 val bottomNavItems = listOf(
-    BottomNavItem(MapScreen, "地图", Icons.Default.LocationOn),
-    BottomNavItem(AttractionsScreen, "景点", Icons.Default.Attractions),
-    BottomNavItem(CommunityScreen, "社区", Icons.Default.AutoStories),
-    BottomNavItem(ProfileScreen, "我的", Icons.Default.Person),
+    BottomNavItem(MapScreen, Copy.TAB_MAP, Icons.Default.LocationOn),
+    BottomNavItem(AttractionsScreen, Copy.TAB_ATTRACTION, Icons.Default.Attractions),
+    BottomNavItem(CommunityScreen, Copy.TAB_COMMUNITY, Icons.Default.AutoStories),
+    BottomNavItem(ProfileScreen, Copy.TAB_PROFILE, Icons.Default.Person),
 )
 
 internal val LocalScaffoldBottomPadding = compositionLocalOf { 0.dp }
@@ -141,16 +146,13 @@ private fun SplashScreen(onFinish: () -> Unit) {
     }
 }
 
-private val TabInactive = Color(0xFF999999)
-private val BarBackground = Color(0xFFFAFAF8)
-
 @Composable
 private fun MapChinaBottomBar(
     currentDestination: androidx.navigation.NavDestination?,
     navController: androidx.navigation.NavHostController
 ) {
     Surface(
-        color = BarBackground,
+        color = MapChinaColors.SurfaceElevated,
         shadowElevation = 12.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -167,14 +169,14 @@ private fun MapChinaBottomBar(
                 } == true
 
                 val tint by animateColorAsState(
-                    targetValue = if (selected) MapChinaColors.Primary else TabInactive,
-                    animationSpec = tween(180),
+                    targetValue = if (selected) MapChinaColors.Primary else MapChinaColors.TextTertiary,
+                    animationSpec = tween(MapChinaMotion.Instant),
                     label = "tint"
                 )
 
                 Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(MapChinaRadius.Medium)
                         .clickable {
                             navController.navigate(item.screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -196,7 +198,7 @@ private fun MapChinaBottomBar(
                     Spacer(Modifier.height(3.dp))
                     Text(
                         item.label,
-                        fontSize = 10.sp,
+                        style = MapChinaTypography.Caption,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         color = tint
                     )
@@ -205,7 +207,12 @@ private fun MapChinaBottomBar(
                         modifier = Modifier
                             .width(if (selected) 16.dp else 0.dp)
                             .height(2.5.dp)
-                            .background(MapChinaColors.Primary, RoundedCornerShape(1.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(MapChinaColors.Primary, MapChinaColors.PrimaryVariant)
+                                ),
+                                shape = RoundedCornerShape(1.dp)
+                            )
                     )
                 }
             }

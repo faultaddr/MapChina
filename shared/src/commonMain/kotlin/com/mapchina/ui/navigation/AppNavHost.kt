@@ -40,6 +40,7 @@ import com.mapchina.ui.attraction.CustomAttractionScreen as CustomAttractionScre
 import com.mapchina.ui.community.CommunityScreen as CommunityScreenComposable
 import com.mapchina.ui.community.PostDetailScreen as PostDetailScreenComposable
 import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.journal.JournalListScreen as JournalListScreenComposable
 import com.mapchina.ui.journal.JournalDetailScreen as JournalDetailScreenComposable
@@ -92,7 +93,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
                 onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
                 onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) },
-                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = "true")) }
+                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = "true")) },
+                onNavigateToStats = { navController.navigate(com.mapchina.ui.navigation.StatsScreen) },
+                settingsRepository = profileVm.settingsRepository
             )
         }
         composable<BadgeWallScreen> {
@@ -327,6 +330,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onSave = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable<com.mapchina.ui.navigation.StatsScreen> {
+            val vm: StatsViewModel = koinInject()
+            StatsScreenComposable(viewModel = vm)
         }
         composable<CommunityScreen> {
             val vm: CommunityViewModel = koinInject()

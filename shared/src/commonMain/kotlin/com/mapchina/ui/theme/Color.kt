@@ -1,5 +1,6 @@
 package com.mapchina.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 object MapChinaColors {
@@ -56,4 +57,13 @@ object MapChinaColors {
     val CardBackgroundLight = Color(0xFFF0EDE5)
     val FootprintUnvisited = Color(0xFFE8E5DD)
     val Gold = Color(0xFFC8963E)
+
+    // Convenience gradient brushes
+    val PrimaryGradient = Brush.horizontalGradient(listOf(GradientPrimaryStart, GradientPrimaryEnd))
+    val GoldGradient = Brush.horizontalGradient(listOf(GradientGoldStart, GradientGoldEnd))
+    val WarmGradient = Brush.verticalGradient(listOf(GradientWarmStart, GradientWarmEnd))
+    val CardHeroGradient = Brush.verticalGradient(listOf(
+        Color(0xFF0D7377),
+        Color(0xFF14A3A8),
+    ))
 }

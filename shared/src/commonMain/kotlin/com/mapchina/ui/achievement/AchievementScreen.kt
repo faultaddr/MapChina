@@ -54,9 +54,12 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.stats.StatsUi
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.ui.stats.VisitedAttractionUi
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.InkTabIndicator
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
+import com.mapchina.ui.theme.MapChinaRadius
+import com.mapchina.ui.theme.MapChinaTypography
 
 @Composable
 fun AchievementScreen(
@@ -169,8 +172,8 @@ private fun AchievementTab(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("省份征服", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("征服每个省份，点亮你的中国版图", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                        Text(Copy.FEATURE_PROVINCE_TITLE, style = MapChinaTypography.Headline, color = MapChinaColors.TextPrimary)
+                        Text(Copy.FEATURE_PROVINCE_SUBTITLE, style = MapChinaTypography.Body, color = MapChinaColors.TextTertiary)
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
                 }
@@ -202,8 +205,8 @@ private fun AchievementTab(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("主题图鉴", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("按主题收集中国之美", color = MapChinaColors.TextTertiary, fontSize = 13.sp)
+                        Text(Copy.FEATURE_ATLAS_TITLE, style = MapChinaTypography.Headline, color = MapChinaColors.TextPrimary)
+                        Text(Copy.FEATURE_ATLAS_SUBTITLE, style = MapChinaTypography.Body, color = MapChinaColors.TextTertiary)
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(20.dp))
                 }
@@ -219,7 +222,7 @@ private fun AchievementTab(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text("查看全部徽章", color = MapChinaColors.Primary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("查看全部${Copy.FEATURE_BADGE_TITLE}", color = MapChinaColors.Primary, style = MapChinaTypography.Title, fontWeight = FontWeight.Medium)
             }
         }
     }

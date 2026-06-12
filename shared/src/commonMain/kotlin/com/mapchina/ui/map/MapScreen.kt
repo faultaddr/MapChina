@@ -67,6 +67,7 @@ import com.mapchina.ui.navigation.CarvingListScreen
 import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 import kotlinx.coroutines.delay
@@ -664,10 +665,10 @@ private fun AttractionSheetCard(
             Box {
                 Text(
                     text = when (attraction.visitLevel) {
-                        FootprintLevel.DEEP -> "深度游"
-                        FootprintLevel.SHORT_VISIT -> "短暂停留"
-                        FootprintLevel.PASS_BY -> "路过"
-                        null -> "未到访"
+                        FootprintLevel.DEEP -> Copy.FOOTPRINT_DEEP
+                        FootprintLevel.SHORT_VISIT -> Copy.FOOTPRINT_SHORT
+                        FootprintLevel.PASS_BY -> Copy.FOOTPRINT_PASS
+                        null -> Copy.FOOTPRINT_NONE
                     },
                     color = if (isVisited) MapChinaColors.FootprintDeep else MapChinaColors.TextTertiary,
                     fontSize = 12.sp,
@@ -683,21 +684,21 @@ private fun AttractionSheetCard(
                     onDismissRequest = { showLevelMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("深度游", MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_DEEP, MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
                         onClick = {
                             showLevelMenu = false
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.DEEP)
                         }
                     )
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("短暂停留", MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_SHORT, MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
                         onClick = {
                             showLevelMenu = false
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
                         }
                     )
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("路过", MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_PASS, MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
                         onClick = {
                             showLevelMenu = false
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.PASS_BY)

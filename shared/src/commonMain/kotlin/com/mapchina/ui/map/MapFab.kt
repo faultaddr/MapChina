@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 
 private data class MenuItem(
@@ -258,8 +259,8 @@ fun MapFab(
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 if (visitedCount == 0) {
-                    Text("出发", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                    Text("开始旅程", color = Color.White.copy(alpha = 0.75f), fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+                    Text(Copy.FAB_DEPART, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text(Copy.FAB_DEPART_SUB, color = Color.White.copy(alpha = 0.75f), fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
                 } else {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text("$coveragePercent", color = MapChinaColors.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
@@ -267,8 +268,8 @@ fun MapFab(
                     }
                     Text(
                         when {
-                            coveragePercent < 5 -> "探索起步"
-                            coveragePercent < 20 -> "渐入佳境"
+                            coveragePercent < 5 -> Copy.FAB_COVERAGE_EARLY
+                            coveragePercent < 20 -> Copy.FAB_COVERAGE_MID
                             else -> "$visitedCount/$totalCount$currentLevel"
                         },
                         color = MapChinaColors.TextTertiary, fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center

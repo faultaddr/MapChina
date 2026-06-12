@@ -8,6 +8,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
+import com.mapchina.ui.theme.Copy
 import org.junit.Test
 
 @RunWith(RobolectricTestRunner::class)
@@ -15,10 +16,9 @@ import org.junit.Test
 class ProfileScreenTest {
 
     @OptIn(ExperimentalTestApi::class)
-    @Test fun profileScreen_displaysTabs() = runComposeUiTest {
+    @Test fun profileScreen_displaysUserCard() = runComposeUiTest {
         setContent { ProfileScreen() }
-        onNodeWithText("我的").assertIsDisplayed()
-        onNodeWithText("成就").assertIsDisplayed()
+        onNodeWithText("未登录").assertIsDisplayed()
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -31,9 +31,9 @@ class ProfileScreenTest {
     @OptIn(ExperimentalTestApi::class)
     @Test fun profileScreen_displaysFeatureCards() = runComposeUiTest {
         setContent { ProfileScreen() }
-        onNodeWithText("我的游记").assertIsDisplayed()
-        onNodeWithText("徽章墙").assertIsDisplayed()
-        onNodeWithText("省份征服").assertIsDisplayed()
-        onNodeWithText("主题图鉴").assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_JOURNAL_TITLE).assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_BADGE_TITLE).assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_PROVINCE_TITLE).assertIsDisplayed()
+        onNodeWithText(Copy.FEATURE_ATLAS_TITLE).assertIsDisplayed()
     }
 }
