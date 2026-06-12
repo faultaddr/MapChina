@@ -1,22 +1,23 @@
 package com.mapchina.ui.carving
 
-import androidx.ink.strokes.Stroke
 import com.mapchina.data.repository.CarvingRepository
 import com.mapchina.domain.model.Carving
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 class CarvingViewModel(
     private val carvingRepository: CarvingRepository,
-    private val userId: String = ""
+    private val userId: String = "",
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _savedCarvings = MutableStateFlow<List<Carving>>(emptyList())
     val savedCarvings: StateFlow<List<Carving>> = _savedCarvings.asStateFlow()
@@ -24,8 +25,8 @@ class CarvingViewModel(
     private val _currentCarving = MutableStateFlow<Carving?>(null)
     val currentCarving: StateFlow<Carving?> = _currentCarving.asStateFlow()
 
-    private val _existingStrokes = MutableStateFlow<List<Stroke>>(emptyList())
-    val existingStrokes: StateFlow<List<Stroke>> = _existingStrokes.asStateFlow()
+    private val _existingStrokeData = MutableStateFlow<String?>(null)
+    val existingStrokeData: StateFlow<String?> = _existingStrokeData.asStateFlow()
 
     private val _carvingList = MutableStateFlow<List<Carving>>(emptyList())
     val carvingList: StateFlow<List<Carving>> = _carvingList.asStateFlow()
@@ -47,29 +48,26 @@ class CarvingViewModel(
     fun loadCarvingForRegion(regionId: String) {
         val existing = carvingRepository.getCarvingsByRegion(regionId)
         _currentCarving.value = existing.firstOrNull()
-        _existingStrokes.value = emptyList()
+        _existingStrokeData.value = null
     }
 
     fun loadCarvingForEdit(carvingId: String) {
         editingCarvingId = carvingId
         val carving = carvingRepository.getCarving(carvingId)
         _currentCarving.value = carving
-        _existingStrokes.value = carving?.strokeData?.let { deserializeStrokes(it) } ?: emptyList()
+        _existingStrokeData.value = carving?.strokeData
     }
 
     fun saveCarving(
         regionId: String,
         regionName: String,
-        strokes: List<Stroke>,
-        brushType: CarvingBrushType = CarvingBrushType.IRON_CHISEL,
-        brushColorArgb: Int = 0xFF1A1612.toInt(),
+        strokeData: String,
         imagePath: String? = null,
         previewAspectRatio: Float? = null,
         attractionId: String? = null,
         attractionName: String? = null
     ) {
         val now = Clock.System.now().toEpochMilliseconds()
-        val strokeData = serializeStrokes(strokes, brushType, brushColorArgb)
         val id = editingCarvingId ?: "carving_${regionId}_${attractionId ?: "region"}_$now"
         val existingCarving = editingCarvingId?.let { carvingRepository.getCarving(it) }
         val carving = Carving(
