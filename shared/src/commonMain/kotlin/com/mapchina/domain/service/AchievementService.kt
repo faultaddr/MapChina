@@ -1,5 +1,7 @@
 package com.mapchina.domain.service
 
+import kotlin.time.Clock
+
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.AttractionRepository
@@ -48,7 +50,7 @@ class AchievementService(
 
             if (progress >= target && target > 0 && !wasUnlocked) {
                 newlyUnlocked.add(
-                    UserAchievement(userId, def.id, progress, target, AchievementStatus.UNLOCKED, kotlinx.datetime.Clock.System.now())
+                    UserAchievement(userId, def.id, progress, target, AchievementStatus.UNLOCKED, Clock.System.now())
                 )
                 totalScoreFromAchievements += def.rewardScore
             }

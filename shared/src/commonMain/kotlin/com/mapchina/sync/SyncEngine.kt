@@ -1,5 +1,7 @@
 package com.mapchina.sync
 
+import kotlin.time.Clock
+
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.model.FootprintDto
 import com.mapchina.data.model.FootprintLevel
@@ -58,7 +60,7 @@ class SyncEngine(
     fun enqueueChange(entityType: String, entityId: String, operation: String, payload: String) {
         database.syncQueueQueries.insertPending(
             entityType, entityId, operation, payload,
-            kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+            Clock.System.now().toEpochMilliseconds()
         )
     }
 

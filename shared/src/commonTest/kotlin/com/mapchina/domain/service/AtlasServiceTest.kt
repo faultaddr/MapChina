@@ -38,7 +38,7 @@ class AtlasServiceTest {
 
     @Test
     fun getAtlasProgress_afterVisit_showsProgress() {
-        footprintRepo.markAttractionVisit("u1", "attr001", "110101", FootprintLevel.DEEP)
+        footprintRepo.markAttractionVisit("u1", "attr_B000A8UIN8", "110101", FootprintLevel.DEEP)
 
         val progress = service.getAtlasProgress("u1")
         val heritage = progress.find { it.atlasId == "world_heritage" }
@@ -70,18 +70,18 @@ class AtlasServiceTest {
 
     @Test
     fun getAtlasItemsWithVisitStatus_afterVisit_showsVisited() {
-        footprintRepo.markAttractionVisit("u1", "attr001", "110101", FootprintLevel.DEEP)
+        footprintRepo.markAttractionVisit("u1", "attr_B000A8UIN8", "110101", FootprintLevel.DEEP)
 
         val items = service.getAtlasItemsWithVisitStatus("u1", "world_heritage")
-        val guGong = items.find { it.attractionId == "attr001" }
+        val guGong = items.find { it.attractionId == "attr_B000A8UIN8" }
         assertNotNull(guGong)
         assertTrue(guGong.isVisited)
     }
 
     @Test
     fun getAtlasItemsForAttraction_returnsCorrectAtlases() {
-        val result = service.getAtlasItemsForAttraction("attr001")
-        // attr001 is in world_heritage and museum
+        val result = service.getAtlasItemsForAttraction("attr_B000A8UIN8")
+        // attr_B000A8UIN8 is in world_heritage and museum
         assertTrue(result.any { it.atlasId == "world_heritage" })
         assertTrue(result.any { it.atlasId == "museum" })
     }

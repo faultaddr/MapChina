@@ -4,7 +4,7 @@ import com.mapchina.data.model.UserDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 class AuthService {
     private val _currentUser = MutableStateFlow<UserDto?>(null)

@@ -1,7 +1,7 @@
 package com.mapchina.domain.service
 
 import com.mapchina.data.model.UserDto
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
