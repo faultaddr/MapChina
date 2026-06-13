@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "attractions": "景点",
+    "journals": "游记",
+    "about": "关于",
+    "download": "下载"
+  },
+  "hero": {
+    "slogan": "用地图点亮你的中国足迹",
+    "subtitle": "探索、记录、分享你的中国之旅",
+    "download": "免费下载"
+  },
+  "features": {
+    "title": "核心功能",
+    "map": { "title": "地图探索", "desc": "逐级钻入中国版图，从省到市到区" },
+    "footprint": { "title": "足迹标记", "desc": "深游、小驻、途经，三级足迹体系" },
+    "journal": { "title": "游录", "desc": "记行旅见闻，图文并茂" },
+    "badge": { "title": "勋章", "desc": "收行旅荣誉，点亮成就" },
+    "carving": { "title": "碑刻", "desc": "石壁留名题字，毛笔书写" },
+    "theme": { "title": "主题", "desc": "水墨、古舆图、星夜六套主题" }
+  },
+  "themes": {
+    "title": "地图主题",
+    "classic": "经典",
+    "ink_wash": "水墨",
+    "vintage_map": "古舆图",
+    "rice_paper": "宣纸",
+    "starry_night": "星夜",
+    "mountain_mist": "山水"
+  },
+  "community": {
+    "title": "社区精选"
+  },
+  "download": {
+    "title": "开始你的旅程",
+    "subtitle": "免费下载 MapChina，点亮你的中国足迹",
+    "app_store": "App Store",
+    "google_play": "Google Play"
+  },
+  "footer": {
+    "copyright": "© 2026 MapChina"
+  }
+}

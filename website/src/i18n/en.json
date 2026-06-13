@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "attractions": "Attractions",
+    "journals": "Journals",
+    "about": "About",
+    "download": "Download"
+  },
+  "hero": {
+    "slogan": "Light Up Your China Footprint",
+    "subtitle": "Explore, record, and share your journey across China",
+    "download": "Download Free"
+  },
+  "features": {
+    "title": "Core Features",
+    "map": { "title": "Map Explorer", "desc": "Drill down into China's map, from province to city to district" },
+    "footprint": { "title": "Footprint Tracker", "desc": "Deep visit, short stay, or pass-by — three-tier footprint system" },
+    "journal": { "title": "Travel Journal", "desc": "Record your travel stories with photos and text" },
+    "badge": { "title": "Badges", "desc": "Collect travel honors and unlock achievements" },
+    "carving": { "title": "Stone Carving", "desc": "Leave your calligraphy on virtual stone walls" },
+    "theme": { "title": "Themes", "desc": "Six map themes including ink-wash and starry night" }
+  },
+  "themes": {
+    "title": "Map Themes",
+    "classic": "Classic",
+    "ink_wash": "Ink Wash",
+    "vintage_map": "Vintage Map",
+    "rice_paper": "Rice Paper",
+    "starry_night": "Starry Night",
+    "mountain_mist": "Mountain Mist"
+  },
+  "community": {
+    "title": "Community Picks"
+  },
+  "download": {
+    "title": "Start Your Journey",
+    "subtitle": "Download MapChina for free and light up your China footprint",
+    "app_store": "App Store",
+    "google_play": "Google Play"
+  },
+  "footer": {
+    "copyright": "© 2026 MapChina"
+  }
+}
