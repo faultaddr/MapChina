@@ -135,6 +135,34 @@ website/
 - **Attraction/Journal lists**: ISR, revalidate = 3600s, fetched from App API
 - **Attraction/Journal detail**: ISR, revalidate = 1800s, `generateStaticParams` pre-generates popular entries
 - **API client**: unified in `lib/api.ts` with error handling and timeout
+- **ISR caching**: self-hosted environment uses Next.js built-in filesystem cache (no Redis needed); if scaling beyond single instance, add Redis as shared cache layer later
+
+### API Endpoints (App Backend)
+
+The website reads from the existing MapChina API:
+
+| Endpoint | Method | Params | Used By |
+|----------|--------|--------|---------|
+| `/api/attractions` | GET | `?page=1&limit=20&sort=popular` | Attraction list, Community Picks |
+| `/api/attractions/:id` | GET | — | Attraction detail |
+| `/api/journals` | GET | `?page=1&limit=20&sort=popular` | Journal list, Community Picks |
+| `/api/journals/:id` | GET | — | Journal detail |
+
+Response format: `{ success: boolean, data: T, error?: string, meta: { total, page, limit } }`
+
+`sort=popular` returns items ranked by a combination of view count + like count + recency, as defined by the App backend.
+
+### Theme Gallery Implementation
+
+6 theme previews are pre-rendered screenshots of each map theme (exported from the App), displayed as `<Image>` components with a CSS crossfade transition on selection. No Canvas rendering on the website — this keeps the gallery lightweight and avoids duplicating map rendering logic.
+
+### Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | App backend base URL | `https://api.mapchina.com` |
+| `REVALIDATE_INTERVAL_LIST` | ISR revalidate for list pages (seconds) | `3600` |
+| `REVALIDATE_INTERVAL_DETAIL` | ISR revalidate for detail pages (seconds) | `1800` |
 
 ### R3F Loading Strategy
 
