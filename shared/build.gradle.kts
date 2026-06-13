@@ -15,7 +15,7 @@ kotlin {
         languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
 
-    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             baseName = "shared"
             isStatic = true
@@ -29,8 +29,10 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.materialIconsExtended)
-            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
-            implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.8.0-alpha10")
+            implementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.1")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+            implementation("org.jetbrains.androidx.savedstate:savedstate:1.4.0")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation("io.ktor:ktor-client-core:3.3.3")

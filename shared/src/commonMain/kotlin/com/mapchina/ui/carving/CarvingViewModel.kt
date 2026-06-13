@@ -58,6 +58,9 @@ class CarvingViewModel(
         _existingStrokeData.value = carving?.strokeData
     }
 
+    private val _saveComplete = MutableStateFlow(false)
+    val saveComplete: StateFlow<Boolean> = _saveComplete.asStateFlow()
+
     fun saveCarving(
         regionId: String,
         regionName: String,
@@ -83,13 +86,19 @@ class CarvingViewModel(
             previewAspectRatio = previewAspectRatio
         )
         vmScope.launch {
-            if (editingCarvingId != null) {
+            try {
+                if (editingCarvingId != null) {
+                    carvingRepository.updateCarving(carving)
+                } else {
+                    carvingRepository.insertCarving(carving)
+                }
+                _currentCarving.value = carving
+                editingCarvingId = null
+            } catch (_: Exception) {
+                // If insert fails (e.g. duplicate id), try update
                 carvingRepository.updateCarving(carving)
-            } else {
-                carvingRepository.insertCarving(carving)
             }
-            _currentCarving.value = carving
-            editingCarvingId = null
+            _saveComplete.value = true
         }
     }
 

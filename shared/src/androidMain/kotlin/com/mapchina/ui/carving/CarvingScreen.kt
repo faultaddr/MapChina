@@ -96,6 +96,11 @@ actual fun CarvingScreen(
     val existingStrokeData by viewModel.existingStrokeData.collectAsState()
     val existingStrokes by remember { derivedStateOf { existingStrokeData?.let { deserializeStrokes(it) } ?: emptyList() } }
 
+    val saveComplete by viewModel.saveComplete.collectAsState()
+    LaunchedEffect(saveComplete) {
+        if (saveComplete) onBack()
+    }
+
     val titleName = attractionName ?: regionName
 
     val carvingBrush = rememberCarvingBrush(brushType, brushColor, brushSize)
@@ -110,19 +115,21 @@ actual fun CarvingScreen(
                 )
             },
             navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = MapChinaColors.TextPrimary)
-                }
+                com.mapchina.ui.common.BackButton(onClick = onBack)
             },
             actions = {
                 IconButton(onClick = {
+                    val strokeData = try {
+                        serializeStrokes(finishedStrokes, brushType, brushColor.toArgb())
+                    } catch (_: Exception) {
+                        "[]"
+                    }
                     viewModel.saveCarving(
                         regionId, regionName,
-                        strokeData = serializeStrokes(finishedStrokes, brushType, brushColor.toArgb()),
+                        strokeData = strokeData,
                         attractionId = attractionId,
                         attractionName = attractionName
                     )
-                    onBack()
                 }) {
                     Text("保存", color = MapChinaColors.Primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
