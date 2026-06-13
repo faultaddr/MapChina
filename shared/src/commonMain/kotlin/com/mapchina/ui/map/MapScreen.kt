@@ -184,10 +184,14 @@ fun MapScreen(
         }
     }
 
-    // Re-sync map state when AMap view is recreated (e.g. after navigation back)
+    // Re-sync map state when map view is recreated (e.g. after navigation back)
     mapController.setOnMapReadyListener {
-        val (lat, lng, zoom) = viewModel.getSavedCameraState()
-        mapController.setCamera(lat, lng, zoom, false)
+        if (currentLevel == MapZoomLevel.NATIONAL) {
+            mapController.fitChinaInView(false)
+        } else {
+            val (lat, lng, zoom) = viewModel.getSavedCameraState()
+            mapController.setCamera(lat, lng, zoom, false)
+        }
         viewModel.reloadData()
     }
 
@@ -502,7 +506,7 @@ fun MapScreen(
         if (showDartTravel) {
             dartTravelReady = false
             dartTravelKey++
-            mapController.setCamera(35.5, 104.0, 3.5f, true)
+            mapController.fitChinaInView(true)
             kotlinx.coroutines.delay(800)
             dartTravelReady = true
         } else {

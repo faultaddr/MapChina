@@ -1,43 +1,28 @@
 package com.mapchina.map
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlin.time.TimeSource
 
-suspend fun animatePulse(animatable: Animatable<Float, AnimationVector1D>) {
-    animatable.animateTo(
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-}
-
-fun animateCameraMove(
-    viewport: ViewportState,
-    targetLng: Double,
-    targetLat: Double,
-    targetZoom: Float,
-    scope: CoroutineScope
-) {
-    scope.launch {
-        launch {
-            val anim = Animatable(viewport.centerLng.toFloat())
-            anim.animateTo(targetLng.toFloat(), tween(400)) { viewport.centerLng = value.toDouble() }
+suspend fun animatePulse(onAlpha: (Float) -> Unit) {
+    val halfCycleMs = 600L
+    while (true) {
+        val start = TimeSource.Monotonic.markNow()
+        while (true) {
+            val elapsed = start.elapsedNow().inWholeMilliseconds
+            val t = (elapsed.toFloat() / halfCycleMs).coerceIn(0f, 1f)
+            val eased = t * t * (3f - 2f * t)
+            onAlpha(eased * 0.5f)
+            if (t >= 1f) break
+            delay(16)
         }
-        launch {
-            val anim = Animatable(viewport.centerLat.toFloat())
-            anim.animateTo(targetLat.toFloat(), tween(400)) { viewport.centerLat = value.toDouble() }
-        }
-        launch {
-            val anim = Animatable(viewport.zoomLevel)
-            anim.animateTo(targetZoom, tween(400)) { viewport.zoomLevel = value }
+        val start2 = TimeSource.Monotonic.markNow()
+        while (true) {
+            val elapsed = start2.elapsedNow().inWholeMilliseconds
+            val t = (elapsed.toFloat() / halfCycleMs).coerceIn(0f, 1f)
+            val eased = t * t * (3f - 2f * t)
+            onAlpha((1f - eased) * 0.5f)
+            if (t >= 1f) break
+            delay(16)
         }
     }
 }

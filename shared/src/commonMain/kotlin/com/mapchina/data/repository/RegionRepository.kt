@@ -9,6 +9,13 @@ import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
+data class RegionBounds(
+    val minLng: Double,
+    val maxLng: Double,
+    val minLat: Double,
+    val maxLat: Double
+)
+
 class RegionRepository(private val database: MapChinaDatabase) {
 
     fun insertRegion(region: Region) {
@@ -82,6 +89,32 @@ class RegionRepository(private val database: MapChinaDatabase) {
     fun getRegionCenter(regionId: String): Pair<Double, Double>? {
         val boundary = getRegionBoundary(regionId) ?: return null
         return parseBoundaryCenter(boundary)
+    }
+
+    fun getRegionBounds(regionId: String): RegionBounds? {
+        val boundary = getRegionBoundary(regionId) ?: return null
+        return parseBoundaryBounds(boundary)
+    }
+
+    private fun parseBoundaryBounds(boundary: String): RegionBounds? {
+        return try {
+            val array = Json.decodeFromString<JsonArray>(boundary)
+            if (array.isEmpty()) return null
+            var minLng = Double.MAX_VALUE; var maxLng = -Double.MAX_VALUE
+            var minLat = Double.MAX_VALUE; var maxLat = -Double.MAX_VALUE
+            for (item in array) {
+                val coord = item.jsonArray
+                val lng = coord[0].jsonPrimitive.double
+                val lat = coord[1].jsonPrimitive.double
+                if (lng < minLng) minLng = lng
+                if (lng > maxLng) maxLng = lng
+                if (lat < minLat) minLat = lat
+                if (lat > maxLat) maxLat = lat
+            }
+            RegionBounds(minLng, maxLng, minLat, maxLat)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun parseBoundaryCenter(boundary: String): Pair<Double, Double>? {

@@ -39,7 +39,7 @@ class ViewportStateTest {
         vp.canvasWidth = 400f
         vp.canvasHeight = 800f
         vp.zoomBy(-100f, Offset(200f, 400f))
-        assertEquals(3f, vp.zoomLevel)
+        assertEquals(2f, vp.zoomLevel)
         vp.zoomBy(100f, Offset(200f, 400f))
         assertEquals(15f, vp.zoomLevel)
     }

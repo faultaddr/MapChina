@@ -23,6 +23,8 @@ class GeoPathCache {
 
     val paths: Map<String, List<Path>> get() = cachedPaths
     val bounds: Map<String, Rect> get() = cachedBounds
+    var boundsChanged: Boolean = false
+        private set
 
     fun buildIfChanged(
         overlays: Map<String, OverlayData>,
@@ -36,20 +38,25 @@ class GeoPathCache {
             else -> 0.0
         }
 
-        val sameZoom = (epsilon == lastEpsilon || lastEpsilon < 0.0 && epsilon == 0.0) &&
-            lastScale == projection.scale && lastMercScale == projection.mercScale &&
-            lastWidth == projection.canvasWidth && lastHeight == projection.canvasHeight
+        val scaleChanged = lastScale != projection.scale ||
+            lastMercScale != projection.mercScale ||
+            lastWidth != projection.canvasWidth ||
+            lastHeight != projection.canvasHeight ||
+            lastEpsilon != epsilon
 
         val keysChanged = currentKeys != lastOverlayKeys
+        boundsChanged = false
 
-        if (keysChanged || !sameZoom) {
+        if (keysChanged || scaleChanged) {
             precomputeRings(overlays, epsilon)
         }
 
-        if (keysChanged || !sameZoom ||
-            lastCenterLng != projection.viewCenterLng ||
-            lastCenterLat != projection.viewCenterLat) {
+        val centerChanged = lastCenterLng != projection.viewCenterLng ||
+            lastCenterLat != projection.viewCenterLat
+
+        if (keysChanged || scaleChanged || centerChanged) {
             buildPaths(projection)
+            boundsChanged = true
         }
 
         lastCenterLng = projection.viewCenterLng
@@ -89,6 +96,9 @@ class GeoPathCache {
         val ch = projection.canvasHeight
         val centerMercY = ln(tan(PI / 4 + cy * PI / 360))
 
+        val halfW = cw / 2f
+        val halfH = ch / 2f
+
         for (ring in precomputedRings) {
             val path = Path()
             path.fillType = PathFillType.EvenOdd
@@ -96,9 +106,6 @@ class GeoPathCache {
             var minY = Float.MAX_VALUE
             var maxX = Float.MIN_VALUE
             var maxY = Float.MIN_VALUE
-
-            val halfW = cw / 2f
-            val halfH = ch / 2f
 
             for ((i, pt) in ring.points.withIndex()) {
                 val x = ((pt.lng - cx) * s + halfW).toFloat()

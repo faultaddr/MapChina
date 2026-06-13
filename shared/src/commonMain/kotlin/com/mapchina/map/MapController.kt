@@ -1,6 +1,5 @@
 package com.mapchina.map
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlin.time.TimeSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +28,8 @@ class MapController {
 
     internal val animationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private val _pulseAnimatable = Animatable(0f)
-    val pulseAlpha: Float get() = _pulseAnimatable.value
+    private var _pulseAlpha = 0f
+    val pulseAlpha: Float get() = _pulseAlpha
 
     private var regionTapListener: ((String) -> Unit)? = null
     private var regionDoubleTapListener: ((String) -> Unit)? = null
@@ -37,11 +37,17 @@ class MapController {
     private var cameraZoomChangeListener: ((Float) -> Unit)? = null
     private var cameraPositionListener: ((Double, Double, Float) -> Unit)? = null
     private var mapReadyListener: (() -> Unit)? = null
+    private var cameraAnimCompleteListener: (() -> Unit)? = null
 
     private val hitTestBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
     private val hitTestCoords = mutableMapOf<String, List<List<Pair<Double, Double>>>>()
 
     private var animJob: Job? = null
+
+    // Guard against DisposableEffect re-execution overwriting camera state
+    private var hasNotifiedReady = false
+    var initialFitDone: Boolean = false
+        internal set
 
     // ---- Overlay operations ----
 
@@ -69,14 +75,18 @@ class MapController {
         _renderState.update { it.copy(overlays = it.overlays.filterKeys { k -> k in regionIds }) }
     }
 
+    private var pulseJob: Job? = null
+
     fun pulseOverlay(regionId: String) {
         _renderState.update { it.copy(pulseTarget = regionId) }
-        animationScope.launch { animatePulse(_pulseAnimatable) }
+        pulseJob?.cancel()
+        pulseJob = animationScope.launch { animatePulse { _pulseAlpha = it } }
     }
 
     fun restorePulsedOverlay() {
+        pulseJob?.cancel()
+        _pulseAlpha = 0f
         _renderState.update { it.copy(pulseTarget = null) }
-        animationScope.launch { _pulseAnimatable.snapTo(0f) }
     }
 
     // ---- Marker operations ----
@@ -154,6 +164,50 @@ class MapController {
         }
     }
 
+    fun computeZoomForBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double): Triple<Double, Double, Float> {
+        val w = viewport.canvasWidth
+        val h = viewport.canvasHeight
+        val targetLng = (minLng + maxLng) / 2.0
+        val targetLat = (minLat + maxLat) / 2.0
+
+        val lngSpan = maxLng - minLng
+        if (lngSpan <= 0.0 || w <= 0f || h <= 0f) {
+            return Triple(targetLng, targetLat, (viewport.zoomLevel + 3f).coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM))
+        }
+
+        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
+        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
+        val mercSpan = mercMax - mercMin
+
+        val padding = 0.75f
+        val scaleFromLng = (w * padding) / lngSpan.toFloat()
+        val scaleFromLat = if (mercSpan > 0.0)
+            (h * padding) / (mercSpan.toFloat() * (180.0 / PI).toFloat())
+        else Float.MAX_VALUE
+
+        val targetScale = minOf(scaleFromLng, scaleFromLat)
+        val targetZoom = (ViewportState.BASE_ZOOM +
+            log2((targetScale / ViewportState.BASE_SCALE).toDouble()).toFloat())
+            .coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM)
+
+        return Triple(targetLng, targetLat, targetZoom)
+    }
+
+    fun zoomToBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, animated: Boolean) {
+        val (targetLng, targetLat, targetZoom) = computeZoomForBounds(minLng, maxLng, minLat, maxLat)
+        if (animated) animateCamera(targetLng, targetLat, targetZoom)
+        else viewport.moveTo(targetLng, targetLat, targetZoom)
+    }
+
+    fun fitChinaInView(animated: Boolean) {
+        if (animated) {
+            val target = viewport.computeChinaFitTarget()
+            animateCamera(target.first, target.second, target.third)
+        } else {
+            viewport.fitChinaInView()
+        }
+    }
+
     fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
         val proj = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
         val offset = proj.project(lng, lat)
@@ -168,6 +222,7 @@ class MapController {
     fun setOnCameraZoomChangeListener(listener: ((Float) -> Unit)?) { cameraZoomChangeListener = listener }
     fun setOnCameraPositionListener(listener: ((Double, Double, Float) -> Unit)?) { cameraPositionListener = listener }
     fun setOnMapReadyListener(listener: (() -> Unit)?) { mapReadyListener = listener }
+    fun setOnCameraAnimCompleteListener(listener: (() -> Unit)?) { cameraAnimCompleteListener = listener }
 
     // ---- Internal event handling ----
 
@@ -222,6 +277,8 @@ class MapController {
     }
 
     internal fun notifyMapReady() {
+        if (hasNotifiedReady) return
+        hasNotifiedReady = true
         mapReadyListener?.invoke()
     }
 
@@ -283,19 +340,26 @@ class MapController {
         val startLat = viewport.centerLat
         val startZoom = viewport.zoomLevel
 
-        if (startLng == targetLng && startLat == targetLat && startZoom == targetZoom) return
+        if (startLng == targetLng && startLat == targetLat && startZoom == targetZoom) {
+            cameraAnimCompleteListener?.invoke()
+            return
+        }
 
         animJob = animationScope.launch {
-            val steps = 15
-            val stepMs = 25L
-            for (i in 1..steps) {
-                val t = i.toFloat() / steps
+            val durationMs = 400L
+            val startTime = TimeSource.Monotonic.markNow()
+            while (true) {
+                val elapsed = startTime.elapsedNow().inWholeMilliseconds
+                val t = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
                 val eased = t * t * (3f - 2f * t)
-                viewport.centerLng = startLng + (targetLng - startLng) * eased
-                viewport.centerLat = startLat + (targetLat - startLat) * eased
-                viewport.zoomLevel = startZoom + (targetZoom - startZoom) * eased
-                delay(stepMs)
+                val lng = startLng + (targetLng - startLng) * eased
+                val lat = startLat + (targetLat - startLat) * eased
+                val zoom = startZoom + (targetZoom - startZoom) * eased
+                viewport.updateCamera(lng, lat, zoom)
+                if (t >= 1f) break
+                delay(16)
             }
+            cameraAnimCompleteListener?.invoke()
         }
     }
 

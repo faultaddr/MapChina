@@ -246,12 +246,22 @@ class MapViewModel(
             RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
         }
         _selectedRegion.value = null
-        moveCameraToRegion(region)
 
-        vmScope.launch {
-            loadChildRegions(regionId)
-            loadAttractionsForRegion(regionId)
+        // Highlight the tapped region during camera animation
+        val controller = _mapController
+        if (controller != null) {
+            controller.pulseOverlay(regionId)
+            controller.setOnCameraAnimCompleteListener {
+                controller.restorePulsedOverlay()
+                controller.setOnCameraAnimCompleteListener(null)
+                vmScope.launch {
+                    loadChildRegions(regionId)
+                    loadAttractionsForRegion(regionId)
+                }
+            }
         }
+
+        moveCameraToRegion(region)
     }
 
     private fun setProgrammaticCamera() {
@@ -266,11 +276,15 @@ class MapViewModel(
     fun navigateToNational() {
         _currentLevel.value = MapZoomLevel.NATIONAL
         _currentPath.value = emptyList()
-        savedCameraLat = 35.5
-        savedCameraLng = 104.0
-        savedCameraZoom = 3.5f
-        setProgrammaticCamera()
-        mapController?.setCamera(35.5, 104.0, 3.5f, true)
+        val controller = _mapController
+        if (controller != null) {
+            val target = controller.viewport.computeChinaFitTarget()
+            savedCameraLat = target.first
+            savedCameraLng = target.second
+            savedCameraZoom = target.third
+            setProgrammaticCamera()
+            controller.fitChinaInView(true)
+        }
         vmScope.launch {
             loadTopLevelRegions()
             _attractions.value = emptyList()
@@ -309,11 +323,15 @@ class MapViewModel(
         } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
-            savedCameraLat = 35.5
-            savedCameraLng = 104.0
-            savedCameraZoom = 3.5f
-            setProgrammaticCamera()
-            mapController?.setCamera(35.5, 104.0, 3.5f, true)
+            val controller = _mapController
+            if (controller != null) {
+                val target = controller.viewport.computeChinaFitTarget()
+                savedCameraLat = target.first
+                savedCameraLng = target.second
+                savedCameraZoom = target.third
+                setProgrammaticCamera()
+                controller.fitChinaInView(true)
+            }
 
             vmScope.launch {
                 loadTopLevelRegions()
@@ -332,12 +350,22 @@ class MapViewModel(
             RegionLevel.CITY -> MapZoomLevel.CITY
             RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
         }
-        moveCameraToRegion(region)
+        _selectedRegion.value = null
 
-        vmScope.launch {
-            loadChildRegions(regionId)
-            loadAttractionsForRegion(regionId)
+        val controller = _mapController
+        if (controller != null) {
+            controller.pulseOverlay(regionId)
+            controller.setOnCameraAnimCompleteListener {
+                controller.restorePulsedOverlay()
+                controller.setOnCameraAnimCompleteListener(null)
+                vmScope.launch {
+                    loadChildRegions(regionId)
+                    loadAttractionsForRegion(regionId)
+                }
+            }
         }
+
+        moveCameraToRegion(region)
     }
 
     fun selectRegion(regionId: String) {
@@ -808,6 +836,15 @@ class MapViewModel(
         } else if (path.size == 1) {
             _currentLevel.value = MapZoomLevel.NATIONAL
             _currentPath.value = emptyList()
+            val controller = _mapController
+            if (controller != null) {
+                val target = controller.viewport.computeChinaFitTarget()
+                savedCameraLat = target.first
+                savedCameraLng = target.second
+                savedCameraZoom = target.third
+                setProgrammaticCamera()
+                controller.fitChinaInView(true)
+            }
             vmScope.launch {
                 loadTopLevelRegions()
                 _attractions.value = emptyList()
@@ -883,18 +920,30 @@ class MapViewModel(
 
     private fun moveCameraToRegion(region: Region) {
         val controller = _mapController ?: return
-        val zoom = when (region.level) {
-            RegionLevel.PROVINCE -> 7f
-            RegionLevel.CITY -> 9f
-            RegionLevel.DISTRICT -> 11f
-        }
-        val center = regionRepository.getRegionCenter(region.id)
-        if (center != null) {
-            savedCameraLat = center.first
-            savedCameraLng = center.second
-            savedCameraZoom = zoom
+        val bounds = regionRepository.getRegionBounds(region.id)
+        if (bounds != null) {
+            val (targetLng, targetLat, targetZoom) = controller.computeZoomForBounds(
+                bounds.minLng, bounds.maxLng, bounds.minLat, bounds.maxLat
+            )
+            savedCameraLat = targetLat
+            savedCameraLng = targetLng
+            savedCameraZoom = targetZoom
             setProgrammaticCamera()
-            controller.setCamera(center.first, center.second, zoom, true)
+            controller.zoomToBounds(bounds.minLng, bounds.maxLng, bounds.minLat, bounds.maxLat, true)
+        } else {
+            val zoom = when (region.level) {
+                RegionLevel.PROVINCE -> 7f
+                RegionLevel.CITY -> 9f
+                RegionLevel.DISTRICT -> 11f
+            }
+            val center = regionRepository.getRegionCenter(region.id)
+            if (center != null) {
+                savedCameraLat = center.first
+                savedCameraLng = center.second
+                savedCameraZoom = zoom
+                setProgrammaticCamera()
+                controller.setCamera(center.first, center.second, zoom, true)
+            }
         }
     }
 
