@@ -55,7 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
@@ -84,7 +84,8 @@ import androidx.compose.material.icons.filled.Star
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    navController: NavHostController,
+    onNavigate: (NavKey) -> Unit,
+    onBack: () -> Unit,
     viewModel: MapViewModel? = null,
     mapController: MapController = remember { MapController() },
     modifier: Modifier = Modifier
@@ -98,7 +99,16 @@ fun MapScreen(
 
     viewModel.mapController = mapController
 
+    // Refresh map theme when returning to MapScreen
+    LaunchedEffect(Unit) {
+        viewModel.refreshMapTheme()
+    }
+
     val currentLevel by viewModel.currentLevel.collectAsState()
+    val currentMapTheme by remember { androidx.compose.runtime.derivedStateOf {
+        val rs = mapController.renderState.value
+        rs.backgroundTheme
+    }}
     val currentPath by viewModel.currentPath.collectAsState()
     val regions by viewModel.regions.collectAsState()
     val selectedRegion by viewModel.selectedRegion.collectAsState()
@@ -130,6 +140,7 @@ fun MapScreen(
 
     val bottomPanel by viewModel.bottomPanel.collectAsState()
     val previewAttraction by viewModel.previewAttraction.collectAsState()
+    val shareMode by viewModel.shareMode.collectAsState()
 
     // Derive showRegionCard from bottomPanel for RegionCard visibility
     val showRegionPanel = bottomPanel is BottomPanel.Region && selectedRegion != null
@@ -202,19 +213,21 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top breadcrumb
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-        ) {
-            BreadcrumbNav(
-                path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
-                onNavigateUp = { viewModel.navigateUp() },
-                onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
-            )
+        // Top breadcrumb (hidden in share mode)
+        if (!shareMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, start = 8.dp, end = 8.dp)
+            ) {
+                BreadcrumbNav(
+                    path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
+                    onNavigateUp = { viewModel.navigateUp() },
+                    onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
+                )
+            }
         }
 
         // Scrim to dismiss FAB menu
@@ -226,29 +239,33 @@ fun MapScreen(
             )
         }
 
-        // Top-right FAB: feature hub
-        MapFab(
-            visitedCount = visitedCount,
-            totalCount = totalCount,
-            coveragePercent = coveragePercent,
-            currentLevel = levelLabel,
-            photoMarkersVisible = photoMarkersVisible,
-            isExpanded = fabExpanded,
-            onExpandedChange = { fabExpanded = it },
-            onTogglePhotos = { viewModel.togglePhotoMarkers() },
-            onDepart = { showDartTravel = true },
-            onNavigateToNational = { viewModel.navigateToNational() },
-            onMyLocation = { viewModel.moveToCurrentLocation() },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(top = 12.dp, end = 12.dp)
-        )
+        // Top-right FAB: feature hub (hidden in share mode)
+        if (!shareMode) {
+            MapFab(
+                visitedCount = visitedCount,
+                totalCount = totalCount,
+                coveragePercent = coveragePercent,
+                currentLevel = levelLabel,
+                photoMarkersVisible = photoMarkersVisible,
+                isExpanded = fabExpanded,
+                onExpandedChange = { fabExpanded = it },
+                onTogglePhotos = { viewModel.togglePhotoMarkers() },
+                onShare = { viewModel.enterShareMode() },
+                onDepart = { showDartTravel = true },
+                onNavigateToNational = { viewModel.navigateToNational() },
+                onMyLocation = { viewModel.moveToCurrentLocation() },
+                mapTheme = currentMapTheme,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 12.dp, end = 12.dp)
+            )
+        }
 
-        // Bottom RegionCard
+        // Bottom RegionCard (hidden in share mode)
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         AnimatedVisibility(
-            visible = showRegionPanel,
+            visible = showRegionPanel && !shareMode,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -286,7 +303,7 @@ fun MapScreen(
                     onOpenCarving = {
                         val region = selectedRegion!!
                         viewModel.clearBottomPanel()
-                        navController.navigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
+                        onNavigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
                     },
                     onClose = {
                         viewModel.clearBottomPanel()
@@ -296,9 +313,9 @@ fun MapScreen(
             }
         }
 
-        // Attraction preview card
+        // Attraction preview card (hidden in share mode)
         AnimatedVisibility(
-            visible = bottomPanel is BottomPanel.AttractionPreview && previewAttraction != null,
+            visible = bottomPanel is BottomPanel.AttractionPreview && previewAttraction != null && !shareMode,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -315,15 +332,15 @@ fun MapScreen(
                 AttractionPreviewCard(
                     attraction = previewAttraction!!,
                     onViewDetail = {
-                        navController.navigate(AttractionDetailScreen(previewAttraction!!.id))
+                        onNavigate(AttractionDetailScreen(previewAttraction!!.id))
                     },
                     onClose = { viewModel.clearBottomPanel() }
                 )
             }
         }
 
-        // Auto-mark snackbar
-        if (autoMarkMessage != null) {
+        // Auto-mark snackbar (hidden in share mode)
+        if (autoMarkMessage != null && !shareMode) {
             AnimatedVisibility(
                 visible = true,
                 enter = slideInVertically(initialOffsetY = { it }),
@@ -379,8 +396,8 @@ fun MapScreen(
             }
         }
 
-        // Achievement unlock → top banner notification
-        if (achievementResult != null) {
+        // Achievement unlock → top banner notification (hidden in share mode)
+        if (achievementResult != null && !shareMode) {
             val animatedScore by animateIntAsState(
                 targetValue = achievementResult!!.scoreAdded,
                 animationSpec = spring(stiffness = Spring.StiffnessMedium),
@@ -483,9 +500,30 @@ fun MapScreen(
                 }
             }
         }
-    }
 
-    // Photo preview overlay
+        // Share mode confirm bar
+        var shareCapturing by remember { mutableStateOf(false) }
+        if (shareMode && !shareCapturing) {
+            ShareConfirmBar(
+                onConfirm = {
+                    shareCapturing = true
+                },
+                onCancel = { viewModel.exitShareMode() },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomBarOffset + 12.dp, start = 32.dp, end = 32.dp)
+            )
+        }
+        LaunchedEffect(shareCapturing) {
+            if (shareCapturing) {
+                kotlinx.coroutines.delay(300)
+                val shareHelper = org.koin.mp.KoinPlatform.getKoin().getOrNull<com.mapchina.platform.MapShareHelper>()
+                shareHelper?.captureAndShare()
+                viewModel.exitShareMode()
+                shareCapturing = false
+            }
+        }
+    }
     if (photoPreviewCluster != null) {
         PhotoPreviewOverlay(
             cluster = photoPreviewCluster!!,
@@ -514,7 +552,7 @@ fun MapScreen(
         }
     }
     if (showDartTravel && dartTravelReady) {
-        val cityDots = remember { viewModel.getCityDots() }
+        val cityDots = remember(dartTravelKey) { viewModel.getCurrentRegionCityDots() }
         DartTravelOverlay(
             key = dartTravelKey,
             cityDots = cityDots,
@@ -543,7 +581,7 @@ fun MapScreen(
             },
             onAttractionClick = { attractionId ->
                 showAttractionsSheet = false
-                navController.navigate(AttractionDetailScreen(attractionId))
+                onNavigate(AttractionDetailScreen(attractionId))
             },
             onDismiss = {
                 showAttractionsSheet = false
@@ -797,5 +835,62 @@ private fun formatCoord(value: Double): String {
     if (dot == -1) return "$s.0000"
     val after = s.length - dot - 1
     return if (after >= 4) s else s + "0".repeat(4 - after)
+}
+
+@Composable
+private fun ShareConfirmBar(
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MapChinaColors.SurfaceOverlay,
+        shadowElevation = 8.dp,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                Copy.SHARE_MAP,
+                color = MapChinaColors.TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    Copy.SHARE_CANCEL,
+                    color = MapChinaColors.TextTertiary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onCancel)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MapChinaColors.Primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                ) {
+                    Text(
+                        Copy.SHARE_CONFIRM,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clickable(onClick = onConfirm)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 

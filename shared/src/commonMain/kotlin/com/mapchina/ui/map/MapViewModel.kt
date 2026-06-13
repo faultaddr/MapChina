@@ -12,12 +12,14 @@ import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapController
+import com.mapchina.map.MapTheme
 import com.mapchina.platform.PhotoResult
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayStyle
+import com.mapchina.map.LabelData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -77,8 +79,35 @@ class MapViewModel(
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
+    val persistentMapController = MapController()
+
     fun onCleared() {
         vmScope.cancel()
+    }
+
+    private fun applyMapTheme(controller: MapController) {
+        val themeName = settingsRepository?.getString("map_theme")
+        val theme = MapTheme.fromName(themeName)
+        controller.setBackgroundTheme(theme)
+    }
+
+    fun refreshMapTheme() {
+        val controller = _mapController ?: return
+        applyMapTheme(controller)
+    }
+
+    fun enterShareMode() {
+        val controller = _mapController ?: return
+        _shareMode.value = true
+        com.mapchina.ui.ShareModeState.value = true
+        controller.setShareMode(true)
+    }
+
+    fun exitShareMode() {
+        val controller = _mapController ?: return
+        controller.setShareMode(false)
+        _shareMode.value = false
+        com.mapchina.ui.ShareModeState.value = false
     }
 
     private val _currentLevel = MutableStateFlow(MapZoomLevel.NATIONAL)
@@ -123,10 +152,17 @@ class MapViewModel(
     private val _previewAttraction = MutableStateFlow<AttractionUi?>(null)
     val previewAttraction: StateFlow<AttractionUi?> = _previewAttraction.asStateFlow()
 
+    private val _shareMode = MutableStateFlow(false)
+    val shareMode: StateFlow<Boolean> = _shareMode.asStateFlow()
+
     private var footprintCache: Map<String, FootprintLevel>? = null
 
     private var childrenIndex: Map<String, List<String>> = emptyMap()
     private var childrenIndexReady = false
+
+    private var provinceBoundaryCache: Map<String, String> = emptyMap()
+    private var provinceCenterCache: Map<String, Pair<Double, Double>> = emptyMap()
+    private var provinceNameCache: Map<String, String> = emptyMap()
 
     private fun invalidateCaches() {
         footprintCache = null
@@ -151,6 +187,7 @@ class MapViewModel(
             _mapController = value
             if (value != null) {
                 lastSyncedRegionIds = emptySet()
+                applyMapTheme(value)
                 if (_regions.value.isNotEmpty()) {
                     syncOverlaysToMap(lastBoundaries)
                 }
@@ -238,6 +275,7 @@ class MapViewModel(
     }
 
     fun drillIntoRegion(regionId: String) {
+        if (_currentPath.value.any { it.id == regionId }) return
         val region = regionRepository.getRegion(regionId) ?: return
         _currentPath.value = _currentPath.value + region
         _currentLevel.value = when (region.level) {
@@ -572,8 +610,28 @@ class MapViewModel(
         return dots
     }
 
+    fun getCurrentRegionCityDots(): List<CityDot> {
+        val currentParentId = _currentPath.value.lastOrNull()?.id
+        return if (currentParentId != null) {
+            regionRepository.getChildRegions(currentParentId).mapNotNull { city ->
+                val center = regionRepository.getRegionCenter(city.id) ?: return@mapNotNull null
+                CityDot(city.id, city.name, center.first, center.second)
+            }
+        } else {
+            getCityDots()
+        }
+    }
+
     fun getRandomCityWithAttractions(): CityDot? {
-        val dots = getCityDots()
+        val currentParentId = _currentPath.value.lastOrNull()?.id
+        val dots = if (currentParentId != null) {
+            regionRepository.getChildRegions(currentParentId).mapNotNull { city ->
+                val center = regionRepository.getRegionCenter(city.id) ?: return@mapNotNull null
+                CityDot(city.id, city.name, center.first, center.second)
+            }
+        } else {
+            getCityDots()
+        }
         if (dots.isEmpty()) return null
         val withAttractions = dots.filter { dot ->
             attractionService.getAttractionsByParentRegion(dot.id).isNotEmpty()
@@ -704,6 +762,10 @@ class MapViewModel(
         val footprints = getFootprintCache()
         val boundaries = regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
         lastBoundaries = boundaries
+
+        provinceBoundaryCache = boundaries
+        provinceCenterCache = provinces.associate { it.id to (regionRepository.getRegionCenter(it.id) ?: (0.0 to 0.0)) }
+        provinceNameCache = provinces.associate { it.id to it.name }
 
         _regions.value = provinces.map { region ->
             RegionFootprintUi(
@@ -856,16 +918,57 @@ class MapViewModel(
     private fun syncOverlaysToMap(boundaries: Map<String, String>? = null) {
         val controller = _mapController ?: return
         val regionIds = mutableSetOf<String>()
+        val labels = mutableMapOf<String, LabelData>()
+
+        // Keep province overlays visible but non-interactive when drilled down
+        val provinceIds = mutableSetOf<String>()
+        if (_currentLevel.value != MapZoomLevel.NATIONAL && provinceBoundaryCache.isNotEmpty()) {
+            val footprints = getFootprintCache()
+            val coverageMap = if (childrenIndexReady) {
+                computeCoverageBatch(provinceBoundaryCache.keys.toList(), footprints)
+            } else emptyMap()
+
+            for ((id, boundary) in provinceBoundaryCache) {
+                regionIds.add(id)
+                provinceIds.add(id)
+                val coverage = coverageMap[id] ?: 0f
+                val fp = footprints[id]
+                val style = footprintOverlayStyle(fp, coverage)
+                controller.updateOverlayStyle(id, style, fp != null)
+            }
+        }
+
         for (region in _regions.value) {
             regionIds.add(region.regionId)
             val style = footprintOverlayStyle(region.footprintLevel, region.childCoverageRate)
             val boundary = boundaries?.get(region.regionId)
                 ?: regionRepository.getRegionBoundary(region.regionId)
             if (boundary != null) {
-                controller.addOverlay(region.regionId, boundary, style)
+                controller.addOverlay(region.regionId, boundary, style, region.footprintLevel != null)
+            }
+            // Add label if we have center coords
+            val center = regionRepository.getRegionCenter(region.regionId)
+            if (center != null) {
+                val minZoom = when (_currentLevel.value) {
+                    MapZoomLevel.NATIONAL -> 3.5f
+                    MapZoomLevel.PROVINCIAL -> 6f
+                    else -> 7f
+                }
+                labels[region.regionId] = LabelData(
+                    id = region.regionId,
+                    name = region.name,
+                    lat = center.first,
+                    lng = center.second,
+                    minZoom = minZoom
+                )
             }
         }
         controller.removeOverlaysExcept(regionIds)
+        // Province overlays are visual-only when drilled down — remove from hit test
+        if (provinceIds.isNotEmpty()) {
+            controller.removeHitTestFor(provinceIds)
+        }
+        controller.setLabels(labels)
         lastSyncedRegionIds = regionIds
     }
 
@@ -893,7 +996,7 @@ class MapViewModel(
         val boundary = regionRepository.getRegionBoundary(regionId)
         if (boundary != null) {
             controller.removeOverlay(regionId)
-            controller.addOverlay(regionId, boundary, style)
+            controller.addOverlay(regionId, boundary, style, true)
         }
     }
 
@@ -906,8 +1009,8 @@ class MapViewModel(
 
         val targetLevel = when {
             zoom < 5f -> MapZoomLevel.NATIONAL
-            zoom < 8f -> MapZoomLevel.PROVINCIAL
-            zoom < 10f -> MapZoomLevel.CITY
+            zoom < 7f -> MapZoomLevel.PROVINCIAL
+            zoom < 9f -> MapZoomLevel.CITY
             else -> MapZoomLevel.DISTRICT
         }
 
@@ -952,37 +1055,37 @@ class MapViewModel(
             val rate = childCoverageRate.coerceIn(0f, 1f)
             if (rate == 0f) {
                 return OverlayStyle(
-                    fillColor = 0xFF0D7377L,
-                    strokeColor = 0xFF6BAAAEL,
+                    fillColor = 0xFF6DB8B0L,
+                    strokeColor = 0xFF5AADA4L,
                     strokeWidth = 0.5f,
-                    alpha = 0.07f
+                    alpha = 0.12f
                 )
             }
-            val alpha = 0.08f + rate * 0.22f
+            val alpha = 0.15f + rate * 0.20f
             return OverlayStyle(
-                fillColor = 0xFF14A3A8L,
-                strokeColor = 0xFF0D7377L,
-                strokeWidth = 0.8f + rate * 0.7f,
+                fillColor = 0xFF5AADA4L,
+                strokeColor = 0xFF4A9E94L,
+                strokeWidth = 0.6f + rate * 0.5f,
                 alpha = alpha
             )
         }
         return when (level) {
             FootprintLevel.DEEP -> OverlayStyle(
-                fillColor = 0xFFC84530L,
-                strokeColor = 0xFF5A1C10L,
-                strokeWidth = 2.0f,
-                alpha = 0.55f
+                fillColor = 0xFF1A7A70L,
+                strokeColor = 0xFF0D5E5AL,
+                strokeWidth = 1.2f,
+                alpha = 0.62f
             )
             FootprintLevel.SHORT_VISIT -> OverlayStyle(
-                fillColor = 0xFFD48840L,
-                strokeColor = 0xFF6B4020L,
-                strokeWidth = 1.8f,
-                alpha = 0.45f
+                fillColor = 0xFF3EA396L,
+                strokeColor = 0xFF1A7A70L,
+                strokeWidth = 1.0f,
+                alpha = 0.48f
             )
             FootprintLevel.PASS_BY -> OverlayStyle(
-                fillColor = 0xFFC8A040L,
-                strokeColor = 0xFF5A4A20L,
-                strokeWidth = 1.5f,
+                fillColor = 0xFF80C4BAL,
+                strokeColor = 0xFF4A9E94L,
+                strokeWidth = 0.8f,
                 alpha = 0.35f
             )
         }

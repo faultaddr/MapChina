@@ -34,7 +34,7 @@ class ViewportState(
 
         const val CHINA_FIT_MIN_LNG = 73.0
         const val CHINA_FIT_MAX_LNG = 136.0
-        const val CHINA_FIT_MIN_LAT = 17.0
+        const val CHINA_FIT_MIN_LAT = 3.0
         const val CHINA_FIT_MAX_LAT = 54.0
     }
 
@@ -97,12 +97,12 @@ class ViewportState(
         camera = CameraState(lng, lat.coerceIn(-85.0, 85.0), zoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
     }
 
-    fun fitChinaInView(padding: Float = 0.88f) {
+    fun fitChinaInView(padding: Float = 0.96f) {
         val target = computeChinaFitTarget(padding)
         camera = CameraState(target.first, target.second, target.third)
     }
 
-    fun computeChinaFitTarget(padding: Float = 0.88f): Triple<Double, Double, Float> {
+    fun computeChinaFitTarget(padding: Float = 0.96f): Triple<Double, Double, Float> {
         val w = canvasWidth
         val h = canvasHeight
         val targetLng = (CHINA_FIT_MIN_LNG + CHINA_FIT_MAX_LNG) / 2.0

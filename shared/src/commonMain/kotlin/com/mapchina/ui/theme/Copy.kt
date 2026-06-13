@@ -55,6 +55,11 @@ object Copy {
     const val TAB_COMMUNITY = "社区"
     const val TAB_PROFILE = "我的"
 
+    // Share
+    const val SHARE_MAP = "分享"
+    const val SHARE_CONFIRM = "确认分享"
+    const val SHARE_CANCEL = "取消"
+
     // FAB
     const val FAB_DEPART = "启程"
     const val FAB_DEPART_SUB = "启程远行"

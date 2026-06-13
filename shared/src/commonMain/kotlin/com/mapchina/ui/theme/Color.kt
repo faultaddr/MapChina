@@ -28,10 +28,10 @@ object MapChinaColors {
     val AccentBlue = Color(0xFF2E7BD6)
     val BadgeRed = Color(0xFFD94040)
 
-    // Footprint levels - 更鲜明的层次
-    val FootprintDeep = Color(0xFFC84530)
-    val FootprintShortVisit = Color(0xFFD48840)
-    val FootprintPassBy = Color(0xFFC8A040)
+    // Footprint levels - 碧绿色系明度阶梯
+    val FootprintDeep = Color(0xFF1A7A70)
+    val FootprintShortVisit = Color(0xFF3EA396)
+    val FootprintPassBy = Color(0xFF80C4BA)
 
     // Achievement rarity - 更精致的稀有度色彩
     val RarityCommon = Color(0xFF2E7BD6)

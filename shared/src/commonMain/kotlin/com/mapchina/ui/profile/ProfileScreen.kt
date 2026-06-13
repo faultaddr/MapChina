@@ -3,6 +3,7 @@ package com.mapchina.ui.profile
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Book
@@ -62,6 +64,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mapchina.data.repository.SettingsRepository
+import com.mapchina.map.MapTheme
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AchievementWithProgress
 import com.mapchina.ui.stats.StatsUi
@@ -202,6 +205,10 @@ fun ProfileScreen(
                     SettingsRow(Copy.PHOTO_MARKERS, photoMarkersVisible, { photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
                     Spacer(modifier = Modifier.height(6.dp))
                     SettingsRow(Copy.AUTO_FOOTPRINT, autoMarkFootprint, { autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text("地图主题", style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MapThemeSelector(settingsRepository = settingsRepository)
                 }
             }
         }
@@ -476,5 +483,51 @@ fun LevelBadgeIcon(level: Int, modifier: Modifier = Modifier, useLightIcon: Bool
             tint = iconTint,
             modifier = Modifier.size(if (level >= 8) 36.dp else 32.dp)
         )
+    }
+}
+
+@Composable
+private fun MapThemeSelector(settingsRepository: SettingsRepository?) {
+    var selectedTheme by remember {
+        mutableStateOf(MapTheme.fromName(settingsRepository?.getString("map_theme")))
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        MapTheme.entries.forEach { theme ->
+            val isSelected = theme == selectedTheme
+            val borderCol = if (isSelected) MapChinaColors.Primary else Color.Transparent
+            val borderW = if (isSelected) 2.dp else 0.dp
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MapChinaColors.Background)
+                    .border(borderW, borderCol, RoundedCornerShape(8.dp))
+                    .clickable {
+                        selectedTheme = theme
+                        settingsRepository?.setString("map_theme", theme.name)
+                    }
+                    .padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(theme.oceanColor)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    theme.displayName,
+                    style = MapChinaTypography.Caption,
+                    color = if (isSelected) MapChinaColors.Primary else MapChinaColors.TextTertiary,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                )
+            }
+        }
     }
 }

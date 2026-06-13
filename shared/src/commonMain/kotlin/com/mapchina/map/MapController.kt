@@ -44,6 +44,9 @@ class MapController {
 
     private var animJob: Job? = null
 
+    // Share mode: saved styles to restore
+    private val savedOverlayStyles = mutableMapOf<String, OverlayStyle>()
+
     // Guard against DisposableEffect re-execution overwriting camera state
     private var hasNotifiedReady = false
     var initialFitDone: Boolean = false
@@ -51,10 +54,16 @@ class MapController {
 
     // ---- Overlay operations ----
 
-    fun addOverlay(regionId: String, boundary: String, style: OverlayStyle) {
+    fun addOverlay(regionId: String, boundary: String, style: OverlayStyle, isVisited: Boolean = false) {
         val coords = BoundaryParser.parseFlatCoords(boundary)
         hitTestCoords[regionId] = coords
-        _renderState.update { it.copy(overlays = it.overlays + (regionId to OverlayData(coords, style))) }
+        _renderState.update { it.copy(overlays = it.overlays + (regionId to OverlayData(coords, style, isVisited))) }
+    }
+
+    fun updateOverlayStyle(regionId: String, style: OverlayStyle, isVisited: Boolean? = null) {
+        val existing = _renderState.value.overlays[regionId] ?: return
+        val visited = isVisited ?: existing.isVisited
+        _renderState.update { it.copy(overlays = it.overlays + (regionId to existing.copy(style = style, isVisited = visited))) }
     }
 
     fun removeOverlay(regionId: String) {
@@ -67,6 +76,13 @@ class MapController {
         hitTestCoords.clear()
         hitTestBounds.clear()
         _renderState.update { it.copy(overlays = emptyMap()) }
+    }
+
+    fun removeHitTestFor(regionIds: Set<String>) {
+        for (id in regionIds) {
+            hitTestCoords.remove(id)
+            hitTestBounds.remove(id)
+        }
     }
 
     fun removeOverlaysExcept(regionIds: Set<String>) {
@@ -148,10 +164,74 @@ class MapController {
         _renderState.update { it.copy(polylines = emptyMap()) }
     }
 
+    // ---- Label operations ----
+
+    fun addLabel(id: String, name: String, lat: Double, lng: Double, minZoom: Float) {
+        _renderState.update {
+            it.copy(labels = it.labels + (id to LabelData(id, name, lat, lng, minZoom)))
+        }
+    }
+
+    fun removeLabel(id: String) {
+        _renderState.update { it.copy(labels = it.labels - id) }
+    }
+
+    fun setLabels(labels: Map<String, LabelData>) {
+        _renderState.update { it.copy(labels = labels) }
+    }
+
+    fun clearLabels() {
+        _renderState.update { it.copy(labels = emptyMap()) }
+    }
+
     // ---- Ocean background ----
 
     fun setOceanColor(color: androidx.compose.ui.graphics.Color) {
         _renderState.update { it.copy(oceanColor = color) }
+    }
+
+    fun setBackgroundTheme(theme: MapTheme) {
+        _renderState.update { it.copy(backgroundTheme = theme, oceanColor = theme.oceanColor) }
+    }
+
+    // ---- Share mode ----
+
+    private val shareVisitedStyle = OverlayStyle(
+        fillColor = 0xFFC8963EL,
+        strokeColor = 0xFFA07830L,
+        strokeWidth = 0.8f,
+        alpha = 0.35f
+    )
+
+    private val shareUnvisitedStyle = OverlayStyle(
+        fillColor = 0xFF4A9E94L,
+        strokeColor = 0xFF3A887EL,
+        strokeWidth = 0.5f,
+        alpha = 0.10f
+    )
+
+    fun setShareMode(enabled: Boolean) {
+        if (enabled) {
+            savedOverlayStyles.clear()
+            val current = _renderState.value.overlays
+            val updated = current.mapValues { (id, data) ->
+                savedOverlayStyles[id] = data.style
+                data.copy(style = if (data.isVisited) shareVisitedStyle else shareUnvisitedStyle)
+            }
+            _renderState.update { it.copy(overlays = updated, shareMode = true) }
+        } else {
+            if (savedOverlayStyles.isNotEmpty()) {
+                val current = _renderState.value.overlays
+                val restored = current.mapValues { (id, data) ->
+                    val saved = savedOverlayStyles[id]
+                    if (saved != null) data.copy(style = saved) else data
+                }
+                _renderState.update { it.copy(overlays = restored, shareMode = false) }
+            } else {
+                _renderState.update { it.copy(shareMode = false) }
+            }
+            savedOverlayStyles.clear()
+        }
     }
 
     // ---- Camera operations ----
@@ -228,15 +308,19 @@ class MapController {
 
     internal fun handleTap(offset: Offset) {
         val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
-        val tester = HitTester(hitTestBounds, hitTestCoords)
-        val regionId = tester.hitTest(offset.x, offset.y, projection)
-        if (regionId != null) {
-            regionTapListener?.invoke(regionId)
-            return
-        }
-
         val rs = _renderState.value
-        val tapThreshold = 20f
+        val tapThreshold = 24f
+
+        // Markers take priority over regions
+        for (marker in rs.attractionMarkers.values) {
+            val screenPos = projection.project(marker.lng, marker.lat)
+            val dx = offset.x - screenPos.x
+            val dy = offset.y - screenPos.y
+            if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
+                markerTapListener?.invoke(marker.id)
+                return
+            }
+        }
         for (marker in rs.markers.values) {
             val screenPos = projection.project(marker.lng, marker.lat)
             val dx = offset.x - screenPos.x
@@ -246,14 +330,11 @@ class MapController {
                 return
             }
         }
-        for (marker in rs.attractionMarkers.values) {
-            val screenPos = projection.project(marker.lng, marker.lat)
-            val dx = offset.x - screenPos.x
-            val dy = offset.y - screenPos.y
-            if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
-                markerTapListener?.invoke(marker.id)
-                return
-            }
+
+        val tester = HitTester(hitTestBounds, hitTestCoords)
+        val regionId = tester.hitTest(offset.x, offset.y, projection)
+        if (regionId != null) {
+            regionTapListener?.invoke(regionId)
         }
     }
 
@@ -300,36 +381,7 @@ class MapController {
             }
         }
 
-        val targetLng = (minLng + maxLng) / 2.0
-        val targetLat = (minLat + maxLat) / 2.0
-
-        val w = viewport.canvasWidth
-        val h = viewport.canvasHeight
-        if (w <= 0f || h <= 0f) return
-
-        val lngSpan = maxLng - minLng
-        if (lngSpan <= 0.0) {
-            animateCamera(targetLng, targetLat, viewport.zoomLevel + 3f)
-            return
-        }
-
-        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
-        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
-        val mercSpan = mercMax - mercMin
-
-        val padding = 0.7f
-        val scaleFromLng = (w * padding) / lngSpan.toFloat()
-        val scaleFromLat = if (mercSpan > 0.0)
-            (h * padding) / (mercSpan.toFloat() * (180.0 / PI).toFloat())
-        else
-            Float.MAX_VALUE
-
-        val targetScale = minOf(scaleFromLng, scaleFromLat)
-        val targetZoom = (ViewportState.BASE_ZOOM +
-            log2((targetScale / ViewportState.BASE_SCALE).toDouble()).toFloat())
-            .coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM)
-
-        animateCamera(targetLng, targetLat, targetZoom)
+        zoomToBounds(minLng, maxLng, minLat, maxLat, animated = true)
     }
 
     // ---- Animation ----
@@ -348,14 +400,18 @@ class MapController {
         animJob = animationScope.launch {
             val durationMs = 400L
             val startTime = TimeSource.Monotonic.markNow()
+            var lastT = -1f
             while (true) {
                 val elapsed = startTime.elapsedNow().inWholeMilliseconds
                 val t = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
-                val eased = t * t * (3f - 2f * t)
-                val lng = startLng + (targetLng - startLng) * eased
-                val lat = startLat + (targetLat - startLat) * eased
-                val zoom = startZoom + (targetZoom - startZoom) * eased
-                viewport.updateCamera(lng, lat, zoom)
+                if (t != lastT) {
+                    val eased = t * t * (3f - 2f * t)
+                    val lng = startLng + (targetLng - startLng) * eased
+                    val lat = startLat + (targetLat - startLat) * eased
+                    val zoom = startZoom + (targetZoom - startZoom) * eased
+                    viewport.updateCamera(lng, lat, zoom)
+                    lastT = t
+                }
                 if (t >= 1f) break
                 delay(16)
             }
@@ -364,6 +420,11 @@ class MapController {
     }
 
     // ---- Lifecycle ----
+
+    fun detachFromComposition() {
+        animJob?.cancel()
+        pulseJob?.cancel()
+    }
 
     fun dispose() {
         animationScope.cancel()

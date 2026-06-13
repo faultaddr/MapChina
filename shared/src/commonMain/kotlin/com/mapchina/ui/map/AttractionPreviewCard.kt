@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,8 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
@@ -41,7 +44,9 @@ fun AttractionPreviewCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp)
+            .clip(MapChinaRadius.Large)
+            .clickable(onClick = onViewDetail),
         shape = MapChinaRadius.Large,
         color = MapChinaColors.SurfaceElevated,
         shadowElevation = 8.dp
@@ -61,12 +66,21 @@ fun AttractionPreviewCard(
                     .background(MapChinaColors.BorderSubtle),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.Attractions,
-                    contentDescription = null,
-                    tint = MapChinaColors.TextTertiary,
-                    modifier = Modifier.size(32.dp)
-                )
+                if (attraction.imageUrl != null) {
+                    AsyncImage(
+                        model = attraction.imageUrl,
+                        contentDescription = attraction.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Attractions,
+                        contentDescription = null,
+                        tint = MapChinaColors.TextTertiary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -115,7 +129,6 @@ fun AttractionPreviewCard(
                     modifier = Modifier
                         .clip(MapChinaRadius.Small)
                         .background(if (attraction.visitLevel != null) MapChinaColors.Primary.copy(alpha = 0.2f) else MapChinaColors.BorderSubtle)
-                        .clickable { onViewDetail() }
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 )
                 Spacer(modifier = Modifier.height(4.dp))

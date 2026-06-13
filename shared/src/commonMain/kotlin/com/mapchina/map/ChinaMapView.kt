@@ -20,13 +20,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import org.jetbrains.compose.resources.imageResource
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -36,6 +42,11 @@ fun ChinaMapView(
 ) {
     val renderState by controller.renderState.collectAsState()
     val pathCache = remember { GeoPathCache() }
+    val textMeasurer = rememberTextMeasurer()
+
+    val backgroundBitmap: ImageBitmap? = renderState.backgroundTheme.backgroundRes?.let {
+        imageResource(it)
+    }
 
     Box(modifier = modifier
         .onSizeChanged { size ->
@@ -55,12 +66,25 @@ fun ChinaMapView(
             onLongPress = { offset -> controller.handleLongPress(offset) }
         )
     ) {
+        // Read zoom from ViewportState (Compose state) to drive Compose-level visibility
+        val zoom by remember {
+            derivedStateOf { controller.viewport.zoomLevel }
+        }
+
         Canvas(modifier = Modifier.fillMaxSize()) {
             val projection = controller.viewport.toProjection(size.width, size.height)
-            val zoom = controller.viewport.zoomLevel
 
             // L0: Background (ocean)
             drawRect(renderState.oceanColor)
+
+            // L0.5: Theme background texture
+            if (backgroundBitmap != null) {
+                drawImage(
+                    image = backgroundBitmap,
+                    dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
+                    alpha = 0.35f
+                )
+            }
 
             // L1/L2: Region overlays
             pathCache.buildIfChanged(renderState.overlays, projection, zoom)
@@ -75,6 +99,14 @@ fun ChinaMapView(
                 val fillColor = data.style.toFillColor()
                 val strokeColor = data.style.toStrokeColor()
                 val strokeWidth = if (zoom < 6f) 1.5.dp.toPx() else 1.dp.toPx()
+
+                // When a theme background is active, draw an opaque ocean-color base
+                // under each overlay so the texture doesn't bleed through
+                if (backgroundBitmap != null) {
+                    for (path in overlayPaths) {
+                        drawPath(path, color = renderState.oceanColor)
+                    }
+                }
 
                 for (path in overlayPaths) {
                     drawPath(path, color = fillColor)
@@ -119,16 +151,55 @@ fun ChinaMapView(
                 }
             }
 
-            // South China Sea inset
-            drawSouthChinaSeaInset(
+            // South China Sea nine-dash line (directly on map)
+            drawSouthChinaSeaOnMap(
+                projection = projection,
                 zoomLevel = zoom,
                 strokeColor = MapChinaColors.TextTertiary,
                 islandColor = MapChinaColors.AccentBlue
             )
+
+            // L7: Region labels with collision avoidance
+            if (zoom >= 3.5f) {
+                val fontSizePx = when {
+                    zoom >= 10f -> 12.dp.toPx()
+                    zoom >= 7f -> 10.dp.toPx()
+                    else -> 9.dp.toPx()
+                }
+                val style = TextStyle(
+                    color = MapChinaColors.TextPrimary.copy(alpha = if (zoom < 5f) 0.7f else 0.85f),
+                    fontSize = with(density) { fontSizePx.toSp() },
+                    textAlign = TextAlign.Center
+                )
+                val visibleLabels = renderState.labels.values.filter { zoom >= it.minZoom }
+                val measuredLabels = visibleLabels.mapNotNull { label ->
+                    val pos = projection.project(label.lng, label.lat)
+                    val measured = textMeasurer.measure(label.name, style)
+                    val rect = androidx.compose.ui.geometry.Rect(
+                        left = pos.x - measured.size.width / 2f,
+                        top = pos.y - measured.size.height / 2f,
+                        right = pos.x + measured.size.width / 2f,
+                        bottom = pos.y + measured.size.height / 2f
+                    )
+                    Triple(label, measured, rect)
+                }
+                val occupied = mutableListOf<androidx.compose.ui.geometry.Rect>()
+                for ((_, measured, rect) in measuredLabels) {
+                    val overlaps = occupied.any { existing ->
+                        rect.overlaps(existing)
+                    }
+                    if (!overlaps) {
+                        drawText(
+                            textLayoutResult = measured,
+                            topLeft = androidx.compose.ui.geometry.Offset(rect.left, rect.top)
+                        )
+                        occupied.add(rect)
+                    }
+                }
+            }
         }
 
         // Attraction markers with images (Compose overlay, city level+)
-        val zoom = controller.viewport.zoomLevel
         if (zoom >= 7f) {
             AttractionMarkerOverlay(controller, renderState.attractionMarkers, zoom)
         }
@@ -137,7 +208,7 @@ fun ChinaMapView(
     DisposableEffect(Unit) {
         controller.notifyMapReady()
         onDispose {
-            controller.dispose()
+            controller.detachFromComposition()
         }
     }
 }
@@ -153,18 +224,19 @@ private fun AttractionMarkerOverlay(
     val markerSizePx = with(density) { markerSizeDp.toPx() }
     val halfMarkerPx = markerSizePx / 2f
 
-    // Derived projection so all markers share one calculation per recomposition
-    val projection by remember {
+    // Derive screen positions from camera state — recomputes only when camera changes
+    val markerPositions by remember(markers) {
         derivedStateOf {
-            controller.viewport.toProjection(
-                controller.viewport.canvasWidth,
-                controller.viewport.canvasHeight
-            )
+            val vp = controller.viewport
+            val proj = vp.toProjection(vp.canvasWidth, vp.canvasHeight)
+            markers.mapValues { (_, marker) ->
+                proj.project(marker.lng, marker.lat)
+            }
         }
     }
 
     for (marker in markers.values) {
-        val pos = projection.project(marker.lng, marker.lat)
+        val pos = markerPositions[marker.id] ?: continue
         val offsetX = with(density) { (pos.x - halfMarkerPx).toDp() }
         val offsetY = with(density) { (pos.y - halfMarkerPx).toDp() }
 
@@ -174,8 +246,7 @@ private fun AttractionMarkerOverlay(
                     .offset(x = offsetX, y = offsetY)
                     .size(markerSizeDp)
                     .shadow(2.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(Color.White),
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (marker.imageUrl != null) {
@@ -184,8 +255,8 @@ private fun AttractionMarkerOverlay(
                         contentDescription = marker.name,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(1.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
                     )
                 } else {
                     val tint = if (marker.visited) MapChinaColors.Primary else MapChinaColors.AccentBlue
