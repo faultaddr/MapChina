@@ -2,8 +2,8 @@ package com.mapchina.data.repository
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.*
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 class AchievementRepository(private val database: MapChinaDatabase) {
 

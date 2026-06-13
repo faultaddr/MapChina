@@ -1,6 +1,6 @@
 package com.mapchina.domain.model
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 data class Achievement(
     val id: String,

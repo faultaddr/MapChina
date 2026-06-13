@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapController
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -151,12 +153,15 @@ fun DartTravelOverlay(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+
     // Landing
     LaunchedEffect(phase) {
         if (phase == 1) {
+            haptic.perform(HapticType.HEAVY)
             particles.clear()
             for (i in 0..23) {
-                val angle = (i.toFloat() / 24) * 2 * Math.PI.toFloat() + Random.nextFloat() * 0.2f
+                val angle = (i.toFloat() / 24) * 2 * kotlin.math.PI.toFloat() + Random.nextFloat() * 0.2f
                 particles.add(Particle(
                     angle = angle,
                     speed = 0.6f + Random.nextFloat() * 1.3f,
@@ -296,6 +301,7 @@ fun DartTravelOverlay(
                     .padding(top = 16.dp, end = 20.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable {
+                        haptic.perform(HapticType.LIGHT)
                         if (phase == 0) {
                             phase = 1
                             currentDotIndex = finalDotIndex
@@ -362,7 +368,7 @@ private fun DrawScope.drawLandingEffects(
     if (ringProgress > 0.25f) {
         val sa = (ringProgress - 0.25f) / 0.75f * particleAlpha
         for (i in 0..7) {
-            val angle = (i.toFloat() / 8) * 2 * Math.PI.toFloat() + ringProgress * 0.4f
+            val angle = (i.toFloat() / 8) * 2 * kotlin.math.PI.toFloat() + ringProgress * 0.4f
             val d = maxR * 0.5f * ringProgress
             drawCircle(color = GlowGoldBright.copy(alpha = sa * 0.6f), radius = px.sparkleR, center = Offset(center.x + cos(angle) * d, center.y + sin(angle) * d))
         }

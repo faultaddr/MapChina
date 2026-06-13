@@ -17,10 +17,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MapChina.Splash">
 
-        <meta-data
-            android:name="com.amap.api.v2.apikey"
-            android:value="bd8dc0cac04015ac54d04f58c7c13741" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -29,6 +25,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

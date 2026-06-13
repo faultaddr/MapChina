@@ -28,6 +28,7 @@ import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AttractionService
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -69,9 +70,10 @@ class EndToEndTest {
     @Test
     fun fullJourney_seedData_browseMarkViewStats() {
         val userId = "testUser"
+        val td = UnconfinedTestDispatcher()
 
         // 1. Browse provinces at national level
-        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, userId)
+        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, null, null, null, null, null, userId, td)
         val provinces = mapViewModel.regions.value
         assertEquals(34, provinces.size)
 
@@ -95,7 +97,7 @@ class EndToEndTest {
         assertEquals(FootprintLevel.PASS_BY, beijing?.footprintLevel)
 
         // 6. Search attractions
-        val attractionViewModel = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null)
+        val attractionViewModel = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, dispatcher = td)
         attractionViewModel.searchAttractions("故宫")
         val searchResults = attractionViewModel.attractions.value
         assertTrue(searchResults.isNotEmpty())
@@ -107,7 +109,9 @@ class EndToEndTest {
         assertEquals(FootprintLevel.DEEP, updatedAttraction?.visitLevel)
 
         // 8. Check coverage stats
-        val statsViewModel = StatsViewModel(footprintService, attractionRepo, footprintRepo, userId)
+        val statsAuthService = com.mapchina.domain.service.AuthService()
+        statsAuthService.onLogin(com.mapchina.data.model.UserDto(userId, "", "Test", null, 0L))
+        val statsViewModel = StatsViewModel(footprintService, attractionRepo, footprintRepo, regionRepo, statsAuthService, td)
         statsViewModel.refreshStats()
         val stats = statsViewModel.stats.value
         assertTrue(stats.visitedProvinces >= 2)
@@ -165,7 +169,9 @@ class EndToEndTest {
         assertTrue(result.newlyUnlocked.isNotEmpty())
         assertTrue(result.scoreAdded > 0)
 
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, userId)
+        val achAuthService = com.mapchina.domain.service.AuthService()
+        achAuthService.onLogin(com.mapchina.data.model.UserDto(userId, "", "U1", null, 0L))
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, achAuthService, UnconfinedTestDispatcher())
         vm.refresh()
         assertTrue(vm.ui.value.unlockedCount > 0)
     }
@@ -175,7 +181,9 @@ class EndToEndTest {
         AchievementSeeder.seedAchievements(achievementRepo)
         achievementService.evaluateAndSettle("u1")
 
-        val vm = AchievementViewModel(achievementRepo, userScoreRepo, "u1")
+        val achAuthService2 = com.mapchina.domain.service.AuthService()
+        achAuthService2.onLogin(com.mapchina.data.model.UserDto("u1", "", "U1", null, 0L))
+        val vm = AchievementViewModel(achievementRepo, userScoreRepo, achAuthService2, UnconfinedTestDispatcher())
         vm.refresh()
         val ui = vm.ui.value
         assertTrue(ui.totalCount > 0)
@@ -222,7 +230,7 @@ class EndToEndTest {
     fun provinceConquestPath_showsProvinces() {
         AchievementSeeder.seedAchievements(achievementRepo)
 
-        val vm = ProvinceConquestViewModel(achievementService, achievementRepo)
+        val vm = ProvinceConquestViewModel(achievementService, achievementRepo, dispatcher = UnconfinedTestDispatcher())
         vm.refresh()
         assertTrue(vm.ui.value.provinces.isNotEmpty())
     }
@@ -231,7 +239,7 @@ class EndToEndTest {
     fun provinceConquestPath_detailShowsAchievements() {
         AchievementSeeder.seedAchievements(achievementRepo)
 
-        val vm = ProvinceConquestViewModel(achievementService, achievementRepo)
+        val vm = ProvinceConquestViewModel(achievementService, achievementRepo, dispatcher = UnconfinedTestDispatcher())
         vm.loadProvinceDetail("51")
         assertTrue(vm.detailUi.value.provinceAchievements.isNotEmpty())
     }

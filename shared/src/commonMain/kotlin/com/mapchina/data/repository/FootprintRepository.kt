@@ -4,8 +4,8 @@ import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.AttractionVisit
 import com.mapchina.domain.model.Footprint
 import com.mapchina.domain.model.FootprintLevel
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 class FootprintRepository(private val database: MapChinaDatabase) {
 

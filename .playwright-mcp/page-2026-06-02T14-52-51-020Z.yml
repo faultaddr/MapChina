@@ -1,0 +1,1538 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner:
+      - generic:
+        - generic [ref=e6]:
+          - text: menu
+          - link "Android Developers" [ref=e8] [cursor=pointer]:
+            - /url: /
+            - img "Android Developers" [ref=e10]
+          - generic [ref=e11]:
+            - navigation "Upper tabs" [ref=e14]:
+              - generic [ref=e15]:
+                - link "Essentials, selected" [ref=e16] [cursor=pointer]:
+                  - /url: https://developer.android.com/jetpack
+                  - text: Essentials
+                - button "Dropdown menu for Essentials" [ref=e17] [cursor=pointer]: arrow_drop_down
+              - generic [ref=e18]:
+                - button "Dropdown menu for Extended Navigation" [ref=e19] [cursor=pointer]: arrow_drop_down More
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - generic [ref=e23]:
+              - combobox "Search" [ref=e24]
+              - generic [ref=e25]: search
+              - generic [ref=e26]: /
+          - generic [ref=e27]:
+            - 'button "Appearance: Light theme" [ref=e28] [cursor=pointer]': light_mode
+            - text: light_mode dark_mode brightness_medium
+          - generic "Select your language preference." [ref=e29]:
+            - button "English" [ref=e30] [cursor=pointer]:
+              - img
+              - generic [ref=e31]: English
+              - img
+          - link "Android Studio" [ref=e32] [cursor=pointer]:
+            - /url: https://developer.android.com/studio
+          - link "Sign in" [ref=e35] [cursor=pointer]:
+            - /url: https://developer.android.com/_d/signin?continue=https%3A%2F%2Fdeveloper.android.com%2Fjetpack%2Fandroidx%2Freleases%2Fink&prompt=select_account
+        - generic [ref=e37]:
+          - list "Lower header breadcrumb" [ref=e41]:
+            - listitem [ref=e42]:
+              - link "Get started" [ref=e43] [cursor=pointer]:
+                - /url: https://developer.android.com/get-started/overview
+            - listitem [ref=e44]:
+              - generic [ref=e45]: chevron_right
+              - link "Jetpack" [ref=e46] [cursor=pointer]:
+                - /url: https://developer.android.com/jetpack
+          - navigation "Lower tabs" [ref=e49]:
+            - link "Overview" [ref=e51] [cursor=pointer]:
+              - /url: https://developer.android.com/jetpack
+            - link "Guides" [ref=e53] [cursor=pointer]:
+              - /url: https://developer.android.com/jetpack/getting-started
+            - link "Samples" [ref=e55] [cursor=pointer]:
+              - /url: https://developer.android.com/jetpack/samples
+            - link "Libraries, selected" [ref=e57] [cursor=pointer]:
+              - /url: https://developer.android.com/jetpack/androidx/explorer
+              - text: Libraries
+            - text: arrow_drop_down
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - text: filter_list
+        - searchbox "Type to filter" [ref=e61]
+        - text: close
+      - navigation "Side menu" [ref=e62]:
+        - text: arrow_back
+        - generic [ref=e63]:
+          - text: arrow_forward arrow_forward arrow_forward arrow_forward arrow_forward
+          - list [ref=e65]:
+            - listitem [ref=e66]:
+              - link "Explore the libraries" [ref=e67] [cursor=pointer]:
+                - /url: /jetpack/androidx/explorer
+                - generic [ref=e68]: Explore the libraries
+            - listitem [ref=e69]:
+              - generic [ref=e70]:
+                - generic [ref=e71] [cursor=pointer]: arrow_drop_down
+                - button "Library Releases" [ref=e72] [cursor=pointer]:
+                  - generic [ref=e73]: Library Releases
+            - listitem [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76] [cursor=pointer]: arrow_drop_down
+                - button "Release Notes" [ref=e77] [cursor=pointer]:
+                  - generic [ref=e78]: Release Notes
+                - list [ref=e79]:
+                  - listitem [ref=e80]:
+                    - link "androidx.activity" [ref=e81] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/activity
+                      - generic [ref=e82]: androidx.activity
+                  - listitem [ref=e83]:
+                    - link "androidx.ads" [ref=e84] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/ads
+                      - generic [ref=e85]: androidx.ads
+                  - listitem [ref=e86]:
+                    - link "androidx.annotation" [ref=e87] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/annotation
+                      - generic [ref=e88]: androidx.annotation
+                  - listitem [ref=e89]:
+                    - link "androidx.appcompat" [ref=e90] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/appcompat
+                      - generic [ref=e91]: androidx.appcompat
+                  - listitem [ref=e92]:
+                    - link "androidx.appfunctions" [ref=e93] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/appfunctions
+                      - generic [ref=e94]: androidx.appfunctions
+                  - listitem [ref=e95]:
+                    - link "androidx.appsearch" [ref=e96] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/appsearch
+                      - generic [ref=e97]: androidx.appsearch
+                  - listitem [ref=e98]:
+                    - link "androidx.arch.core" [ref=e99] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/arch-core
+                      - generic [ref=e100]: androidx.arch.core
+                  - listitem [ref=e101]:
+                    - link "androidx.asynclayoutinflater" [ref=e102] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/asynclayoutinflater
+                      - generic [ref=e103]: androidx.asynclayoutinflater
+                  - listitem [ref=e104]:
+                    - link "androidx.autofill" [ref=e105] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/autofill
+                      - generic [ref=e106]: androidx.autofill
+                  - listitem [ref=e107]:
+                    - link "androidx.benchmark" [ref=e108] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/benchmark
+                      - generic [ref=e109]: androidx.benchmark
+                  - listitem [ref=e110]:
+                    - link "androidx.biometric" [ref=e111] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/biometric
+                      - generic [ref=e112]: androidx.biometric
+                  - listitem [ref=e113]:
+                    - link "androidx.bluetooth" [ref=e114] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/bluetooth
+                      - generic [ref=e115]: androidx.bluetooth
+                  - listitem [ref=e116]:
+                    - link "androidx.browser" [ref=e117] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/browser
+                      - generic [ref=e118]: androidx.browser
+                  - listitem [ref=e119]:
+                    - link "androidx.camera" [ref=e120] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/camera
+                      - generic [ref=e121]: androidx.camera
+                  - listitem [ref=e122]:
+                    - link "androidx.camera.featurecombinationquery" [ref=e123] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/camera-featurecombinationquery
+                      - generic [ref=e124]: androidx.camera.featurecombinationquery
+                  - listitem [ref=e125]:
+                    - link "androidx.camera.media3" [ref=e126] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/camera-media3
+                      - generic [ref=e127]: androidx.camera.media3
+                  - listitem [ref=e128]:
+                    - link "androidx.camera.viewfinder" [ref=e129] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/camera-viewfinder
+                      - generic [ref=e130]: androidx.camera.viewfinder
+                  - listitem [ref=e131]:
+                    - link "androidx.car" [ref=e132] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/car
+                      - generic [ref=e133]: androidx.car
+                  - listitem [ref=e134]:
+                    - link "androidx.car.app" [ref=e135] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/car-app
+                      - generic [ref=e136]: androidx.car.app
+                  - listitem [ref=e137]:
+                    - link "androidx.cardview" [ref=e138] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/cardview
+                      - generic [ref=e139]: androidx.cardview
+                  - listitem [ref=e140]:
+                    - link "androidx.collection" [ref=e141] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/collection
+                      - generic [ref=e142]: androidx.collection
+                  - listitem [ref=e143]:
+                    - link "androidx.compose" [ref=e144] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose
+                      - generic [ref=e145]: androidx.compose
+                  - listitem [ref=e146]:
+                    - link "androidx.compose.animation" [ref=e147] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-animation
+                      - generic [ref=e148]: androidx.compose.animation
+                  - listitem [ref=e149]:
+                    - link "androidx.compose.compiler" [ref=e150] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-compiler
+                      - generic [ref=e151]: androidx.compose.compiler
+                  - listitem [ref=e152]:
+                    - link "androidx.compose.foundation" [ref=e153] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-foundation
+                      - generic [ref=e154]: androidx.compose.foundation
+                  - listitem [ref=e155]:
+                    - link "androidx.compose.material" [ref=e156] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-material
+                      - generic [ref=e157]: androidx.compose.material
+                  - listitem [ref=e158]:
+                    - link "androidx.compose.material3" [ref=e159] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-material3
+                      - generic [ref=e160]: androidx.compose.material3
+                  - listitem [ref=e161]:
+                    - link "androidx.compose.material3.adaptive" [ref=e162] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-material3-adaptive
+                      - generic [ref=e163]: androidx.compose.material3.adaptive
+                  - listitem [ref=e164]:
+                    - link "androidx.compose.remote" [ref=e165] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-remote
+                      - generic [ref=e166]: androidx.compose.remote
+                  - listitem [ref=e167]:
+                    - link "androidx.compose.runtime" [ref=e168] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-runtime
+                      - generic [ref=e169]: androidx.compose.runtime
+                  - listitem [ref=e170]:
+                    - link "androidx.compose.ui" [ref=e171] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/compose-ui
+                      - generic [ref=e172]: androidx.compose.ui
+                  - listitem [ref=e173]:
+                    - link "androidx.concurrent" [ref=e174] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/concurrent
+                      - generic [ref=e175]: androidx.concurrent
+                  - listitem [ref=e176]:
+                    - link "androidx.constraintlayout" [ref=e177] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/constraintlayout
+                      - generic [ref=e178]: androidx.constraintlayout
+                  - listitem [ref=e179]:
+                    - link "androidx.contentpager" [ref=e180] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/contentpager
+                      - generic [ref=e181]: androidx.contentpager
+                  - listitem [ref=e182]:
+                    - link "androidx.coordinatorlayout" [ref=e183] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/coordinatorlayout
+                      - generic [ref=e184]: androidx.coordinatorlayout
+                  - listitem [ref=e185]:
+                    - link "androidx.core" [ref=e186] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/core
+                      - generic [ref=e187]: androidx.core
+                  - listitem [ref=e188]:
+                    - link "androidx.core.uwb" [ref=e189] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/core-uwb
+                      - generic [ref=e190]: androidx.core.uwb
+                  - listitem [ref=e191]:
+                    - link "androidx.credentials" [ref=e192] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/credentials
+                      - generic [ref=e193]: androidx.credentials
+                  - listitem [ref=e194]:
+                    - link "androidx.credentials.providerevents" [ref=e195] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/credentials-providerevents
+                      - generic [ref=e196]: androidx.credentials.providerevents
+                  - listitem [ref=e197]:
+                    - link "androidx.credentials.registry" [ref=e198] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/credentials-registry
+                      - generic [ref=e199]: androidx.credentials.registry
+                  - listitem [ref=e200]:
+                    - link "androidx.cursoradapter" [ref=e201] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/cursoradapter
+                      - generic [ref=e202]: androidx.cursoradapter
+                  - listitem [ref=e203]:
+                    - link "androidx.customview" [ref=e204] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/customview
+                      - generic [ref=e205]: androidx.customview
+                  - listitem [ref=e206]:
+                    - link "androidx.databinding" [ref=e207] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/databinding
+                      - generic [ref=e208]: androidx.databinding
+                  - listitem [ref=e209]:
+                    - link "androidx.datastore" [ref=e210] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/datastore
+                      - generic [ref=e211]: androidx.datastore
+                  - listitem [ref=e212]:
+                    - link "androidx.documentfile" [ref=e213] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/documentfile
+                      - generic [ref=e214]: androidx.documentfile
+                  - listitem [ref=e215]:
+                    - link "androidx.draganddrop" [ref=e216] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/draganddrop
+                      - generic [ref=e217]: androidx.draganddrop
+                  - listitem [ref=e218]:
+                    - link "androidx.drawerlayout" [ref=e219] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/drawerlayout
+                      - generic [ref=e220]: androidx.drawerlayout
+                  - listitem [ref=e221]:
+                    - link "androidx.dynamicanimation" [ref=e222] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/dynamicanimation
+                      - generic [ref=e223]: androidx.dynamicanimation
+                  - listitem [ref=e224]:
+                    - link "androidx.emoji" [ref=e225] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/emoji
+                      - generic [ref=e226]: androidx.emoji
+                  - listitem [ref=e227]:
+                    - link "androidx.emoji2" [ref=e228] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/emoji2
+                      - generic [ref=e229]: androidx.emoji2
+                  - listitem [ref=e230]:
+                    - link "androidx.enterprise" [ref=e231] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/enterprise
+                      - generic [ref=e232]: androidx.enterprise
+                  - listitem [ref=e233]:
+                    - link "androidx.exifinterface" [ref=e234] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/exifinterface
+                      - generic [ref=e235]: androidx.exifinterface
+                  - listitem [ref=e236]:
+                    - link "androidx.fragment" [ref=e237] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/fragment
+                      - generic [ref=e238]:
+                        - text: androidx.
+                        - text: fragment
+                  - listitem [ref=e239]:
+                    - link "androidx.games" [ref=e240] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/games
+                      - generic [ref=e241]:
+                        - text: androidx.
+                        - text: games
+                  - listitem [ref=e242]:
+                    - link "androidx.glance" [ref=e243] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/glance
+                      - generic [ref=e244]:
+                        - text: androidx.
+                        - text: glance
+                  - listitem [ref=e245]:
+                    - link "androidx.glance.wear" [ref=e246] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/glance-wear
+                      - generic [ref=e247]:
+                        - text: androidx.
+                        - text: glance.
+                        - text: wear
+                  - listitem [ref=e248]:
+                    - link "androidx.graphics" [ref=e249] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/graphics
+                      - generic [ref=e250]:
+                        - text: androidx.
+                        - text: graphics
+                  - listitem [ref=e251]:
+                    - link "androidx.gridlayout" [ref=e252] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/gridlayout
+                      - generic [ref=e253]:
+                        - text: androidx.
+                        - text: gridlayout
+                  - listitem [ref=e254]:
+                    - link "androidx.health" [ref=e255] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/health
+                      - generic [ref=e256]:
+                        - text: androidx.
+                        - text: health
+                  - listitem [ref=e257]:
+                    - link "androidx.health.connect" [ref=e258] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/health-connect
+                      - generic [ref=e259]:
+                        - text: androidx.
+                        - text: health.
+                        - text: connect
+                  - listitem [ref=e260]:
+                    - link "androidx.heifwriter" [ref=e261] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/heifwriter
+                      - generic [ref=e262]:
+                        - text: androidx.
+                        - text: heifwriter
+                  - listitem [ref=e263]:
+                    - link "androidx.hilt" [ref=e264] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/hilt
+                      - generic [ref=e265]:
+                        - text: androidx.
+                        - text: hilt
+                  - listitem [ref=e266]:
+                    - link "androidx.ink" [ref=e267] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/ink
+                      - generic [ref=e268]:
+                        - text: androidx.
+                        - text: ink
+                  - listitem [ref=e269]:
+                    - link "androidx.input" [ref=e270] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/input
+                      - generic [ref=e271]:
+                        - text: androidx.
+                        - text: input
+                  - listitem [ref=e272]:
+                    - link "androidx.interpolator" [ref=e273] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/interpolator
+                      - generic [ref=e274]:
+                        - text: androidx.
+                        - text: interpolator
+                  - listitem [ref=e275]:
+                    - link "androidx.javascriptengine" [ref=e276] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/javascriptengine
+                      - generic [ref=e277]:
+                        - text: androidx.
+                        - text: javascriptengine
+                  - listitem [ref=e278]:
+                    - link "androidx.leanback" [ref=e279] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/leanback
+                      - generic [ref=e280]:
+                        - text: androidx.
+                        - text: leanback
+                  - listitem [ref=e281]:
+                    - link "androidx.legacy" [ref=e282] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/legacy
+                      - generic [ref=e283]:
+                        - text: androidx.
+                        - text: legacy
+                  - listitem [ref=e284]:
+                    - link "androidx.lifecycle" [ref=e285] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/lifecycle
+                      - generic [ref=e286]:
+                        - text: androidx.
+                        - text: lifecycle
+                  - listitem [ref=e287]:
+                    - link "androidx.lint" [ref=e288] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/lint
+                      - generic [ref=e289]:
+                        - text: androidx.
+                        - text: lint
+                  - listitem [ref=e290]:
+                    - link "androidx.loader" [ref=e291] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/loader
+                      - generic [ref=e292]:
+                        - text: androidx.
+                        - text: loader
+                  - listitem [ref=e293]:
+                    - link "androidx.localbroadcastmanager" [ref=e294] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/localbroadcastmanager
+                      - generic [ref=e295]:
+                        - text: androidx.
+                        - text: localbroadcastmanager
+                  - listitem [ref=e296]:
+                    - link "androidx.media" [ref=e297] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/media
+                      - generic [ref=e298]: androidx.media
+                  - listitem [ref=e299]:
+                    - link "androidx.media3" [ref=e300] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/media3
+                      - generic [ref=e301]: androidx.media3
+                  - listitem [ref=e302]:
+                    - link "androidx.mediarouter" [ref=e303] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/mediarouter
+                      - generic [ref=e304]: androidx.mediarouter
+                  - listitem [ref=e305]:
+                    - link "androidx.metrics" [ref=e306] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/metrics
+                      - generic [ref=e307]: androidx.metrics
+                  - listitem [ref=e308]:
+                    - link "androidx.multidex" [ref=e309] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/multidex
+                      - generic [ref=e310]: androidx.multidex
+                  - listitem [ref=e311]:
+                    - link "androidx.navigation" [ref=e312] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/navigation
+                      - generic [ref=e313]: androidx.navigation
+                  - listitem [ref=e314]:
+                    - link "androidx.navigation3" [ref=e315] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/navigation3
+                      - generic [ref=e316]: androidx.navigation3
+                  - listitem [ref=e317]:
+                    - link "androidx.navigationevent" [ref=e318] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/navigationevent
+                      - generic [ref=e319]: androidx.navigationevent
+                  - listitem [ref=e320]:
+                    - link "androidx.paging" [ref=e321] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/paging
+                      - generic [ref=e322]: androidx.paging
+                  - listitem [ref=e323]:
+                    - link "androidx.palette" [ref=e324] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/palette
+                      - generic [ref=e325]: androidx.palette
+                  - listitem [ref=e326]:
+                    - link "androidx.pdf" [ref=e327] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/pdf
+                      - generic [ref=e328]: androidx.pdf
+                  - listitem [ref=e329]:
+                    - link "androidx.percentlayout" [ref=e330] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/percentlayout
+                      - generic [ref=e331]: androidx.percentlayout
+                  - listitem [ref=e332]:
+                    - link "androidx.performance" [ref=e333] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/performance
+                      - generic [ref=e334]: androidx.performance
+                  - listitem [ref=e335]:
+                    - link "androidx.photopicker" [ref=e336] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/photopicker
+                      - generic [ref=e337]: androidx.photopicker
+                  - listitem [ref=e338]:
+                    - link "androidx.preference" [ref=e339] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/preference
+                      - generic [ref=e340]: androidx.preference
+                  - listitem [ref=e341]:
+                    - link "androidx.print" [ref=e342] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/print
+                      - generic [ref=e343]: androidx.print
+                  - listitem [ref=e344]:
+                    - link "androidx.privacysandbox.activity" [ref=e345] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-activity
+                      - generic [ref=e346]: androidx.privacysandbox.activity
+                  - listitem [ref=e347]:
+                    - link "androidx.privacysandbox.ads" [ref=e348] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-ads
+                      - generic [ref=e349]: androidx.privacysandbox.ads
+                  - listitem [ref=e350]:
+                    - link "androidx.privacysandbox.plugins" [ref=e351] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-plugins
+                      - generic [ref=e352]: androidx.privacysandbox.plugins
+                  - listitem [ref=e353]:
+                    - link "androidx.privacysandbox.sdkruntime" [ref=e354] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-sdkruntime
+                      - generic [ref=e355]: androidx.privacysandbox.sdkruntime
+                  - listitem [ref=e356]:
+                    - link "androidx.privacysandbox.tools" [ref=e357] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-tools
+                      - generic [ref=e358]: androidx.privacysandbox.tools
+                  - listitem [ref=e359]:
+                    - link "androidx.privacysandbox.ui" [ref=e360] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/privacysandbox-ui
+                      - generic [ref=e361]: androidx.privacysandbox.ui
+                  - listitem [ref=e362]:
+                    - link "androidx.profileinstaller" [ref=e363] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/profileinstaller
+                      - generic [ref=e364]: androidx.profileinstaller
+                  - listitem [ref=e365]:
+                    - link "androidx.recommendation" [ref=e366] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/recommendation
+                      - generic [ref=e367]: androidx.recommendation
+                  - listitem [ref=e368]:
+                    - link "androidx.recyclerview" [ref=e369] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/recyclerview
+                      - generic [ref=e370]: androidx.recyclerview
+                  - listitem [ref=e371]:
+                    - link "androidx.remotecallback" [ref=e372] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/remotecallback
+                      - generic [ref=e373]: androidx.remotecallback
+                  - listitem [ref=e374]:
+                    - link "androidx.resourceinspection" [ref=e375] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/resourceinspection
+                      - generic [ref=e376]: androidx.resourceinspection
+                  - listitem [ref=e377]:
+                    - link "androidx.room" [ref=e378] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/room
+                      - generic [ref=e379]: androidx.room
+                  - listitem [ref=e380]:
+                    - link "androidx.room3" [ref=e381] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/room3
+                      - generic [ref=e382]: androidx.room3
+                  - listitem [ref=e383]:
+                    - link "androidx.savedstate" [ref=e384] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/savedstate
+                      - generic [ref=e385]: androidx.savedstate
+                  - listitem [ref=e386]:
+                    - link "androidx.security" [ref=e387] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/security
+                      - generic [ref=e388]: androidx.security
+                  - listitem [ref=e389]:
+                    - link "androidx.sharetarget" [ref=e390] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/sharetarget
+                      - generic [ref=e391]: androidx.sharetarget
+                  - listitem [ref=e392]:
+                    - link "androidx.slice" [ref=e393] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/slice
+                      - generic [ref=e394]: androidx.slice
+                  - listitem [ref=e395]:
+                    - link "androidx.slidingpanelayout" [ref=e396] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/slidingpanelayout
+                      - generic [ref=e397]: androidx.slidingpanelayout
+                  - listitem [ref=e398]:
+                    - link "androidx.sqlite" [ref=e399] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/sqlite
+                      - generic [ref=e400]: androidx.sqlite
+                  - listitem [ref=e401]:
+                    - link "androidx.startup" [ref=e402] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/startup
+                      - generic [ref=e403]: androidx.startup
+                  - listitem [ref=e404]:
+                    - link "androidx.swiperefreshlayout" [ref=e405] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/swiperefreshlayout
+                      - generic [ref=e406]: androidx.swiperefreshlayout
+                  - listitem [ref=e407]:
+                    - link "androidx.test" [ref=e408] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/test
+                      - generic [ref=e409]: androidx.test
+                  - listitem [ref=e410]:
+                    - link "androidx.test.ext" [ref=e411] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/test-ext
+                      - generic [ref=e412]: androidx.test.ext
+                  - listitem [ref=e413]:
+                    - link "androidx.test.uiautomator" [ref=e414] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/test-uiautomator
+                      - generic [ref=e415]: androidx.test.uiautomator
+                  - listitem [ref=e416]:
+                    - link "androidx.textclassifier" [ref=e417] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/textclassifier
+                      - generic [ref=e418]: androidx.textclassifier
+                  - listitem [ref=e419]:
+                    - link "androidx.tracing" [ref=e420] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/tracing
+                      - generic [ref=e421]: androidx.tracing
+                  - listitem [ref=e422]:
+                    - link "androidx.transition" [ref=e423] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/transition
+                      - generic [ref=e424]: androidx.transition
+                  - listitem [ref=e425]:
+                    - link "androidx.tv" [ref=e426] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/tv
+                      - generic [ref=e427]: androidx.tv
+                  - listitem [ref=e428]:
+                    - link "androidx.tvprovider" [ref=e429] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/tvprovider
+                      - generic [ref=e430]: androidx.tvprovider
+                  - listitem [ref=e431]:
+                    - link "androidx.text-vertical" [ref=e432] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/text-vertical
+                      - generic [ref=e433]: androidx.text-vertical
+                  - listitem [ref=e434]:
+                    - link "androidx.xr.arcore" [ref=e435] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-arcore
+                      - generic [ref=e436]: androidx.xr.arcore
+                  - listitem [ref=e437]:
+                    - link "androidx.xr.compose" [ref=e438] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-compose
+                      - generic [ref=e439]: androidx.xr.compose
+                  - listitem [ref=e440]:
+                    - link "androidx.xr.compose.material3" [ref=e441] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-compose-material3
+                      - generic [ref=e442]: androidx.xr.compose.material3
+                  - listitem [ref=e443]:
+                    - link "androidx.xr.glimmer" [ref=e444] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-glimmer
+                      - generic [ref=e445]: androidx.xr.glimmer
+                  - listitem [ref=e446]:
+                    - link "androidx.xr.projected" [ref=e447] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-projected
+                      - generic [ref=e448]: androidx.xr.projected
+                  - listitem [ref=e449]:
+                    - link "androidx.xr.runtime" [ref=e450] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-runtime
+                      - generic [ref=e451]: androidx.xr.runtime
+                  - listitem [ref=e452]:
+                    - link "androidx.xr.scenecore" [ref=e453] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/xr-scenecore
+                      - generic [ref=e454]: androidx.xr.scenecore
+                  - listitem [ref=e455]:
+                    - link "androidx.vectordrawable" [ref=e456] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/vectordrawable
+                      - generic [ref=e457]: androidx.vectordrawable
+                  - listitem [ref=e458]:
+                    - link "androidx.versionedparcelable" [ref=e459] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/versionedparcelable
+                      - generic [ref=e460]: androidx.versionedparcelable
+                  - listitem [ref=e461]:
+                    - link "androidx.viewpager" [ref=e462] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/viewpager
+                      - generic [ref=e463]: androidx.viewpager
+                  - listitem [ref=e464]:
+                    - link "androidx.viewpager2" [ref=e465] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/viewpager2
+                      - generic [ref=e466]: androidx.viewpager2
+                  - listitem [ref=e467]:
+                    - link "androidx.wear" [ref=e468] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear
+                      - generic [ref=e469]: androidx.wear
+                  - listitem [ref=e470]:
+                    - link "androidx.wear.compose" [ref=e471] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-compose
+                      - generic [ref=e472]: androidx.wear.compose
+                  - listitem [ref=e473]:
+                    - link "androidx.wear.compose (compose-material3)" [ref=e474] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-compose-m3
+                      - generic [ref=e475]: androidx.wear.compose (compose-material3)
+                  - listitem [ref=e476]:
+                    - link "androidx.wear.compose.remote (remote-material3)" [ref=e477] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-compose-remote
+                      - generic [ref=e478]: androidx.wear.compose.remote (remote-material3)
+                  - listitem [ref=e479]:
+                    - link "androidx.wear.protolayout" [ref=e480] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-protolayout
+                      - generic [ref=e481]: androidx.wear.protolayout
+                  - listitem [ref=e482]:
+                    - link "androidx.wear.tiles" [ref=e483] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-tiles
+                      - generic [ref=e484]: androidx.wear.tiles
+                  - listitem [ref=e485]:
+                    - link "androidx.wear.watchface" [ref=e486] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-watchface
+                      - generic [ref=e487]: androidx.wear.watchface
+                  - listitem [ref=e488]:
+                    - link "androidx.wear.watchfacepush" [ref=e489] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/wear-watchfacepush
+                      - generic [ref=e490]: androidx.wear.watchfacepush
+                  - listitem [ref=e491]:
+                    - link "androidx.webgpu" [ref=e492] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/webgpu
+                      - generic [ref=e493]: androidx.webgpu
+                  - listitem [ref=e494]:
+                    - link "androidx.webkit" [ref=e495] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/webkit
+                      - generic [ref=e496]: androidx.webkit
+                  - listitem [ref=e497]:
+                    - link "androidx.window" [ref=e498] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/window
+                      - generic [ref=e499]: androidx.window
+                  - listitem [ref=e500]:
+                    - link "androidx.window.extensions.core" [ref=e501] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/window-extensions-core
+                      - generic [ref=e502]: androidx.window.extensions.core
+                  - listitem [ref=e503]:
+                    - link "androidx.work" [ref=e504] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/work
+                      - generic [ref=e505]: androidx.work
+                  - listitem [ref=e506]:
+                    - link "tools.build.jetifier" [ref=e507] [cursor=pointer]:
+                      - /url: /jetpack/androidx/releases/jetifier
+                      - generic [ref=e508]: tools.build.jetifier
+            - listitem [ref=e509]:
+              - generic [ref=e510]:
+                - generic [ref=e511] [cursor=pointer]: arrow_drop_down
+                - button "Release Note Archive" [ref=e512] [cursor=pointer]:
+                  - generic [ref=e513]: Release Note Archive
+            - listitem [ref=e514]:
+              - link "Jetpack Compose Roadmap" [ref=e515] [cursor=pointer]:
+                - /url: /jetpack/androidx/compose-roadmap
+                - generic [ref=e516]: Jetpack Compose Roadmap
+            - listitem [ref=e517]:
+              - link "Jetpack Compose Kotlin Compatibility" [ref=e518] [cursor=pointer]:
+                - /url: /jetpack/androidx/releases/compose-kotlin
+                - generic [ref=e519]: Jetpack Compose Kotlin Compatibility
+    - button "Hide side navigation" [expanded] [ref=e520] [cursor=pointer]:
+      - generic [ref=e521]: chevron_left
+    - generic [ref=e522]:
+      - main [ref=e523]:
+        - generic [ref=e524]:
+          - article [ref=e525]:
+            - navigation [ref=e526]:
+              - list "Breadcrumb" [ref=e527]:
+                - listitem [ref=e528]:
+                  - link "Android Developers" [ref=e529] [cursor=pointer]:
+                    - /url: https://developer.android.com/
+                - listitem [ref=e530]:
+                  - generic [ref=e531]: chevron_right
+                  - link "Get started" [ref=e532] [cursor=pointer]:
+                    - /url: https://developer.android.com/get-started/overview
+                - listitem [ref=e533]:
+                  - generic [ref=e534]: chevron_right
+                  - link "Jetpack" [ref=e535] [cursor=pointer]:
+                    - /url: https://developer.android.com/jetpack
+                - listitem [ref=e536]:
+                  - generic [ref=e537]: chevron_right
+                  - link "Libraries" [ref=e538] [cursor=pointer]:
+                    - /url: https://developer.android.com/jetpack/androidx/explorer
+              - form "Was this helpful?" [ref=e540]:
+                - generic [ref=e541]: Was this helpful?
+                - generic [ref=e542]:
+                  - button "Helpful" [ref=e543] [cursor=pointer]:
+                    - img
+                  - button "Not helpful" [ref=e544] [cursor=pointer]:
+                    - img
+            - list [ref=e546]:
+              - listitem [ref=e547]:
+                - heading "On this page" [level=2] [ref=e548]:
+                  - generic [ref=e549]: On this page
+                - button "expand_more" [ref=e550] [cursor=pointer]
+              - listitem [ref=e551]:
+                - link "Declaring dependencies" [ref=e552] [cursor=pointer]:
+                  - /url: "#declaring_dependencies"
+                  - generic [ref=e553]: Declaring dependencies
+              - listitem [ref=e554]:
+                - link "Feedback" [ref=e555] [cursor=pointer]:
+                  - /url: "#feedback"
+                  - generic [ref=e556]: Feedback
+              - listitem [ref=e557]:
+                - link "Ink Version 1.1" [ref=e558] [cursor=pointer]:
+                  - /url: "#ink_version_11_2"
+                  - generic [ref=e559]: Ink Version 1.1
+                - list [ref=e560]:
+                  - listitem [ref=e561]:
+                    - link "Version 1.1.0-alpha03" [ref=e562] [cursor=pointer]:
+                      - /url: "#1.1.0-alpha03"
+                      - generic [ref=e563]: Version 1.1.0-alpha03
+                  - listitem [ref=e564]:
+                    - link "Version 1.1.0-alpha02" [ref=e565] [cursor=pointer]:
+                      - /url: "#1.1.0-alpha02"
+                      - generic [ref=e566]: Version 1.1.0-alpha02
+                  - listitem [ref=e567]:
+                    - link "Version 1.1.0-alpha01" [ref=e568] [cursor=pointer]:
+                      - /url: "#1.1.0-alpha01"
+                      - generic [ref=e569]: Version 1.1.0-alpha01
+              - listitem [ref=e570]:
+                - link "Version 1.0" [ref=e571] [cursor=pointer]:
+                  - /url: "#version_10_2"
+                  - generic [ref=e572]: Version 1.0
+                - list [ref=e573]:
+                  - listitem [ref=e574]:
+                    - link "Version 1.0.0" [ref=e575] [cursor=pointer]:
+                      - /url: "#1.0.0"
+                      - generic [ref=e576]: Version 1.0.0
+              - listitem [ref=e577]:
+                - button "more_horiz" [ref=e578] [cursor=pointer]
+            - generic [ref=e579]:
+              - heading "ink LLM Tools" [level=1] [ref=e580]:
+                - text: ink
+                - generic [ref=e581]:
+                  - listbox "Bookmark collections drop down" [ref=e584] [cursor=pointer]:
+                    - button "Open dropdown" [ref=e585]:
+                      - generic:
+                        - generic: bookmark_border
+                        - text: bookmark
+                      - text: arrow_drop_down
+                  - group "LLM Tools" [ref=e587]:
+                    - button "Copy page as markdown" [ref=e589] [cursor=pointer]:
+                      - generic: content_copy
+                    - button "More LLM Tools options" [ref=e592] [cursor=pointer]: arrow_drop_down
+              - generic [ref=e595]:
+                - text: API Reference
+                - link "androidx.ink.authoring" [ref=e596] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/authoring/package-summary
+                - link "androidx.ink.authoring.compose" [ref=e597] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/authoring/compose/package-summary
+                - link "androidx.ink.brush" [ref=e598] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/brush/package-summary
+                - link "androidx.ink.brush.compose" [ref=e599] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/brush/compose/package-summary
+                - link "androidx.ink.geometry" [ref=e600] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/geometry/package-summary
+                - link "androidx.ink.geometry.compose" [ref=e601] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/geometry/compose/package-summary
+                - link "androidx.ink.rendering.android.canvas" [ref=e602] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/rendering/android/canvas/package-summary
+                - link "androidx.ink.rendering.android.view" [ref=e603] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/rendering/android/view/package-summary
+                - link "androidx.ink.storage" [ref=e604] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/storage/package-summary
+                - link "androidx.ink.strokes" [ref=e605] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/ink/strokes/package-summary
+              - generic [ref=e606]: Inspire best-in-class pen apps. Lower the developer barrier to entry for high performance, beautiful inking experiences. Supports Inking on Android and server-side JVM (currently supported on Linux for x86_64).
+              - table [ref=e608]:
+                - rowgroup [ref=e609]:
+                  - row "Latest Update Stable Release Release Candidate Beta Release Alpha Release" [ref=e610]:
+                    - columnheader "Latest Update" [ref=e611]
+                    - columnheader "Stable Release" [ref=e612]
+                    - columnheader "Release Candidate" [ref=e613]
+                    - columnheader "Beta Release" [ref=e614]
+                    - columnheader "Alpha Release" [ref=e615]
+                  - row "May 19, 2026 1.0.0 - - 1.1.0-alpha03" [ref=e616]:
+                    - cell "May 19, 2026" [ref=e617]
+                    - cell "1.0.0" [ref=e618]:
+                      - link "1.0.0" [ref=e619] [cursor=pointer]:
+                        - /url: /jetpack/androidx/releases/ink#1.0.0
+                    - cell "-" [ref=e620]
+                    - cell "-" [ref=e621]
+                    - cell "1.1.0-alpha03" [ref=e622]:
+                      - link "1.1.0-alpha03" [ref=e623] [cursor=pointer]:
+                        - /url: /jetpack/androidx/releases/ink#1.1.0-alpha03
+              - heading "Declaring dependencies" [level=2] [ref=e624]
+              - paragraph [ref=e625]:
+                - text: To add a dependency on Ink, you must add the Google Maven repository to your project. Read
+                - link "Google's Maven repository" [ref=e626] [cursor=pointer]:
+                  - /url: /studio/build/dependencies#google-maven
+                - text: for more information.
+              - paragraph [ref=e627]:
+                - text: Add the dependencies for the artifacts you need in the
+                - code [ref=e628]: build.gradle
+                - text: "file for your app or module:"
+              - generic [ref=e630]:
+                - tablist [ref=e631]:
+                  - generic [ref=e632]:
+                    - tab "Groovy" [selected] [ref=e633]:
+                      - button "Groovy" [expanded] [ref=e634] [cursor=pointer]
+                    - tab "Kotlin" [ref=e635]:
+                      - button "Kotlin" [ref=e636] [cursor=pointer]
+                    - text: arrow_drop_down
+                - tabpanel "Groovy" [ref=e637]:
+                  - generic [ref=e639]: "dependencies { implementation \"androidx.ink:ink-authoring:1.1.0-alpha03\" implementation \"androidx.ink:ink-authoring-compose:1.1.0-alpha03\" implementation \"androidx.ink:ink-brush:1.1.0-alpha03\" implementation \"androidx.ink:ink-brush-compose:1.1.0-alpha03\" implementation \"androidx.ink:ink-geometry:1.1.0-alpha03\" implementation \"androidx.ink:ink-geometry-compose:1.1.0-alpha03\" implementation \"androidx.ink:ink-nativeloader:1.1.0-alpha03\" implementation \"androidx.ink:ink-rendering:1.1.0-alpha03\" implementation \"androidx.ink:ink-storage:1.1.0-alpha03\" implementation \"androidx.ink:ink-strokes:1.1.0-alpha03\" }"
+              - paragraph [ref=e640]:
+                - text: For more information about dependencies, see
+                - link "Add build dependencies" [ref=e641] [cursor=pointer]:
+                  - /url: /studio/build/dependencies
+                - text: .
+              - heading "Feedback" [level=2] [ref=e642]
+              - paragraph [ref=e643]:
+                - text: Your feedback helps make Jetpack better. Let us know if you discover new issues or have ideas for improving this library. Please take a look at the
+                - link "existing issues" [ref=e644] [cursor=pointer]:
+                  - /url: https://issuetracker.google.com/issues?q=componentid:1662443%20status:open
+                - text: in this library before you create a new one. You can add your vote to an existing issue by clicking the star button.
+              - paragraph [ref=e645]:
+                - link "Create a new issue" [ref=e646] [cursor=pointer]:
+                  - /url: https://issuetracker.google.com/issues/new?component=1662443&template=2055047
+              - paragraph [ref=e647]:
+                - text: See the
+                - link "Issue Tracker documentation" [ref=e648] [cursor=pointer]:
+                  - /url: https://developers.google.com/issue-tracker
+                - text: for more information.
+              - heading "Ink Version 1.1" [level=2] [ref=e649]:
+                - text: Ink Version 1.
+                - text: "1"
+              - heading "Version 1.1.0-alpha03" [level=3] [ref=e650]:
+                - text: Version 1.
+                - text: "1."
+                - text: 0-alpha03
+              - paragraph [ref=e651]: May 19, 2026
+              - paragraph [ref=e652]:
+                - code [ref=e653]: androidx.ink:ink-*:1.1.0-alpha03
+                - text: is released. Version 1.1.0-alpha03 contains
+                - link "these commits" [ref=e654] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/df4b49eda6f6834b6bc4c8aa30a581fa577a511e..e8de700385d9ab9cdeb458e7ff3867b6a03d869e/ink
+                - text: .
+              - paragraph [ref=e655]:
+                - strong [ref=e656]: API Changes
+              - list [ref=e657]:
+                - listitem [ref=e658]:
+                  - text: Make programmatic Ink brush customization API public (
+                  - link "I8e2e1" [ref=e659] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I8e2e12a3f449ce9b553ced187ea8b7c32a47e902
+                  - text: )
+                - listitem [ref=e660]:
+                  - text: Split
+                  - code [ref=e661]: BrushPaint.TextureLayer
+                  - text: into more specific subclasses (
+                  - link "I8848a" [ref=e662] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I8848ae547b17614a567bc5478e2b0aaf7a0729f8
+                  - text: )
+              - heading "Version 1.1.0-alpha02" [level=3] [ref=e663]
+              - paragraph [ref=e664]: April 22, 2026
+              - paragraph [ref=e665]:
+                - code [ref=e666]: androidx.ink:ink-*:1.1.0-alpha02
+                - text: is released. Version 1.1.0-alpha02 contains
+                - link "these commits" [ref=e667] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/1a508f033de883ba2853b9f9ae1853eec7010638..f99a4088c23a06cb8f2e113e607ef12853d95f09/ink
+                - text: .
+              - paragraph [ref=e668]:
+                - strong [ref=e669]: API Changes
+              - list [ref=e670]:
+                - listitem [ref=e671]:
+                  - text: Expose an overload of
+                  - code [ref=e672]: BrushFamily.decode
+                  - text: that specifies max version compatibility (
+                  - link "I1c7bc" [ref=e673] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I1c7bc469cc79fa4ead6bcf605e2891e456c63b23
+                  - text: )
+                - listitem [ref=e674]:
+                  - text: Graduate
+                  - code [ref=e675]: BrushFamily
+                  - text: serialization API from experimental (
+                  - link "Idd16e" [ref=e676] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Idd16ea9454d944d8daaf3ad719592c9e654df43b
+                  - text: )
+              - paragraph [ref=e677]:
+                - strong [ref=e678]: Bug Fixes
+              - list [ref=e679]:
+                - listitem [ref=e680]:
+                  - text: Fix flicker when using
+                  - code [ref=e681]: InProgressStrokesView.maskPath
+                  - text: on certain devices (
+                  - link "I1c7bc" [ref=e682] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I1c7bc469cc79fa4ead6bcf605e2891e456c63b23
+                  - text: ","
+                  - link "b/496920044" [ref=e683] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/496920044
+                  - text: )
+              - heading "Version 1.1.0-alpha01" [level=3] [ref=e684]
+              - paragraph [ref=e685]: March 11, 2026
+              - paragraph [ref=e686]:
+                - code [ref=e687]: androidx.ink:ink-*:1.1.0-alpha01
+                - text: is released. Version 1.1.0-alpha01 contains
+                - link "these commits" [ref=e688] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/8bf058367eab7e1352e81f61606d663ed7b3cd1d..1a508f033de883ba2853b9f9ae1853eec7010638/ink
+                - text: .
+              - paragraph [ref=e689]:
+                - strong [ref=e690]: New Features
+              - list [ref=e691]:
+                - listitem [ref=e692]: Assorted small bug fixes
+              - paragraph [ref=e693]:
+                - strong [ref=e694]: API Changes
+              - list [ref=e695]:
+                - listitem [ref=e696]:
+                  - text: Add
+                  - code [ref=e697]: InProgressShape.isCanceled
+                  - text: ", fix concurrency issues in authoring module. ("
+                  - link "Ibfd32" [ref=e698] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ibfd32ed6aa398653461d9e86d247f09c57caa53d
+                  - text: ","
+                  - link "b/474385518" [ref=e699] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/474385518
+                  - text: ","
+                  - link "b/470695777" [ref=e700] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/470695777
+                  - text: )
+                - listitem [ref=e701]:
+                  - text: Expose zero-argument version of
+                  - code [ref=e702]: CanvasStrokeRenderer.create
+                  - text: and
+                  - code [ref=e703]: InProgressStroke.updateShape
+                  - text: to Java (
+                  - link "Id80a1" [ref=e704] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Id80a171f1c2c71f3ef7fa309c4aad44c4300867d
+                  - text: ","
+                  - link "b/457715938" [ref=e705] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/457715938
+                  - text: )
+              - paragraph [ref=e706]:
+                - strong [ref=e707]: Bug Fixes
+              - list [ref=e708]:
+                - listitem [ref=e709]:
+                  - text: Fix a bug causing crashes in
+                  - code [ref=e710]: InProgressStrokesView
+                  - text: after detach/reattach from window for API 29-32, allow Vec operations to take same
+                  - code [ref=e711]: MutableVec
+                  - text: as input and output, merge Proguard configs into one file. (
+                  - link "Ia4da0" [ref=e712] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ia4da08aa4ed8b5b428a19ef8b00c63ef544e62ff
+                  - text: )
+                - listitem [ref=e713]:
+                  - text: Increase dependency on graphics-core to 1.0.4 (
+                  - link "Ibfa18" [ref=e714] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ibfa187a40ab55711f8eca9ae0ae53c181086db23
+                  - text: )
+              - heading "Version 1.0" [level=2] [ref=e715]
+              - heading "Version 1.0.0" [level=3] [ref=e716]
+              - paragraph [ref=e717]: December 17, 2025
+              - paragraph [ref=e718]:
+                - code [ref=e719]: androidx.ink:ink-*:1.0.0
+                - text: is released. Version 1.0.0 contains
+                - link "these commits" [ref=e720] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/b6ae8d0a0e8cd803f7b84f30101eda1af4f1d6b6..8bf058367eab7e1352e81f61606d663ed7b3cd1d/ink
+                - text: .
+              - paragraph [ref=e721]:
+                - strong [ref=e722]: Bug Fixes
+              - list [ref=e723]:
+                - listitem [ref=e724]:
+                  - text: Increase dependency on
+                  - code [ref=e725]: graphics-core
+                  - text: to 1.0.4 (
+                  - link "Ibfa18" [ref=e726] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ibfa187a40ab55711f8eca9ae0ae53c181086db23
+                  - text: )
+              - heading "Version 1.0.0-rc01" [level=3] [ref=e727]
+              - paragraph [ref=e728]: December 03, 2025
+              - paragraph [ref=e729]:
+                - code [ref=e730]: androidx.ink:ink-*:1.0.0-rc01
+                - text: is released. Version 1.0.0-rc01 contains
+                - link "these commits" [ref=e731] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/4d752a0684fb1bf991cd0d15ebd3649ee8684ca1..7a31b848f1d509fe53e220229333c573be219d10/ink
+                - text: .
+              - paragraph [ref=e732]:
+                - strong [ref=e733]: Bug Fixes
+              - list [ref=e734]:
+                - listitem [ref=e735]:
+                  - text: Update dependency version. (
+                  - link "Iecd04" [ref=e736] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Iecd04ee1ecca5aa981c756e246e11535455a898c
+                  - text: )
+              - heading "Version 1.0.0-beta02" [level=3] [ref=e737]
+              - paragraph [ref=e738]: November 19, 2025
+              - paragraph [ref=e739]:
+                - code [ref=e740]: androidx.ink:ink-*:1.0.0-beta02
+                - text: is released. Version 1.0.0-beta02 contains
+                - link "these commits" [ref=e741] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/46bcdef6281ae0f03c3a2bb2812edfc2c0e66d05..4d752a0684fb1bf991cd0d15ebd3649ee8684ca1/ink
+                - text: .
+              - paragraph [ref=e742]:
+                - strong [ref=e743]: API Changes
+              - list [ref=e744]:
+                - listitem [ref=e745]:
+                  - text: Experimental custom low latency shape APIs, assorted bug fixes (
+                  - link "Ib8d2f" [ref=e746] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ib8d2fe54389b3a2a9f5d305343878dd766d02527
+                  - text: )
+              - paragraph [ref=e747]:
+                - strong [ref=e748]: Bug Fixes
+              - list [ref=e749]:
+                - listitem [ref=e750]:
+                  - text: Improve floating point precision on
+                  - code [ref=e751]: StrokeInputBatch
+                  - text: serialization, fixing a drift in the values from repeated encoding and decoding
+                - listitem [ref=e752]: More robust system input sanitization.
+                - listitem [ref=e753]:
+                  - text: Fix brush texture support in
+                  - code [ref=e754]: InProgressStrokes
+                  - text: composable
+              - heading "Version 1.0.0-beta01" [level=3] [ref=e755]
+              - paragraph [ref=e756]: October 22, 2025
+              - paragraph [ref=e757]:
+                - code [ref=e758]: androidx.ink:ink-*:1.0.0-beta01
+                - text: is released. Version 1.0.0-beta01 contains
+                - link "these commits" [ref=e759] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/4350deab5806bf95370a4d012d7eeaa70a10be44..46bcdef6281ae0f03c3a2bb2812edfc2c0e66d05/ink
+                - text: .
+              - paragraph [ref=e760]:
+                - strong [ref=e761]: Bug Fixes
+              - list [ref=e762]:
+                - listitem [ref=e763]:
+                  - text: Bug fixes in preparation for beta01 release (
+                  - link "I9900e" [ref=e764] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I9900e364054c1873f97e1e60193e92cf01d4c9ab
+                  - text: )
+                - listitem [ref=e765]: Reduce rendering artifacts in strokes due to too many modeled inputs too close to each other.
+                - listitem [ref=e766]: Fix a rare crash in input modeling.
+              - heading "Version 1.0.0-alpha07" [level=3] [ref=e767]
+              - paragraph [ref=e768]: October 08, 2025
+              - paragraph [ref=e769]:
+                - code [ref=e770]: androidx.ink:ink-*:1.0.0-alpha07
+                - text: is released. Version 1.0.0-alpha07 contains
+                - link "these commits" [ref=e771] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/c359e97fece91f3767a7d017e9def23c7caf1f53..4350deab5806bf95370a4d012d7eeaa70a10be44/ink
+                - text: .
+              - paragraph [ref=e772]:
+                - strong [ref=e773]: New Features
+              - list [ref=e774]:
+                - listitem [ref=e775]:
+                  - code [ref=e776]: SelfOverlap
+                  - text: parameter for
+                  - code [ref=e777]: StockBrushes
+                  - code [ref=e778]: highlighter
+                  - text: and
+                  - code [ref=e779]: emojiHighlighter
+                  - text: ", which replaces"
+                  - code [ref=e780]: InProgressStrokesView
+                  - code [ref=e781]: rendererFactory
+                - listitem [ref=e782]: Improved implementation of stroke input smoothing, which eliminates device measurement noise but which more accurately reflects user input than the previous stroke input smoothing implementation
+                - listitem [ref=e783]: Improved consistency with other Android/Jetpack APIs for angle units (degrees vs. radians), transforms (skew vs. shear), and more
+              - paragraph [ref=e784]:
+                - strong [ref=e785]: API Changes
+              - list [ref=e786]:
+                - listitem [ref=e787]:
+                  - text: Change angle-related API to use degrees and include unit in names, be clear about units in Angle conversion utilities and support both degrees and radians, change
+                  - code [ref=e788]: StockBrushes
+                  - text: API to take stock brush version as a factory function parameter and expose self-overlap behavior control for highlighter brushes, rename
+                  - code [ref=e789]: MutableAffineTransform.populateFromTranslate
+                  - text: to
+                  - code [ref=e790]: populateFromTranslation
+                  - text: ", remove"
+                  - code [ref=e791]: InProgressStrokesView.setRenderFactory/getRenderFactory
+                  - text: . (
+                  - link "Id9eab" [ref=e792] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Id9eab6301d2ca1803452cd8a1eb2dcf0a3cd357d
+                  - text: ","
+                  - link "b/436656418" [ref=e793] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/436656418
+                  - text: )
+                - listitem [ref=e794]:
+                  - text: Rename shear to skew, clarify some documentation, remove
+                  - code [ref=e795]: CanvasStrokeRenderer.strokeModifiedRegionOutsetPx
+                  - text: ", add"
+                  - code [ref=e796]: InProgressStroke.changesWithTime
+                  - text: (
+                  - link "Ia5e70" [ref=e797] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ia5e70048d15787a54bf4c848b715484366e5c629
+                  - text: ","
+                  - link "b/436656418" [ref=e798] [cursor=pointer]:
+                    - /url: https://issuetracker.google.com/issues/436656418
+                  - text: )
+              - paragraph [ref=e799]:
+                - strong [ref=e800]: Bug Fixes
+              - list [ref=e801]:
+                - listitem [ref=e802]:
+                  - text: Improve input modeling to make strokes more accurately reflect input. (
+                  - link "I93097" [ref=e803] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I9309760022de0c30a0bc5e960da4c2467f663e9f
+                  - text: )
+              - heading "Version 1.0.0-alpha06" [level=3] [ref=e804]
+              - paragraph [ref=e805]: August 13, 2025
+              - paragraph [ref=e806]:
+                - code [ref=e807]: androidx.ink:ink-*:1.0.0-alpha06
+                - text: is released. Version 1.0.0-alpha06 contains
+                - link "these commits" [ref=e808] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/e8af6ab7417811bf386c52a59ab5d0b94d194eeb..c359e97fece91f3767a7d017e9def23c7caf1f53/ink
+                - text: .
+              - paragraph [ref=e809]:
+                - strong [ref=e810]: New Features
+              - list [ref=e811]:
+                - listitem [ref=e812]: "Emoji highlighter stock brush: Highlight parts of a document with any emoji you choose, to add a fun flair and help stay organized."
+                - listitem [ref=e813]: More helper APIs for geometry module primitive shapes
+                - listitem [ref=e814]: Improve device compatibility and performance
+              - paragraph [ref=e815]:
+                - strong [ref=e816]: API Changes
+              - list [ref=e817]:
+                - listitem [ref=e818]:
+                  - text: Simplified API for
+                  - code [ref=e819]: InProgressStrokesView
+                  - text: ", finish geometry APIs, emoji highlighter, remove factory functions from"
+                  - code [ref=e820]: MutableParallelogram
+                  - text: in favor of populate methods, support seed for randomized brush behaviors. (
+                  - link "I38280" [ref=e821] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I38280146fca9a55b06d87a835670efdd012990e7
+                  - text: )
+              - paragraph [ref=e822]:
+                - strong [ref=e823]: Bug Fixes
+              - list [ref=e824]:
+                - listitem [ref=e825]:
+                  - text: Fix a performance issue and a wet/dry color consistency issue. (
+                  - link "Ifcd1d" [ref=e826] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ifcd1da4081a01ba8165b4e8624219b1bd26bd248
+                  - text: )
+              - heading "Version 1.0.0-alpha05" [level=3] [ref=e827]
+              - paragraph [ref=e828]: June 18, 2025
+              - paragraph [ref=e829]:
+                - code [ref=e830]: androidx.ink:ink-*:1.0.0-alpha05
+                - text: is released. Version 1.0.0-alpha05 contains
+                - link "these commits" [ref=e831] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/4c37298a97c16270c139eb812ddadaba03e23a52..e8af6ab7417811bf386c52a59ab5d0b94d194eeb/ink
+                - text: .
+              - paragraph [ref=e832]:
+                - strong [ref=e833]: New Features
+              - list [ref=e834]:
+                - listitem [ref=e835]: Compose interoperability modules for authoring, brush, and geometry modules
+              - paragraph [ref=e836]:
+                - strong [ref=e837]: API Changes
+              - list [ref=e838]:
+                - listitem [ref=e839]:
+                  - text: New Compose interoperability modules and APIs, API cleanup (
+                  - link "I0e464" [ref=e840] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I0e4641822d568573fc8c7b3955a007a8ac9cd1c5
+                  - text: )
+                - listitem [ref=e841]:
+                  - code [ref=e842]: InProgressStroke.enqueueInputs/updateShape
+                  - text: methods which returned
+                  - code [ref=e843]: kotlin.Result
+                  - text: are removed, clients should use e.g.
+                  - code [ref=e844]: enqueueInputsOrThrow
+                  - text: or
+                  - code [ref=e845]: enqueueInputsOrIgnore
+                  - text: instead.
+                  - code [ref=e846]: InProgressStroke.getNeedsUpdate
+                  - text: is renamed to
+                  - code [ref=e847]: isUpdateNeeded
+                  - text: .
+                  - code [ref=e848]: InProgressStroke.populateOutlinePosition
+                  - text: now returns its output parameter to allow call chaining, consistent with other methods in Ink. The
+                  - code [ref=e849]: TextureBitmapStore
+                  - text: interface is moved from the rendering module to the brush module.
+                  - code [ref=e850]: BoxAccumulator.populateFrom
+                  - text: is made to take a nullable immutable Box instead of a mutable
+                  - code [ref=e851]: BoxAccumulator
+                  - text: ", to make it clearer what is mutated, callers should change"
+                  - code [ref=e852]: boxAccumulator.add(other)
+                  - text: to
+                  - code [ref=e853]: boxAccumulator.add(other.box)
+                  - text: .
+                  - code [ref=e854]: BrushUtil.toBuilderWithAndroidColor/createBuilderWithAndroidColor
+                  - text: are removed, use the
+                  - code [ref=e855]: setAndroidColor
+                  - text: of
+                  - code [ref=e856]: Brush.Builder
+                  - text: after constructing instead. (
+                  - link "Ia7155" [ref=e857] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ia7155560602b8319183aa12671d7f1d925873448
+                  - text: )
+                - listitem [ref=e858]:
+                  - text: Previously experimental property
+                  - code [ref=e859]: InProgressStrokesView.textureBitmapStore
+                  - text: is now private. There are still public accessors for this property. (
+                  - link "I1d706" [ref=e860] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I1d7064ff25c953066a4b43a6c30a4b3aa0b145d5
+                  - text: )
+              - paragraph [ref=e861]:
+                - strong [ref=e862]: Bug Fixes
+              - list [ref=e863]:
+                - listitem [ref=e864]: Improved performance for custom brushes containing many particles.
+              - heading "Version 1.0.0-alpha04" [level=3] [ref=e865]
+              - paragraph [ref=e866]: April 9, 2025
+              - paragraph [ref=e867]:
+                - code [ref=e868]: androidx.ink:ink-*:1.0.0-alpha04
+                - text: is released. Version 1.0.0-alpha04 contains
+                - link "these commits" [ref=e869] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/24c00eb294d9cda579d8d6e48a29497fe0f8d3f7..4c37298a97c16270c139eb812ddadaba03e23a52/ink
+                - text: .
+              - paragraph [ref=e870]:
+                - strong [ref=e871]: New Features
+              - list [ref=e872]:
+                - listitem [ref=e873]:
+                  - text: Introduces new experimental APIs for custom
+                  - code [ref=e874]: BrushFamily
+                  - text: objects, enabling new brushes like Pencil and Laser Pointer. The API allows for loading brushes defined by this proto. (
+                  - link "I8809a" [ref=e875] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I8809a675a5527c1a7bc2f519e041a8af1ed693b3
+                  - text: )
+              - heading "Version 1.0.0-alpha03" [level=3] [ref=e876]
+              - paragraph [ref=e877]: February 12, 2025
+              - paragraph [ref=e878]:
+                - code [ref=e879]: androidx.ink:ink-*:1.0.0-alpha03
+                - text: is released. Version 1.0.0-alpha03 contains
+                - link "these commits" [ref=e880] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/46295bc0b75a16f452e8e0090e8de41073d4dbb6..24c00eb294d9cda579d8d6e48a29497fe0f8d3f7/ink
+                - text: .
+              - paragraph [ref=e881]:
+                - strong [ref=e882]: New Features
+              - list [ref=e883]:
+                - listitem [ref=e884]:
+                  - text: "Disk and network size savings: Serialization of"
+                  - code [ref=e885]: StrokeInputBatch
+                  - text: ", saving many lines of code, with the resulting objects a tiny fraction of the size of traditionally stored strokes. ("
+                  - link "Ie898d" [ref=e886] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ie898d91e3c77eccbf26e9ee6d7f384a3a57b974f
+                  - text: )
+                - listitem [ref=e887]:
+                  - text: "Lasso selection: dashed line brush to draw a selection stroke, and a function to turn the selection stroke into a"
+                  - code [ref=e888]: PartitionedMesh
+                  - text: for geometry queries. (
+                  - link "Ia38a0" [ref=e889] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/Ia38a0e3e7a2da344d978bdfd5b8db8210a753e74
+                  - text: )
+              - heading "Version 1.0.0-alpha02" [level=3] [ref=e890]
+              - paragraph [ref=e891]: December 11, 2024
+              - paragraph [ref=e892]:
+                - code [ref=e893]: androidx.ink:ink-*:1.0.0-alpha02
+                - text: is released. Version 1.0.0-alpha02 contains
+                - link "these commits" [ref=e894] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/b6ae8d0a0e8cd803f7b84f30101eda1af4f1d6b6..46295bc0b75a16f452e8e0090e8de41073d4dbb6/ink
+                - text: .
+              - paragraph [ref=e895]:
+                - strong [ref=e896]: API Changes
+              - list [ref=e897]:
+                - listitem [ref=e898]:
+                  - text: Assorted bug fixes. (
+                  - link "I05dd8" [ref=e899] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I05dd84cb83c29b6f8af876164c426fee57f6f932
+                  - text: )
+              - paragraph [ref=e900]:
+                - strong [ref=e901]: External Contribution
+              - list [ref=e902]:
+                - listitem [ref=e903]:
+                  - text: Deprecate
+                  - code [ref=e904]: BuildCompat.isAtLeastV
+                  - text: . Callers should check SDK_INT against 35 directly instead. (
+                  - link "I294d1" [ref=e905] [cursor=pointer]:
+                    - /url: https://android-review.googlesource.com/#/q/I294d117a8fea924e7f1b739d52268a9a54be6db7
+                  - text: )
+              - heading "Version 1.0.0-alpha01" [level=3] [ref=e906]
+              - paragraph [ref=e907]: October 2, 2024
+              - paragraph [ref=e908]:
+                - code [ref=e909]: androidx.ink:ink-*:1.0.0-alpha01
+                - text: is released. Version 1.0.0-alpha01 contains
+                - link "these commits" [ref=e910] [cursor=pointer]:
+                  - /url: https://android.googlesource.com/platform/frameworks/support/+log/b6ae8d0a0e8cd803f7b84f30101eda1af4f1d6b6/ink
+                - text: .
+              - paragraph [ref=e911]:
+                - strong [ref=e912]: New Features
+              - list [ref=e913]:
+                - listitem [ref=e914]: A modular and configurable library to make it easy to create, render, and manipulate beautiful ink strokes authored in your application.
+              - paragraph [ref=e915]:
+                - strong [ref=e916]: API Changes
+              - paragraph [ref=e917]: "New modules to help developers build rich inking experiences:"
+              - list [ref=e918]:
+                - listitem [ref=e919]:
+                  - text: "Authoring: Use"
+                  - code [ref=e920]: InProgressStrokesView
+                  - text: for high-performance, low latency rendering of strokes in real time as inputs are received.
+                - listitem [ref=e921]:
+                  - text: "Rendering: Use"
+                  - code [ref=e922]: CanvasStrokeRenderer
+                  - text: and
+                  - code [ref=e923]: ViewStrokeRenderer
+                  - text: to draw the finished ink strokes as part of an app’s user interface.
+                - listitem [ref=e924]: "Strokes: Core data types used for inking features."
+                - listitem [ref=e925]: "Brush: Configurable specification of how strokes will look and act in response to user input."
+                - listitem [ref=e926]: "Geometry: Geometric operations like intersection and coverage to power tools like selection and erasing."
+            - form "Was this helpful?" [ref=e928]:
+              - generic [ref=e929]: Was this helpful?
+              - generic [ref=e930]:
+                - button "Helpful" [ref=e931] [cursor=pointer]:
+                  - img
+                - button "Not helpful" [ref=e932] [cursor=pointer]:
+                  - img
+          - generic [ref=e933]:
+            - paragraph [ref=e934]:
+              - text: Content and code samples on this page are subject to the licenses described in the
+              - link "Content License" [ref=e935] [cursor=pointer]:
+                - /url: /license
+              - text: . Java and OpenJDK are trademarks or registered trademarks of Oracle and/or its affiliates.
+            - paragraph [ref=e936]: Last updated 2026-05-19 UTC.
+      - navigation "Promotions" [ref=e938]:
+        - list [ref=e939]:
+          - listitem [ref=e940]:
+            - link "X X" [ref=e941] [cursor=pointer]:
+              - /url: //x.com/AndroidDev
+              - img "X" [ref=e943]
+              - text: X
+            - generic [ref=e944]: Follow @AndroidDev on X
+          - listitem [ref=e945]:
+            - link "YouTube YouTube" [ref=e946] [cursor=pointer]:
+              - /url: //www.youtube.com/user/androiddevelopers
+              - img "YouTube" [ref=e948]
+              - text: YouTube
+            - generic [ref=e949]: Check out Android Developers on YouTube
+          - listitem [ref=e950]:
+            - link "LinkedIn LinkedIn" [ref=e951] [cursor=pointer]:
+              - /url: //www.linkedin.com/showcase/androiddev
+              - img "LinkedIn" [ref=e953]
+              - text: LinkedIn
+            - generic [ref=e954]: Connect with the Android Developers community on LinkedIn
+      - navigation "Footer links" [ref=e956]:
+        - list [ref=e957]:
+          - listitem [ref=e958]:
+            - heading "More Android" [level=3] [ref=e959]
+            - list [ref=e960]:
+              - listitem [ref=e961]:
+                - link "Android" [ref=e962] [cursor=pointer]:
+                  - /url: //www.android.com
+              - listitem [ref=e963]:
+                - link "Android for Enterprise" [ref=e964] [cursor=pointer]:
+                  - /url: //www.android.com/enterprise/
+              - listitem [ref=e965]:
+                - link "Security" [ref=e966] [cursor=pointer]:
+                  - /url: //www.android.com/security-center/
+              - listitem [ref=e967]:
+                - link "Source" [ref=e968] [cursor=pointer]:
+                  - /url: //source.android.com
+              - listitem [ref=e969]:
+                - link "News" [ref=e970] [cursor=pointer]:
+                  - /url: /news
+              - listitem [ref=e971]:
+                - link "Blog" [ref=e972] [cursor=pointer]:
+                  - /url: //android-developers.googleblog.com/
+              - listitem [ref=e973]:
+                - link "Podcasts" [ref=e974] [cursor=pointer]:
+                  - /url: /podcasts
+          - listitem [ref=e975]:
+            - heading "Discover" [level=3] [ref=e976]
+            - list [ref=e977]:
+              - listitem [ref=e978]:
+                - link "Gaming" [ref=e979] [cursor=pointer]:
+                  - /url: /games
+              - listitem [ref=e980]:
+                - link "Machine Learning" [ref=e981] [cursor=pointer]:
+                  - /url: /ml
+              - listitem [ref=e982]:
+                - link "Health & Fitness" [ref=e983] [cursor=pointer]:
+                  - /url: /health-and-fitness
+              - listitem [ref=e984]:
+                - link "Camera & Media" [ref=e985] [cursor=pointer]:
+                  - /url: /media
+              - listitem [ref=e986]:
+                - link "Privacy" [ref=e987] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=e988]:
+                - link "5G" [ref=e989] [cursor=pointer]:
+                  - /url: /training/connectivity/5g
+          - listitem [ref=e990]:
+            - heading "Android Devices" [level=3] [ref=e991]
+            - list [ref=e992]:
+              - listitem [ref=e993]:
+                - link "Large screens" [ref=e994] [cursor=pointer]:
+                  - /url: /large-screens
+              - listitem [ref=e995]:
+                - link "Wear OS" [ref=e996] [cursor=pointer]:
+                  - /url: /wear
+              - listitem [ref=e997]:
+                - link "ChromeOS devices" [ref=e998] [cursor=pointer]:
+                  - /url: /chrome-os
+              - listitem [ref=e999]:
+                - link "Android for cars" [ref=e1000] [cursor=pointer]:
+                  - /url: /cars
+              - listitem [ref=e1001]:
+                - link "Android TV" [ref=e1002] [cursor=pointer]:
+                  - /url: /tv
+          - listitem [ref=e1003]:
+            - heading "Releases" [level=3] [ref=e1004]
+            - list [ref=e1005]:
+              - listitem [ref=e1006]:
+                - link "Android 15" [ref=e1007] [cursor=pointer]:
+                  - /url: /about/versions/15
+              - listitem [ref=e1008]:
+                - link "Android 14" [ref=e1009] [cursor=pointer]:
+                  - /url: /about/versions/14
+              - listitem [ref=e1010]:
+                - link "Android 13" [ref=e1011] [cursor=pointer]:
+                  - /url: /about/versions/13
+              - listitem [ref=e1012]:
+                - link "Android 12" [ref=e1013] [cursor=pointer]:
+                  - /url: /about/versions/12
+              - listitem [ref=e1014]:
+                - link "Android 11" [ref=e1015] [cursor=pointer]:
+                  - /url: /about/versions/11
+              - listitem [ref=e1016]:
+                - link "Android 10" [ref=e1017] [cursor=pointer]:
+                  - /url: /about/versions/10
+              - listitem [ref=e1018]:
+                - link "Pie" [ref=e1019] [cursor=pointer]:
+                  - /url: /about/versions/pie
+          - listitem [ref=e1020]:
+            - heading "Documentation and Downloads" [level=3] [ref=e1021]
+            - list [ref=e1022]:
+              - listitem [ref=e1023]:
+                - link "Android Studio guide" [ref=e1024] [cursor=pointer]:
+                  - /url: /studio/intro
+              - listitem [ref=e1025]:
+                - link "Developers guides" [ref=e1026] [cursor=pointer]:
+                  - /url: /guide
+              - listitem [ref=e1027]:
+                - link "API reference" [ref=e1028] [cursor=pointer]:
+                  - /url: /reference
+              - listitem [ref=e1029]:
+                - link "Download Studio" [ref=e1030] [cursor=pointer]:
+                  - /url: /studio
+              - listitem [ref=e1031]:
+                - link "Android NDK" [ref=e1032] [cursor=pointer]:
+                  - /url: /ndk
+          - listitem [ref=e1033]:
+            - heading "Support" [level=3] [ref=e1034]
+            - list [ref=e1035]:
+              - listitem [ref=e1036]:
+                - link "Report platform bug" [ref=e1037] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=190923&template=841312
+              - listitem [ref=e1038]:
+                - link "Report documentation bug" [ref=e1039] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=192697
+              - listitem [ref=e1040]:
+                - link "Google Play support" [ref=e1041] [cursor=pointer]:
+                  - /url: //support.google.com/googleplay/android-developer
+              - listitem [ref=e1042]:
+                - link "Join research studies" [ref=e1043] [cursor=pointer]:
+                  - /url: https://g.co/userresearch/androiddeveloperfooter
+      - generic [ref=e1045]:
+        - navigation "Other Google Developers websites" [ref=e1046]:
+          - link "Google Developers" [ref=e1047] [cursor=pointer]:
+            - /url: https://developers.google.com/
+            - img "Google Developers" [ref=e1049]
+          - list [ref=e1050]:
+            - listitem [ref=e1051]:
+              - link "Android" [ref=e1052] [cursor=pointer]:
+                - /url: //developer.android.com
+            - listitem [ref=e1053]:
+              - link "Chrome" [ref=e1054] [cursor=pointer]:
+                - /url: //developer.chrome.com/home
+            - listitem [ref=e1055]:
+              - link "Firebase" [ref=e1056] [cursor=pointer]:
+                - /url: //firebase.google.com
+            - listitem [ref=e1057]:
+              - link "Google Cloud Platform" [ref=e1058] [cursor=pointer]:
+                - /url: //cloud.google.com
+            - listitem [ref=e1059]:
+              - link "All products" [ref=e1060] [cursor=pointer]:
+                - /url: //developers.google.com/products/
+        - navigation "Utility links" [ref=e1061]:
+          - list [ref=e1062]:
+            - listitem [ref=e1063]:
+              - link "Privacy" [ref=e1064] [cursor=pointer]:
+                - /url: //policies.google.com/privacy
+            - listitem [ref=e1065]:
+              - text: "|"
+              - link "License" [ref=e1066] [cursor=pointer]:
+                - /url: /license
+            - listitem [ref=e1067]:
+              - text: "|"
+              - link "Brand guidelines" [ref=e1068] [cursor=pointer]:
+                - /url: /distribute/marketing-tools/brand-guidelines
+            - text: "|"
+            - listitem [ref=e1069]:
+              - generic [ref=e1070]: Get news and tips by email
+              - link "Subscribe" [ref=e1071] [cursor=pointer]:
+                - /url: /updates
+          - generic "Select your language preference." [ref=e1072]:
+            - button "English" [ref=e1073] [cursor=pointer]:
+              - img
+              - generic [ref=e1074]: English
+              - img

@@ -5,6 +5,7 @@ import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.RegionRepository
+import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.di.appModule
 import com.mapchina.di.platformModule
 import com.mapchina.di.seedDataAsync
@@ -18,8 +19,10 @@ fun MainViewController(): UIViewController {
         modules(appModule, platformModule)
     }
     val koin = KoinPlatform.getKoin()
-    seedDataAsync(koin.get<RegionRepository>(), koin.get<AttractionRepository>(), achievementRepo = koin.get<AchievementRepository>(), atlasRepo = koin.get<AtlasRepository>())
-    return ComposeUIViewController {
+    seedDataAsync(koin.get<RegionRepository>(), koin.get<AttractionRepository>(), boundaryLoader = BoundaryLoader(), achievementRepo = koin.get<AchievementRepository>(), atlasRepo = koin.get<AtlasRepository>())
+    return ComposeUIViewController(configure = {
+        enforceStrictPlistSanityCheck = false
+    }) {
         MapChinaApp()
     }
 }

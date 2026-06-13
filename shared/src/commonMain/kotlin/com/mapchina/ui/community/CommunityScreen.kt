@@ -1,5 +1,7 @@
 package com.mapchina.ui.community
 
+import kotlin.time.Clock
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -58,7 +60,7 @@ import com.mapchina.ui.navigation.PostDetailScreen
 import com.mapchina.ui.theme.UserAvatar
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -210,7 +212,7 @@ private fun PostCard(
 private fun formatTime(timestamp: Long): String {
     return try {
         val local = Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(TimeZone.currentSystemDefault())
-        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val now = Clock.System.now().toEpochMilliseconds()
         val diff = now - timestamp
         when {
             diff < 60_000 -> "刚刚"

@@ -174,9 +174,9 @@ class AchievementServiceTest {
 
     @Test
     fun evaluateAndSettle_atlasAchievement() {
-        attractionRepo.insertAttraction(Attraction("attr001", "故宫博物院", "110101", AttractionLevel.A5, 39.9, 116.4, null))
+        attractionRepo.insertAttraction(Attraction("attr_B000A8UIN8", "故宫博物院", "110101", AttractionLevel.A5, 39.9, 116.4, null))
         AtlasSeeder.seedAtlas(atlasRepo)
-        footprintRepo.markAttractionVisit("u1", "attr001", "110101", FootprintLevel.DEEP)
+        footprintRepo.markAttractionVisit("u1", "attr_B000A8UIN8", "110101", FootprintLevel.DEEP)
 
         service.evaluateAndSettle("u1")
         val heritage1 = achievementRepo.getUserAchievement("u1", "atlas_heritage_1")

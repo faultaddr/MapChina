@@ -32,8 +32,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.ui.theme.MapChinaMotion
+import com.mapchina.ui.theme.MapChinaRadius
+import com.mapchina.ui.theme.MapChinaTypography
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 
 @Composable
 fun OnboardingOverlay(
@@ -41,6 +46,7 @@ fun OnboardingOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(),
@@ -57,7 +63,6 @@ fun OnboardingOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Gradient circle icon
                 Box(
                     modifier = Modifier
                         .size(72.dp)
@@ -83,10 +88,9 @@ fun OnboardingOverlay(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    "用地图点亮你的中国足迹",
+                    Copy.SLOGAN,
+                    style = MapChinaTypography.Display,
                     color = MapChinaColors.TextPrimary,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
 
@@ -94,10 +98,10 @@ fun OnboardingOverlay(
 
                 Text(
                     "点击地图上的省份或城市\n标记你的到访足迹",
+                    style = MapChinaTypography.Title,
                     color = MapChinaColors.TextTertiary,
-                    fontSize = 15.sp,
                     textAlign = TextAlign.Center,
-                    lineHeight = 22.sp
+                    lineHeight = MapChinaTypography.Title.lineHeight * 1.5f
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -105,13 +109,13 @@ fun OnboardingOverlay(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(MapChinaRadius.Large)
                         .background(MapChinaColors.SurfaceElevated)
                         .padding(20.dp)
                 ) {
                     OnboardingStep(1, "点击省份查看详情")
                     Spacer(modifier = Modifier.height(12.dp))
-                    OnboardingStep(2, "标记足迹：路过 / 短玩 / 深度")
+                    OnboardingStep(2, "标记足迹：${Copy.FOOTPRINT_PASS} / ${Copy.FOOTPRINT_SHORT} / ${Copy.FOOTPRINT_DEEP}")
                     Spacer(modifier = Modifier.height(12.dp))
                     OnboardingStep(3, "钻入下级查看城市和区县")
                     Spacer(modifier = Modifier.height(12.dp))
@@ -121,12 +125,12 @@ fun OnboardingOverlay(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = onDismiss,
+                    onClick = { haptic.perform(HapticType.MEDIUM); onDismiss() },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MapChinaRadius.Medium,
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                 ) {
-                    Text("开始探索", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(Copy.ACTION_EXPLORE, style = MapChinaTypography.Title, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -146,11 +150,11 @@ private fun OnboardingStep(number: Int, text: String) {
             Text(
                 "$number",
                 color = MapChinaColors.Primary,
-                fontSize = 12.sp,
+                style = MapChinaTypography.Caption,
                 fontWeight = FontWeight.Bold
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text, color = MapChinaColors.TextPrimary, fontSize = 14.sp)
+        Text(text, style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary)
     }
 }

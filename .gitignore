@@ -6,6 +6,11 @@ local.properties
 *.iml
 .kotlin/
 .superpowers/
+.claude/
 androidApp/release/
 /com/
 scripts/output/
+xcuserdata/
+*.xcuserstate
+gen_bg_flux.py
+docs/superpowers/

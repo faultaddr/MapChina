@@ -3,7 +3,10 @@ package com.mapchina.domain.service
 import com.mapchina.data.repository.RegionRepository
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
-import org.json.JSONArray
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 
 data class RegionMatch(
     val province: Region?,
@@ -62,10 +65,10 @@ class RegionMatcher(private val regionRepository: RegionRepository) {
 
     private fun pointInPolygon(lat: Double, lng: Double, boundaryJson: String): Boolean {
         val points = try {
-            val coords = JSONArray(boundaryJson)
-            (0 until coords.length()).map { i ->
-                val coord = coords.getJSONArray(i)
-                Pair(coord.getDouble(1), coord.getDouble(0)) // [lng, lat] → (lat, lng)
+            val coords = kotlinx.serialization.json.Json.decodeFromString<JsonArray>(boundaryJson)
+            coords.map { coord ->
+                val arr = coord.jsonArray
+                Pair(arr[1].jsonPrimitive.double, arr[0].jsonPrimitive.double) // [lng, lat] → (lat, lng)
             }
         } catch (_: Exception) {
             return false

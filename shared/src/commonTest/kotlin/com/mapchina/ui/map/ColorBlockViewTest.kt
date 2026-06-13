@@ -1,6 +1,7 @@
 package com.mapchina.ui.map
 
 import androidx.compose.ui.geometry.Offset
+import com.mapchina.map.pointInPolygon
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

@@ -55,17 +55,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
 import com.mapchina.ui.navigation.CarvingListScreen
 import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 import kotlinx.coroutines.delay
@@ -82,7 +86,8 @@ import androidx.compose.material.icons.filled.Star
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    navController: NavHostController,
+    onNavigate: (NavKey) -> Unit,
+    onBack: () -> Unit,
     viewModel: MapViewModel? = null,
     mapController: MapController = remember { MapController() },
     modifier: Modifier = Modifier
@@ -96,7 +101,18 @@ fun MapScreen(
 
     viewModel.mapController = mapController
 
+    // Refresh map theme when returning to MapScreen
+    LaunchedEffect(Unit) {
+        viewModel.refreshMapTheme()
+    }
+
+    val haptic = LocalHapticFeedback.current
+
     val currentLevel by viewModel.currentLevel.collectAsState()
+    val currentMapTheme by remember { androidx.compose.runtime.derivedStateOf {
+        val rs = mapController.renderState.value
+        rs.backgroundTheme
+    }}
     val currentPath by viewModel.currentPath.collectAsState()
     val regions by viewModel.regions.collectAsState()
     val selectedRegion by viewModel.selectedRegion.collectAsState()
@@ -108,6 +124,10 @@ fun MapScreen(
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
     val autoMarkMessage by viewModel.autoMarkMessage.collectAsState()
+
+    LaunchedEffect(achievementResult) {
+        if (achievementResult != null) haptic.perform(HapticType.SUCCESS)
+    }
 
     LaunchedEffect(regions) {
         if (regions.isEmpty()) {
@@ -128,6 +148,7 @@ fun MapScreen(
 
     val bottomPanel by viewModel.bottomPanel.collectAsState()
     val previewAttraction by viewModel.previewAttraction.collectAsState()
+    val shareMode by viewModel.shareMode.collectAsState()
 
     // Derive showRegionCard from bottomPanel for RegionCard visibility
     val showRegionPanel = bottomPanel is BottomPanel.Region && selectedRegion != null
@@ -146,9 +167,26 @@ fun MapScreen(
     // Single tap on region → pulse + show card
     mapController.setOnRegionTapListener { regionId ->
         if (bottomPanel is BottomPanel.Region && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
+        haptic.perform(HapticType.MEDIUM)
         mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
         viewModel.showRegionPanel(regionId)
+    }
+
+    // Double tap on region → drill into region
+    mapController.setOnRegionDoubleTapListener { regionId ->
+        viewModel.drillIntoRegion(regionId)
+    }
+
+    // Viewport constraint: lock pan at national level, free at drill-down levels
+    LaunchedEffect(currentLevel) {
+        if (currentLevel == MapZoomLevel.NATIONAL) {
+            mapController.viewport.panEnabled = false
+            mapController.viewport.setChinaBounds()
+        } else {
+            mapController.viewport.panEnabled = true
+            mapController.viewport.clearBounds()
+        }
     }
 
     // Close region card → restore overlay
@@ -166,33 +204,39 @@ fun MapScreen(
         }
     }
 
-    // Re-sync map state when AMap view is recreated (e.g. after navigation back)
+    // Re-sync map state when map view is recreated (e.g. after navigation back)
     mapController.setOnMapReadyListener {
-        val (lat, lng, zoom) = viewModel.getSavedCameraState()
-        mapController.setCamera(lat, lng, zoom, false)
+        if (currentLevel == MapZoomLevel.NATIONAL) {
+            mapController.fitChinaInView(false)
+        } else {
+            val (lat, lng, zoom) = viewModel.getSavedCameraState()
+            mapController.setCamera(lat, lng, zoom, false)
+        }
         viewModel.reloadData()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Full-screen map
-        PlatformMapView(
+        ChinaMapView(
             controller = mapController,
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top breadcrumb
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-        ) {
-            BreadcrumbNav(
-                path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
-                onNavigateUp = { viewModel.navigateUp() },
-                onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
-            )
+        // Top breadcrumb (hidden in share mode)
+        if (!shareMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, start = 8.dp, end = 8.dp)
+            ) {
+                BreadcrumbNav(
+                    path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
+                    onNavigateUp = { viewModel.navigateUp() },
+                    onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
+                )
+            }
         }
 
         // Scrim to dismiss FAB menu
@@ -204,29 +248,33 @@ fun MapScreen(
             )
         }
 
-        // Top-right FAB: feature hub
-        MapFab(
-            visitedCount = visitedCount,
-            totalCount = totalCount,
-            coveragePercent = coveragePercent,
-            currentLevel = levelLabel,
-            photoMarkersVisible = photoMarkersVisible,
-            isExpanded = fabExpanded,
-            onExpandedChange = { fabExpanded = it },
-            onTogglePhotos = { viewModel.togglePhotoMarkers() },
-            onDepart = { showDartTravel = true },
-            onNavigateToNational = { viewModel.navigateToNational() },
-            onMyLocation = { viewModel.moveToCurrentLocation() },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(top = 12.dp, end = 12.dp)
-        )
+        // Top-right FAB: feature hub (hidden in share mode)
+        if (!shareMode) {
+            MapFab(
+                visitedCount = visitedCount,
+                totalCount = totalCount,
+                coveragePercent = coveragePercent,
+                currentLevel = levelLabel,
+                photoMarkersVisible = photoMarkersVisible,
+                isExpanded = fabExpanded,
+                onExpandedChange = { fabExpanded = it },
+                onTogglePhotos = { viewModel.togglePhotoMarkers() },
+                onShare = { viewModel.enterShareMode() },
+                onDepart = { showDartTravel = true },
+                onNavigateToNational = { viewModel.navigateToNational() },
+                onMyLocation = { viewModel.moveToCurrentLocation() },
+                mapTheme = currentMapTheme,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 12.dp, end = 12.dp)
+            )
+        }
 
-        // Bottom RegionCard
+        // Bottom RegionCard (hidden in share mode)
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         AnimatedVisibility(
-            visible = showRegionPanel,
+            visible = showRegionPanel && !shareMode,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -264,7 +312,7 @@ fun MapScreen(
                     onOpenCarving = {
                         val region = selectedRegion!!
                         viewModel.clearBottomPanel()
-                        navController.navigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
+                        onNavigate(CarvingListScreen(regionId = region.regionId, regionName = region.name))
                     },
                     onClose = {
                         viewModel.clearBottomPanel()
@@ -274,9 +322,9 @@ fun MapScreen(
             }
         }
 
-        // Attraction preview card
+        // Attraction preview card (hidden in share mode)
         AnimatedVisibility(
-            visible = bottomPanel is BottomPanel.AttractionPreview && previewAttraction != null,
+            visible = bottomPanel is BottomPanel.AttractionPreview && previewAttraction != null && !shareMode,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -293,15 +341,15 @@ fun MapScreen(
                 AttractionPreviewCard(
                     attraction = previewAttraction!!,
                     onViewDetail = {
-                        navController.navigate(AttractionDetailScreen(previewAttraction!!.id))
+                        onNavigate(AttractionDetailScreen(previewAttraction!!.id))
                     },
                     onClose = { viewModel.clearBottomPanel() }
                 )
             }
         }
 
-        // Auto-mark snackbar
-        if (autoMarkMessage != null) {
+        // Auto-mark snackbar (hidden in share mode)
+        if (autoMarkMessage != null && !shareMode) {
             AnimatedVisibility(
                 visible = true,
                 enter = slideInVertically(initialOffsetY = { it }),
@@ -357,8 +405,8 @@ fun MapScreen(
             }
         }
 
-        // Achievement unlock → top banner notification
-        if (achievementResult != null) {
+        // Achievement unlock → top banner notification (hidden in share mode)
+        if (achievementResult != null && !shareMode) {
             val animatedScore by animateIntAsState(
                 targetValue = achievementResult!!.scoreAdded,
                 animationSpec = spring(stiffness = Spring.StiffnessMedium),
@@ -461,9 +509,30 @@ fun MapScreen(
                 }
             }
         }
-    }
 
-    // Photo preview overlay
+        // Share mode confirm bar
+        var shareCapturing by remember { mutableStateOf(false) }
+        if (shareMode && !shareCapturing) {
+            ShareConfirmBar(
+                onConfirm = {
+                    shareCapturing = true
+                },
+                onCancel = { viewModel.exitShareMode() },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomBarOffset + 12.dp, start = 32.dp, end = 32.dp)
+            )
+        }
+        LaunchedEffect(shareCapturing) {
+            if (shareCapturing) {
+                kotlinx.coroutines.delay(300)
+                val shareHelper = org.koin.mp.KoinPlatform.getKoin().getOrNull<com.mapchina.platform.MapShareHelper>()
+                shareHelper?.captureAndShare()
+                viewModel.exitShareMode()
+                shareCapturing = false
+            }
+        }
+    }
     if (photoPreviewCluster != null) {
         PhotoPreviewOverlay(
             cluster = photoPreviewCluster!!,
@@ -484,7 +553,7 @@ fun MapScreen(
         if (showDartTravel) {
             dartTravelReady = false
             dartTravelKey++
-            mapController.setCamera(34.5, 106.0, 3.8f, true)
+            mapController.fitChinaInView(true)
             kotlinx.coroutines.delay(800)
             dartTravelReady = true
         } else {
@@ -492,7 +561,7 @@ fun MapScreen(
         }
     }
     if (showDartTravel && dartTravelReady) {
-        val cityDots = remember { viewModel.getCityDots() }
+        val cityDots = remember(dartTravelKey) { viewModel.getCurrentRegionCityDots() }
         DartTravelOverlay(
             key = dartTravelKey,
             cityDots = cityDots,
@@ -521,7 +590,7 @@ fun MapScreen(
             },
             onAttractionClick = { attractionId ->
                 showAttractionsSheet = false
-                navController.navigate(AttractionDetailScreen(attractionId))
+                onNavigate(AttractionDetailScreen(attractionId))
             },
             onDismiss = {
                 showAttractionsSheet = false
@@ -609,6 +678,7 @@ private fun AttractionSheetCard(
     }
 
     var showLevelMenu by remember { mutableStateOf(false) }
+    val sheetHaptic = LocalHapticFeedback.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -647,10 +717,10 @@ private fun AttractionSheetCard(
             Box {
                 Text(
                     text = when (attraction.visitLevel) {
-                        FootprintLevel.DEEP -> "深度游"
-                        FootprintLevel.SHORT_VISIT -> "短暂停留"
-                        FootprintLevel.PASS_BY -> "路过"
-                        null -> "未到访"
+                        FootprintLevel.DEEP -> Copy.FOOTPRINT_DEEP
+                        FootprintLevel.SHORT_VISIT -> Copy.FOOTPRINT_SHORT
+                        FootprintLevel.PASS_BY -> Copy.FOOTPRINT_PASS
+                        null -> Copy.FOOTPRINT_NONE
                     },
                     color = if (isVisited) MapChinaColors.FootprintDeep else MapChinaColors.TextTertiary,
                     fontSize = 12.sp,
@@ -666,23 +736,26 @@ private fun AttractionSheetCard(
                     onDismissRequest = { showLevelMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("深度游", MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_DEEP, MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.DEEP)
                         }
                     )
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("短暂停留", MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_SHORT, MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
                         }
                     )
                     DropdownMenuItem(
-                        text = { LevelMenuItemContent("路过", MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
+                        text = { LevelMenuItemContent(Copy.FOOTPRINT_PASS, MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.PASS_BY)
                         }
                     )
@@ -702,6 +775,7 @@ private fun AttractionSheetCard(
                             },
                             onClick = {
                                 showLevelMenu = false
+                                sheetHaptic.perform(HapticType.WARNING)
                                 onRemoveVisit(attraction.id)
                             }
                         )
@@ -760,10 +834,76 @@ private fun PhotoPreviewOverlay(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "%.4f, %.4f".format(cluster.latitude, cluster.longitude),
+                "${formatCoord(cluster.latitude)}, ${formatCoord(cluster.longitude)}",
                 color = MapChinaColors.TextTertiary,
                 fontSize = 11.sp
             )
+        }
+    }
+}
+
+private fun formatCoord(value: Double): String {
+    val rounded = kotlin.math.round(value * 10000) / 10000
+    val s = rounded.toString()
+    val dot = s.indexOf('.')
+    if (dot == -1) return "$s.0000"
+    val after = s.length - dot - 1
+    return if (after >= 4) s else s + "0".repeat(4 - after)
+}
+
+@Composable
+private fun ShareConfirmBar(
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MapChinaColors.SurfaceOverlay,
+        shadowElevation = 8.dp,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                Copy.SHARE_MAP,
+                color = MapChinaColors.TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    Copy.SHARE_CANCEL,
+                    color = MapChinaColors.TextTertiary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onCancel)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MapChinaColors.Primary,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                ) {
+                    Text(
+                        Copy.SHARE_CONFIRM,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clickable(onClick = onConfirm)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
         }
     }
 }

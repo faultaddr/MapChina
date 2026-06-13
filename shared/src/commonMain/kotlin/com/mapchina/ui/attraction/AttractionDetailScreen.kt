@@ -69,17 +69,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import coil3.compose.AsyncImage
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.platform.ExternalNavigator
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.koin.compose.koinInject
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -87,7 +89,8 @@ import kotlinx.datetime.toLocalDateTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionDetailScreen(
-    navController: NavHostController,
+    onNavigate: (NavKey) -> Unit,
+    onBack: () -> Unit,
     attraction: AttractionUi?,
     detail: AttractionDetail?,
     journals: List<Journal> = emptyList(),
@@ -98,6 +101,7 @@ fun AttractionDetailScreen(
     onOpenCarving: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     if (attraction == null) {
         Box(
             modifier.fillMaxSize().background(MapChinaColors.Background),
@@ -189,22 +193,14 @@ fun AttractionDetailScreen(
                 )
 
                 // Back button
-                IconButton(
-                    onClick = { navController.popBackStack() },
+                com.mapchina.ui.common.BackButton(
+                    onClick = onBack,
                     modifier = Modifier
                         .statusBarsPadding()
-                        .padding(start = 8.dp, top = 4.dp)
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.3f * backAlpha.value))
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
-                        tint = Color.White.copy(alpha = backAlpha.value),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                        .padding(start = 8.dp, top = 4.dp),
+                    tint = Color.White.copy(alpha = backAlpha.value),
+                    backgroundColor = Color.Black.copy(alpha = 0.3f * backAlpha.value)
+                )
             }
 
             // Scrollable content with fade-in
@@ -276,6 +272,7 @@ fun AttractionDetailScreen(
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
+                        haptic.perform(HapticType.MEDIUM)
                         navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
                     },
                     modifier = Modifier
@@ -297,7 +294,7 @@ fun AttractionDetailScreen(
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
-                            navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
+                            navigator.openUrl(detail.appointmentUrl!!)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -316,7 +313,7 @@ fun AttractionDetailScreen(
 
                 // Visit section
                 Spacer(Modifier.height(20.dp))
-                VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
+                VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = { level -> haptic.perform(HapticType.SUCCESS); onMarkVisit(level) }, onRemoveVisit = { haptic.perform(HapticType.WARNING); onRemoveVisit?.invoke() })
 
                 // Write journal & carving buttons (secondary)
                 if (onWriteJournal != null || onOpenCarving != null) {
@@ -327,7 +324,7 @@ fun AttractionDetailScreen(
                     ) {
                         if (onWriteJournal != null) {
                             OutlinedButton(
-                                onClick = { onWriteJournal.invoke() },
+                                onClick = { haptic.perform(HapticType.LIGHT); onWriteJournal.invoke() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp),
@@ -344,7 +341,7 @@ fun AttractionDetailScreen(
                         }
                         if (onOpenCarving != null) {
                             OutlinedButton(
-                                onClick = { onOpenCarving.invoke() },
+                                onClick = { haptic.perform(HapticType.LIGHT); onOpenCarving.invoke() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp),
@@ -515,21 +512,14 @@ private fun FullscreenImageViewer(
             )
         }
 
-        IconButton(
+        com.mapchina.ui.common.BackButton(
             onClick = onDismiss,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f))
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "关闭",
-                tint = Color.White
-            )
-        }
+                .padding(16.dp),
+            tint = Color.White,
+            backgroundColor = Color.White.copy(alpha = 0.2f)
+        )
 
         if (imageUrls.size > 1) {
             Text(

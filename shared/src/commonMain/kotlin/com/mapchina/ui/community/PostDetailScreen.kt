@@ -1,5 +1,7 @@
 package com.mapchina.ui.community
 
+import kotlin.time.Clock
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,9 +65,7 @@ fun PostDetailScreen(
         TopAppBar(
             title = { Text("帖子详情", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold) },
             navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-                }
+                com.mapchina.ui.common.BackButton(onClick = onBack)
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
@@ -211,7 +211,7 @@ private fun CommentInput(text: String, onTextChange: (String) -> Unit, onSend: (
 
 private fun formatTime(timestamp: Long): String {
     return try {
-        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val now = Clock.System.now().toEpochMilliseconds()
         val diff = now - timestamp
         when {
             diff < 60_000 -> "刚刚"

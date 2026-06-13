@@ -4,6 +4,7 @@ import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,9 +37,10 @@ data class AchievementWithProgress(
 class AchievementViewModel(
     private val achievementRepository: AchievementRepository,
     private val userScoreRepository: UserScoreRepository,
-    private val authService: com.mapchina.domain.service.AuthService
+    private val authService: com.mapchina.domain.service.AuthService,
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val _ui = MutableStateFlow(AchievementUi())
     val ui: StateFlow<AchievementUi> = _ui.asStateFlow()
 

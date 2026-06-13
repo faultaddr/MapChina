@@ -48,8 +48,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
+import com.mapchina.ui.theme.MapChinaRadius
+import com.mapchina.ui.theme.MapChinaTypography
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,9 +74,8 @@ fun StatsScreen(
     ) {
         Text(
             "统计",
+            style = MapChinaTypography.Display,
             color = MapChinaColors.TextPrimary,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
         )
 
@@ -131,11 +133,11 @@ private fun LevelPieChart(dist: LevelDistribution, visitedTotal: Int) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MapChinaRadius.Medium)
             .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("景点等级分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("景点等级分布", style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -254,11 +256,11 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MapChinaRadius.Medium)
             .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("到访级别分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("到访级别分布", style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
@@ -325,9 +327,9 @@ private fun VisitLevelDonutChart(levelCounts: Map<FootprintLevel, Int>) {
             Spacer(modifier = Modifier.width(20.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                LevelLegend(FootprintLevel.DEEP, "深度游览", MapChinaColors.BadgeRed, levelCounts[FootprintLevel.DEEP] ?: 0, total)
-                LevelLegend(FootprintLevel.SHORT_VISIT, "短玩", MapChinaColors.Error, levelCounts[FootprintLevel.SHORT_VISIT] ?: 0, total)
-                LevelLegend(FootprintLevel.PASS_BY, "路过", MapChinaColors.FootprintShortVisit, levelCounts[FootprintLevel.PASS_BY] ?: 0, total)
+                LevelLegend(FootprintLevel.DEEP, Copy.FOOTPRINT_DEEP, MapChinaColors.BadgeRed, levelCounts[FootprintLevel.DEEP] ?: 0, total)
+                LevelLegend(FootprintLevel.SHORT_VISIT, Copy.FOOTPRINT_SHORT, MapChinaColors.Error, levelCounts[FootprintLevel.SHORT_VISIT] ?: 0, total)
+                LevelLegend(FootprintLevel.PASS_BY, Copy.FOOTPRINT_PASS, MapChinaColors.FootprintShortVisit, levelCounts[FootprintLevel.PASS_BY] ?: 0, total)
             }
         }
     }
@@ -358,11 +360,11 @@ private fun ProvinceBarChart(provinceVisits: List<ProvinceVisitUi>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MapChinaRadius.Medium)
             .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {
-        Text("造访景点省份分布", color = MapChinaColors.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text("景点省份分布", style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(4.dp))
         Text("最多 ${maxCount} 个", color = MapChinaColors.TextTertiary, fontSize = 12.sp)
         Spacer(modifier = Modifier.height(8.dp))
@@ -511,7 +513,7 @@ private fun CoverageSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MapChinaRadius.Medium)
             .background(MapChinaColors.SurfaceElevated)
             .padding(16.dp)
     ) {

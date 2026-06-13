@@ -7,7 +7,7 @@ import com.mapchina.domain.model.Journal
 import com.mapchina.domain.model.JournalDetail
 import com.mapchina.domain.model.JournalPhoto
 import com.mapchina.domain.model.JournalTrackPoint
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 class JournalService(
     private val journalRepository: JournalRepository,

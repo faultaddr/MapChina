@@ -49,7 +49,7 @@ import com.mapchina.domain.model.JournalPhoto
 import com.mapchina.ui.theme.MapChinaColors
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -79,9 +79,7 @@ fun JournalDetailScreen(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-            }
+            com.mapchina.ui.common.BackButton(onClick = onBack)
             Text(
                 detail?.journal?.title ?: "游记详情",
                 color = MapChinaColors.TextPrimary,

@@ -1,5 +1,6 @@
 package com.mapchina.ui.attraction
 
+import kotlin.time.Clock
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.data.remote.AttractionDetailProvider
 import com.mapchina.data.repository.AttractionRepository
@@ -10,6 +11,7 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,9 +39,10 @@ class AttractionViewModel(
     private val footprintRepository: FootprintRepository,
     private val detailProvider: AttractionDetailProvider?,
     private val attractionService: AttractionService? = null,
-    private val userId: String = ""
+    private val userId: String = "",
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val vmScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     fun onCleared() {
         vmScope.cancel()
@@ -134,7 +137,7 @@ class AttractionViewModel(
 
     fun createCustomAttraction(name: String, description: String?, regionId: String, latitude: Double, longitude: Double, imageUrl: String? = null) {
         vmScope.launch {
-            val id = "custom_${System.currentTimeMillis()}"
+            val id = "custom_${Clock.System.now().toEpochMilliseconds()}"
             val attraction = Attraction(
                 id = id,
                 name = name,

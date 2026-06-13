@@ -11,6 +11,7 @@ import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.map.MapZoomLevel
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +33,7 @@ class MapViewModelTest {
         val attractionRepo = AttractionRepository(database)
         val attractionService = AttractionService(attractionRepo)
         footprintService = FootprintService(footprintRepo, regionRepo, null)
-        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, "testUser")
+        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, null, null, null, null, null, "testUser", UnconfinedTestDispatcher())
     }
 
     @Test
@@ -43,19 +44,6 @@ class MapViewModelTest {
     @Test
     fun initialPath_isEmpty() {
         assertEquals(0, viewModel.currentPath.value.size)
-    }
-
-    @Test
-    fun initialViewMode_isMap() {
-        assertEquals(ViewMode.MAP, viewModel.viewMode.value)
-    }
-
-    @Test
-    fun toggleViewMode_switchesBetweenMapAndBlock() {
-        viewModel.toggleViewMode()
-        assertEquals(ViewMode.BLOCK, viewModel.viewMode.value)
-        viewModel.toggleViewMode()
-        assertEquals(ViewMode.MAP, viewModel.viewMode.value)
     }
 
     @Test
@@ -90,7 +78,6 @@ class MapViewModelTest {
     fun markFootprint_updatesRegionState() {
         regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
         regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
-        // At national level, provinces are shown
         viewModel.markFootprint("510000", FootprintLevel.DEEP)
         val region = viewModel.regions.value.find { it.regionId == "510000" }
         assertEquals(FootprintLevel.DEEP, region?.footprintLevel)

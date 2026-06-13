@@ -1,0 +1,938 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner:
+      - generic:
+        - generic [ref=e6]:
+          - text: menu
+          - link "Android Developers" [ref=e8] [cursor=pointer]:
+            - /url: /
+            - img "Android Developers" [ref=e10]
+          - generic [ref=e11]:
+            - navigation "Upper tabs" [ref=e14]:
+              - generic [ref=e15]:
+                - link "Develop, selected" [ref=e16] [cursor=pointer]:
+                  - /url: https://developer.android.com/develop
+                  - text: Develop
+                - button "Dropdown menu for Develop" [ref=e17] [cursor=pointer]: arrow_drop_down
+              - generic [ref=e18]:
+                - button "Dropdown menu for Extended Navigation" [ref=e19] [cursor=pointer]: arrow_drop_down More
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - generic [ref=e23]:
+              - combobox "Search" [ref=e24]
+              - generic [ref=e25]: search
+              - generic [ref=e26]: /
+          - generic [ref=e27]:
+            - 'button "Appearance: Light theme" [ref=e28] [cursor=pointer]': light_mode
+            - text: light_mode dark_mode brightness_medium
+          - generic "Select your language preference." [ref=e29]:
+            - button "English" [ref=e30] [cursor=pointer]:
+              - img
+              - generic [ref=e31]: English
+              - img
+          - link "Android Studio" [ref=e32] [cursor=pointer]:
+            - /url: https://developer.android.com/studio
+          - link "Sign in" [ref=e35] [cursor=pointer]:
+            - /url: https://developer.android.com/_d/signin?continue=https%3A%2F%2Fdeveloper.android.com%2Fdevelop%2Fui%2Fcompose%2Flibraries%3Fhl%3Den&prompt=select_account
+        - generic [ref=e37]:
+          - list "Lower header breadcrumb" [ref=e41]:
+            - listitem [ref=e42]:
+              - link "Develop" [ref=e43] [cursor=pointer]:
+                - /url: https://developer.android.com/develop
+            - listitem [ref=e44]:
+              - generic [ref=e45]: chevron_right
+              - link "Core areas" [ref=e46] [cursor=pointer]:
+                - /url: https://developer.android.com/develop/core-areas
+            - listitem [ref=e47]:
+              - generic [ref=e48]: chevron_right
+              - link "UI" [ref=e49] [cursor=pointer]:
+                - /url: https://developer.android.com/develop/ui
+          - navigation "Lower tabs" [ref=e52]:
+            - link "Overview" [ref=e54] [cursor=pointer]:
+              - /url: https://developer.android.com/develop/ui
+            - link "Tutorial" [ref=e56] [cursor=pointer]:
+              - /url: https://developer.android.com/develop/ui/compose/tutorial
+            - link "Samples" [ref=e58] [cursor=pointer]:
+              - /url: https://developer.android.com/develop/ui/compose/samples
+            - link "Docs, selected" [ref=e60] [cursor=pointer]:
+              - /url: https://developer.android.com/develop/ui/compose/documentation
+              - text: Docs
+            - link "Quick Guides" [ref=e62] [cursor=pointer]:
+              - /url: https://developer.android.com/develop/ui/compose/quick-guides
+            - text: arrow_drop_down
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - text: filter_list
+        - searchbox "Type to filter" [ref=e66]
+        - text: close
+      - navigation "Side menu" [ref=e67]:
+        - text: arrow_back
+        - generic [ref=e68]:
+          - text: arrow_forward arrow_forward arrow_forward arrow_forward arrow_forward
+          - list [ref=e70]:
+            - listitem [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73] [cursor=pointer]: expand_less
+                - button "Introduction" [ref=e74] [cursor=pointer]:
+                  - generic [ref=e75]: Introduction
+                - text: arrow_drop_down
+            - listitem [ref=e76]:
+              - generic [ref=e77]:
+                - generic [ref=e78] [cursor=pointer]: expand_less
+                - button "UI architecture" [ref=e79] [cursor=pointer]:
+                  - generic [ref=e80]: UI architecture
+                - text: arrow_drop_down
+            - listitem [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e83] [cursor=pointer]: expand_less
+                - button "App layout" [ref=e84] [cursor=pointer]:
+                  - generic [ref=e85]: App layout
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - listitem [ref=e86]:
+              - generic [ref=e87]:
+                - generic [ref=e88] [cursor=pointer]: expand_less
+                - button "Components" [ref=e89] [cursor=pointer]:
+                  - generic [ref=e90]: Components
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - listitem [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e93] [cursor=pointer]: expand_less
+                - button "Theming" [ref=e94] [cursor=pointer]:
+                  - generic [ref=e95]: Theming
+                - text: arrow_drop_down
+            - listitem [ref=e96]:
+              - generic [ref=e97]:
+                - generic [ref=e98] [cursor=pointer]: expand_less
+                - button "Text and typography" [ref=e99] [cursor=pointer]:
+                  - generic [ref=e100]: Text and typography
+                - text: arrow_drop_down arrow_drop_down
+            - listitem [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103] [cursor=pointer]: expand_less
+                - button "Images and graphics" [ref=e104] [cursor=pointer]:
+                  - generic [ref=e105]: Images and graphics
+                - text: arrow_drop_down arrow_drop_down
+            - listitem [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108] [cursor=pointer]: expand_less
+                - button "Animation" [ref=e109] [cursor=pointer]:
+                  - generic [ref=e110]: Animation
+                - text: arrow_drop_down
+            - listitem [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113] [cursor=pointer]: expand_less
+                - button "Accessibility" [ref=e114] [cursor=pointer]:
+                  - generic [ref=e115]: Accessibility
+            - listitem [ref=e116]:
+              - generic [ref=e117]:
+                - generic [ref=e118] [cursor=pointer]: expand_less
+                - button "Touch and input" [ref=e119] [cursor=pointer]:
+                  - generic [ref=e120]: Touch and input
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - listitem [ref=e121]:
+              - generic [ref=e122]:
+                - generic [ref=e123] [cursor=pointer]: expand_less
+                - button "Performance" [ref=e124] [cursor=pointer]:
+                  - generic [ref=e125]: Performance
+                - text: arrow_drop_down
+            - listitem [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e128] [cursor=pointer]: expand_less
+                - button "Style guidelines" [ref=e129] [cursor=pointer]:
+                  - generic [ref=e130]: Style guidelines
+            - listitem [ref=e131]:
+              - generic [ref=e132]:
+                - generic [ref=e133] [cursor=pointer]: expand_less
+                - button "UI testing" [ref=e134] [cursor=pointer]:
+                  - generic [ref=e135]: UI testing
+            - listitem [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138] [cursor=pointer]: expand_less
+                - button "Migrate to Compose" [ref=e139] [cursor=pointer]:
+                  - generic [ref=e140]: Migrate to Compose
+                - list [ref=e141]:
+                  - listitem [ref=e142]:
+                    - link "Migrate XML Views to Jetpack Compose" [ref=e143] [cursor=pointer]:
+                      - /url: /develop/ui/compose/migrate/migrate-xml-views-to-jetpack-compose
+                      - generic [ref=e144]: Migrate XML Views to Jetpack Compose
+                  - listitem [ref=e145]:
+                    - link "Migration strategy" [ref=e146] [cursor=pointer]:
+                      - /url: /develop/ui/compose/migrate/strategy
+                      - generic [ref=e147]: Migration strategy
+                  - listitem [ref=e148]:
+                    - generic [ref=e149]:
+                      - generic [ref=e150] [cursor=pointer]: arrow_drop_down
+                      - button "Interoperability APIs" [ref=e151] [cursor=pointer]:
+                        - generic [ref=e152]: Interoperability APIs
+                  - listitem [ref=e153]:
+                    - generic [ref=e154]:
+                      - generic [ref=e155] [cursor=pointer]: arrow_drop_down
+                      - button "Common migration scenarios" [ref=e156] [cursor=pointer]:
+                        - generic [ref=e157]: Common migration scenarios
+                  - listitem [ref=e158]:
+                    - link "Other considerations" [ref=e159] [cursor=pointer]:
+                      - /url: /develop/ui/compose/migrate/other-considerations
+                      - generic [ref=e160]: Other considerations
+                  - listitem [ref=e161]:
+                    - link "Adopt Compose for teams" [ref=e162] [cursor=pointer]:
+                      - /url: /develop/ui/compose/adopt/for-large-teams
+                      - generic [ref=e163]: Adopt Compose for teams
+                  - listitem [ref=e164]:
+                    - link "Compose and other libraries" [ref=e165] [cursor=pointer]:
+                      - /url: /develop/ui/compose/libraries
+                      - generic [ref=e166]: Compose and other libraries
+                  - listitem [ref=e167]:
+                    - link "Compare Compose and View metrics" [ref=e168] [cursor=pointer]:
+                      - /url: /develop/ui/compose/migrate/compare-metrics
+                      - generic [ref=e169]: Compare Compose and View metrics
+            - listitem [ref=e170]:
+              - generic [ref=e171]:
+                - generic [ref=e172] [cursor=pointer]: expand_less
+                - button "Tools" [ref=e173] [cursor=pointer]:
+                  - generic [ref=e174]: Tools
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down
+            - listitem [ref=e175]:
+              - generic [ref=e176]:
+                - generic [ref=e177] [cursor=pointer]: expand_less
+                - button "System capabilities" [ref=e178] [cursor=pointer]:
+                  - generic [ref=e179]: System capabilities
+                - text: arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down arrow_drop_down
+            - listitem [ref=e180]:
+              - generic [ref=e181]:
+                - generic [ref=e182] [cursor=pointer]: expand_less
+                - button "Create widgets" [ref=e183] [cursor=pointer]:
+                  - generic [ref=e184]: Create widgets
+    - button "Hide side navigation" [expanded] [ref=e185] [cursor=pointer]:
+      - generic [ref=e186]: chevron_left
+    - generic [ref=e187]:
+      - main [ref=e188]:
+        - generic [ref=e189]:
+          - article [ref=e190]:
+            - navigation [ref=e191]:
+              - list "Breadcrumb" [ref=e192]:
+                - listitem [ref=e193]:
+                  - link "Android Developers" [ref=e194] [cursor=pointer]:
+                    - /url: https://developer.android.com/
+                - listitem [ref=e195]:
+                  - generic [ref=e196]: chevron_right
+                  - link "Develop" [ref=e197] [cursor=pointer]:
+                    - /url: https://developer.android.com/develop
+                - listitem [ref=e198]:
+                  - generic [ref=e199]: chevron_right
+                  - link "Core areas" [ref=e200] [cursor=pointer]:
+                    - /url: https://developer.android.com/develop/core-areas
+                - listitem [ref=e201]:
+                  - generic [ref=e202]: chevron_right
+                  - link "UI" [ref=e203] [cursor=pointer]:
+                    - /url: https://developer.android.com/develop/ui
+                - listitem [ref=e204]:
+                  - generic [ref=e205]: chevron_right
+                  - link "Docs" [ref=e206] [cursor=pointer]:
+                    - /url: https://developer.android.com/develop/ui/compose/documentation
+              - form "Was this helpful?" [ref=e208]:
+                - generic [ref=e209]: Was this helpful?
+                - generic [ref=e210]:
+                  - button "Helpful" [ref=e211] [cursor=pointer]:
+                    - img
+                  - button "Not helpful" [ref=e212] [cursor=pointer]:
+                    - img
+            - heading "Compose and other libraries LLM Tools" [level=1] [ref=e213]:
+              - text: Compose and other libraries
+              - generic [ref=e214]:
+                - listbox "Bookmark collections drop down" [ref=e217] [cursor=pointer]:
+                  - button "Open dropdown" [ref=e218]:
+                    - generic:
+                      - generic [ref=e219]: bookmark_border
+                      - text: bookmark
+                    - text: arrow_drop_down
+                - group "LLM Tools" [ref=e221]:
+                  - button "Copy page as markdown" [ref=e223] [cursor=pointer]:
+                    - generic [ref=e224]: content_copy
+                  - button "More LLM Tools options" [ref=e227] [cursor=pointer]: arrow_drop_down
+            - list [ref=e229]:
+              - listitem [ref=e230]:
+                - heading "On this page" [level=2] [ref=e231]:
+                  - generic [ref=e232]: On this page
+                - button "expand_more" [ref=e233] [cursor=pointer]
+              - listitem [ref=e234]:
+                - link "Activity" [ref=e235] [cursor=pointer]:
+                  - /url: "#activity"
+                  - generic [ref=e236]: Activity
+                - list [ref=e237]:
+                  - listitem [ref=e238]:
+                    - link "Activity Result" [ref=e239] [cursor=pointer]:
+                      - /url: "#activity_result"
+                      - generic [ref=e240]: Activity Result
+                  - listitem [ref=e241]:
+                    - link "Requesting runtime permissions" [ref=e242] [cursor=pointer]:
+                      - /url: "#requesting-runtime-permissions"
+                      - generic [ref=e243]: Requesting runtime permissions
+                  - listitem [ref=e244]:
+                    - link "Handling the system back button" [ref=e245] [cursor=pointer]:
+                      - /url: "#handling_the_system_back_button"
+                      - generic [ref=e246]: Handling the system back button
+              - listitem [ref=e247]:
+                - link "ViewModel" [ref=e248] [cursor=pointer]:
+                  - /url: "#viewmodel"
+                  - generic [ref=e249]: ViewModel
+                - list
+              - listitem [ref=e250]:
+                - button "more_horiz" [ref=e251] [cursor=pointer]
+            - generic [ref=e252]:
+              - paragraph [ref=e253]: You can use your favorite libraries in Compose. This section describes how to incorporate a few of the most useful libraries.
+              - 'heading "Activity Copy link to this section: Activity" [level=2] [ref=e254]':
+                - heading "Activity" [level=2] [ref=e255]
+                - 'button "Copy link to this section: Activity" [ref=e256] [cursor=pointer]': link
+              - paragraph [ref=e257]:
+                - text: To use Compose in an activity, you must use
+                - link "ComponentActivity" [ref=e258] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/ComponentActivity
+                  - code [ref=e259]: ComponentActivity
+                - text: ", a subclass of"
+                - code [ref=e260]: Activity
+                - text: that provides the appropriate
+                - code [ref=e261]: LifecycleOwner
+                - text: and components to Compose. It also provides additional APIs that decouple your code from overriding methods in your activity class.
+                - link "Activity Compose" [ref=e262] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary
+                - text: exposes these APIs to composables such that overriding methods outside of your composables or retrieving an explicit
+                - code [ref=e263]: Activity
+                - text: instance is no longer required. Moreover, these APIs ensure that they are only initialized once, survive recomposition, and clean up properly if the composable is removed from the composition.
+              - 'heading "Activity Result Copy link to this section: Activity Result" [level=3] [ref=e264]':
+                - heading "Activity Result" [level=3] [ref=e265]
+                - 'button "Copy link to this section: Activity Result" [ref=e266] [cursor=pointer]': link
+              - paragraph [ref=e267]:
+                - text: The
+                - link "rememberLauncherForActivityResult()" [ref=e268] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#rememberlauncherforactivityresult
+                  - code [ref=e269]: rememberLauncherForActivityResult()
+                - text: API allows you to
+                - link "get a result from an activity" [ref=e270] [cursor=pointer]:
+                  - /url: /training/basics/intents/result
+                - text: "in your composable:"
+              - paragraph
+              - generic [ref=e272]:
+                - text: "@Composable fun GetContentExample() { var imageUri by remember { mutableStateOf<Uri?>(null) } val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> imageUri = uri } Column { Button(onClick = { launcher.launch(\"image/*\") }) { Text(text = \"Load Image\") } Image( painter = rememberAsyncImagePainter(imageUri), contentDescription = \"My Image\" ) } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e274] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L79-L94
+              - paragraph
+              - paragraph [ref=e275]:
+                - text: This example demonstrates a simple
+                - link "GetContent()" [ref=e276] [cursor=pointer]:
+                  - /url: /reference/androidx/activity/result/contract/ActivityResultContracts.GetContent
+                  - code [ref=e277]: GetContent()
+                - text: contract. Tapping the button launches the request. The trailing lambda for
+                - link "rememberLauncherForActivityResult()" [ref=e278] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#rememberlauncherforactivityresult
+                  - code [ref=e279]: rememberLauncherForActivityResult()
+                - text: is invoked once the user selects an image and returns to the launching activity. This loads the selected image using Coil’s
+                - code [ref=e280]: rememberImagePainter()
+                - text: function.
+              - paragraph [ref=e281]:
+                - text: Any subclass of
+                - link "ActivityResultContract" [ref=e282] [cursor=pointer]:
+                  - /url: /reference/androidx/activity/result/contract/ActivityResultContract
+                  - code [ref=e283]: ActivityResultContract
+                - text: can be used as the first argument to
+                - link "rememberLauncherForActivityResult()" [ref=e284] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#rememberlauncherforactivityresult
+                  - code [ref=e285]: rememberLauncherForActivityResult()
+                - text: . This means that you can use this technique to request content from the framework and in other common patterns. You can also create your own
+                - link "custom contracts" [ref=e286] [cursor=pointer]:
+                  - /url: /training/basics/intents/result#custom
+                - text: and use them with this technique.
+              - complementary [ref=e287]:
+                - text: error
+                - strong [ref=e288]: "Caution:"
+                - generic [ref=e289]:
+                  - text: This example shows how to launch a request from a user interaction. In this case from an
+                  - code [ref=e290]: onClick()
+                  - text: listener. If you attempt to launch a request from inside the composable you’ll get a runtime error because the
+                  - link "ActivityResultLauncher" [ref=e291] [cursor=pointer]:
+                    - /url: /reference/androidx/activity/result/ActivityResultLauncher
+                    - code [ref=e292]: ActivityResultLauncher
+                  - text: has not been initialised at this point. If you need to trigger the launch following composition you’ll need to call the
+                  - link "launch()" [ref=e293] [cursor=pointer]:
+                    - /url: /reference/androidx/activity/result/ActivityResultLauncher#launch(I)
+                    - code [ref=e294]: launch()
+                  - text: method from inside a
+                  - link "LaunchedEffect" [ref=e295] [cursor=pointer]:
+                    - /url: /reference/kotlin/androidx/compose/runtime/LaunchedEffect.composable#LaunchedEffect(kotlin.Any,kotlin.coroutines.SuspendFunction1)
+                    - code [ref=e296]: LaunchedEffect
+                  - text: or
+                  - link "DisposableEffect" [ref=e297] [cursor=pointer]:
+                    - /url: /reference/kotlin/androidx/compose/runtime/DisposableEffect.composable#DisposableEffect(kotlin.Any,kotlin.Function1)
+                    - code [ref=e298]: DisposableEffect
+                  - text: block.
+              - heading "Requesting runtime permissions" [level=3] [ref=e299]
+              - paragraph [ref=e300]:
+                - text: The same Activity Result API and
+                - link "rememberLauncherForActivityResult()" [ref=e301] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#rememberlauncherforactivityresult
+                  - code [ref=e302]: rememberLauncherForActivityResult()
+                - text: explained above can be used to
+                - link "request runtime permissions" [ref=e303] [cursor=pointer]:
+                  - /url: /training/permissions/requesting#allow-system-manage-request-code
+                - text: using the
+                - link "RequestPermission" [ref=e304] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/result/contract/ActivityResultContracts.RequestPermission
+                  - code [ref=e305]: RequestPermission
+                - text: contract for a single permission or
+                - link "RequestMultiplePermissions" [ref=e306] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/result/contract/ActivityResultContracts.RequestMultiplePermissions
+                  - code [ref=e307]: RequestMultiplePermissions
+                - text: contract for multiple permissions.
+              - paragraph [ref=e308]:
+                - text: The
+                - link "Accompanist Permissions library" [ref=e309] [cursor=pointer]:
+                  - /url: https://google.github.io/accompanist/permissions/
+                - text: can also be used a layer above those APIs to map the current granted state for permissions into State that your Compose UI can use.
+              - heading "Handling the system back button" [level=3] [ref=e310]
+              - paragraph [ref=e311]:
+                - text: To
+                - link "provide custom back navigation" [ref=e312] [cursor=pointer]:
+                  - /url: /guide/navigation/navigation-custom-back
+                - text: and override the default behavior of the system back button from within your composable, your composable can use a
+                - link "BackHandler" [ref=e313] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#backhandler
+                  - code [ref=e314]: BackHandler
+                - text: "to intercept that event:"
+              - paragraph
+              - generic [ref=e316]:
+                - text: "var backHandlingEnabled by remember { mutableStateOf(true) } BackHandler(backHandlingEnabled) { // Handle back press }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e318] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L100-L103
+              - paragraph
+              - paragraph [ref=e319]:
+                - text: The first argument controls whether the
+                - link "BackHandler" [ref=e320] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#backhandler
+                  - code [ref=e321]: BackHandler
+                - text: is currently enabled; you can use this argument to temporarily disable your handler based on the state of your component. The trailing lambda will be invoked if the user triggers a system back event, and the
+                - link "BackHandler" [ref=e322] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/activity/compose/package-summary#backhandler
+                  - code [ref=e323]: BackHandler
+                - text: is currently enabled.
+              - complementary [ref=e324]:
+                - text: error
+                - strong [ref=e325]: "Caution:"
+                - generic [ref=e326]:
+                  - text: While it is possible to add multiple back handlers to any composition, the system back event is handled and consumed by the innermost
+                  - emphasis [ref=e327]: enabled
+                  - code [ref=e328]: BackHandler
+                  - text: . In other words, at most one
+                  - code [ref=e329]: BackHandler
+                  - text: is active at any time.
+              - heading "ViewModel" [level=2] [ref=e330]:
+                - code [ref=e331]: ViewModel
+              - paragraph [ref=e332]:
+                - text: If you use the
+                - link "Architecture Components ViewModel" [ref=e333] [cursor=pointer]:
+                  - /url: /topic/libraries/architecture/viewmodel
+                - text: library, you can access a
+                - link "ViewModel" [ref=e334] [cursor=pointer]:
+                  - /url: /reference/androidx/lifecycle/ViewModel
+                  - code [ref=e335]: ViewModel
+                - text: from any composable by calling the
+                - link "viewModel()" [ref=e336] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/lifecycle/viewmodel/compose/package-summary#viewmodel
+                  - code [ref=e337]: viewModel()
+                - text: "function. Add the following dependency to your Gradle file:"
+              - generic [ref=e339]:
+                - tablist [ref=e340]:
+                  - generic [ref=e341]:
+                    - tab "Groovy" [selected] [ref=e342]:
+                      - button "Groovy" [expanded] [ref=e343] [cursor=pointer]
+                    - tab "Kotlin" [ref=e344]:
+                      - button "Kotlin" [ref=e345] [cursor=pointer]
+                    - text: arrow_drop_down
+                - tabpanel "Groovy" [ref=e346]:
+                  - generic [ref=e348]: "dependencies { implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0' }"
+              - paragraph [ref=e349]:
+                - text: You can then use the
+                - code [ref=e350]: viewModel()
+                - text: function in your code.
+              - paragraph
+              - generic [ref=e352]:
+                - text: "class MyViewModel : ViewModel() { /*...*/ } // import androidx.lifecycle.viewmodel.compose.viewModel @Composable fun MyScreen( viewModel: MyViewModel = viewModel() ) { // use viewModel here }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e354] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L109-L117
+              - paragraph
+              - paragraph [ref=e355]:
+                - code [ref=e356]: viewModel()
+                - text: returns an existing
+                - code [ref=e357]: ViewModel
+                - text: or creates a new one. By default, the returned
+                - code [ref=e358]: ViewModel
+                - text: is scoped to the enclosing activity, fragment or navigation destination, and is retained as long as the scope is alive.
+              - paragraph [ref=e359]:
+                - text: For example, if the composable is used in an activity,
+                - code [ref=e360]: viewModel()
+                - text: returns the same instance until the activity is finished or the process is killed.
+              - paragraph
+              - generic [ref=e362]:
+                - text: "class MyViewModel : ViewModel() { /*...*/ } // import androidx.lifecycle.viewmodel.compose.viewModel @Composable fun MyScreen( // Returns the same instance as long as the activity is alive, // just as if you grabbed the instance from an Activity or Fragment viewModel: MyViewModel = viewModel() ) { /* ... */ } @Composable fun MyScreen2( viewModel: MyViewModel = viewModel() // Same instance as in MyScreen ) { /* ... */ }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e364] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L123-L135
+              - paragraph
+              - heading "Usage guidelines" [level=3] [ref=e365]
+              - paragraph [ref=e366]:
+                - text: You usually access
+                - code [ref=e367]: ViewModel
+                - text: instances at
+                - emphasis [ref=e368]: screen-level
+                - text: composables, that is, close to a root composable called from an activity, fragment, or destination of a Navigation graph. This is because
+                - code [ref=e369]: ViewModel
+                - text: s are, by default, scoped to those
+                - emphasis [ref=e370]: screen level
+                - text: objects. Read more about a
+                - code [ref=e371]: ViewModel
+                - text: "'s"
+                - link "lifecycle and scope here" [ref=e372] [cursor=pointer]:
+                  - /url: /topic/libraries/architecture/viewmodel#lifecycle
+                - text: .
+              - paragraph [ref=e373]:
+                - text: Try to avoid passing down
+                - code [ref=e374]: ViewModel
+                - text: instances to other composables as this can make those composables more difficult to test and can break
+                - link "previews" [ref=e375] [cursor=pointer]:
+                  - /url: /develop/ui/compose/tooling/previews
+                - text: . Instead, pass only the data and functions they need as parameters.
+              - paragraph [ref=e376]:
+                - text: You
+                - emphasis [ref=e377]: can
+                - text: use
+                - code [ref=e378]: ViewModel
+                - text: instances to manage state for
+                - emphasis [ref=e379]: sub screen-level
+                - text: composables, however, be aware of the
+                - code [ref=e380]: ViewModel
+                - text: "'s"
+                - link "lifecycle and scope" [ref=e381] [cursor=pointer]:
+                  - /url: /topic/libraries/architecture/viewmodel#lifecycle
+                - text: . If the composable is self-contained, you may want to consider using
+                - link "Hilt" [ref=e382] [cursor=pointer]:
+                  - /url: "#hilt"
+                - text: to inject the
+                - code [ref=e383]: ViewModel
+                - text: to avoid having to pass dependencies from parent composables.
+              - paragraph [ref=e384]:
+                - text: If your
+                - code [ref=e385]: ViewModel
+                - text: has dependencies,
+                - code [ref=e386]: viewModel()
+                - text: takes an optional
+                - link "ViewModelProvider.Factory" [ref=e387] [cursor=pointer]:
+                  - /url: /reference/androidx/lifecycle/ViewModelProvider.Factory
+                  - code [ref=e388]: ViewModelProvider.Factory
+                - text: as a parameter.
+              - paragraph [ref=e389]:
+                - text: For more information about
+                - code [ref=e390]: ViewModel
+                - text: in Compose and how instances are used with the Navigation Compose library, or activities and fragments, see the
+                - link "Interoperability docs" [ref=e391] [cursor=pointer]:
+                  - /url: /develop/ui/compose/interop#viewmodel
+                - text: .
+              - heading "Streams of data" [level=2] [ref=e392]
+              - paragraph [ref=e393]: "Compose comes with extensions for Android's most popular stream-based solutions. Each of these extensions is provided by a different artifact:"
+              - list [ref=e394]:
+                - listitem [ref=e395]:
+                  - code [ref=e396]:
+                    - link "LiveData.observeAsState()" [ref=e397] [cursor=pointer]:
+                      - /url: /reference/kotlin/androidx/compose/runtime/livedata/package-summary#observeAsState(androidx.lifecycle.LiveData)
+                  - text: included in the
+                  - code [ref=e398]: androidx.compose.runtime:runtime-livedata:$composeVersion
+                  - text: artifact.
+                - listitem [ref=e399]:
+                  - code [ref=e400]:
+                    - link "Flow.collectAsState()" [ref=e401] [cursor=pointer]:
+                      - /url: /reference/kotlin/androidx/compose/runtime/package-summary#collectAsState(kotlinx.coroutines.flow.StateFlow,kotlin.coroutines.CoroutineContext)
+                  - text: doesn't require extra dependencies.
+                - listitem [ref=e402]:
+                  - code [ref=e403]:
+                    - link "Observable.subscribeAsState()" [ref=e404] [cursor=pointer]:
+                      - /url: /reference/kotlin/androidx/compose/runtime/rxjava2/package-summary#subscribeAsState(io.reactivex.Observable,kotlin.Any)
+                  - text: included in the
+                  - code [ref=e405]: androidx.compose.runtime:runtime-rxjava2:$composeVersion
+                  - text: or
+                  - code [ref=e406]: androidx.compose.runtime:runtime-rxjava3:$composeVersion
+                  - text: artifact.
+              - paragraph [ref=e407]:
+                - text: These artifacts register as a listener and represent the values as a
+                - link "State" [ref=e408] [cursor=pointer]:
+                  - /url: /reference/kotlin/androidx/compose/runtime/State
+                  - code [ref=e409]: State
+                - text: . Whenever a new value is emitted, Compose recomposes those parts of the UI where that
+                - code [ref=e410]: state.value
+                - text: is used. For example, in this code,
+                - code [ref=e411]: ShowData
+                - text: recomposes every time
+                - code [ref=e412]: exampleLiveData
+                - text: emits a new value.
+              - paragraph
+              - generic [ref=e414]:
+                - text: "// import androidx.lifecycle.viewmodel.compose.viewModel @Composable fun MyScreen( viewModel: MyViewModel = viewModel() ) { val dataExample = viewModel.exampleLiveData.observeAsState() // Because the state is read here, // MyScreen recomposes whenever dataExample changes. dataExample.value?.let { ShowData(dataExample) } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e416] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L145-L157
+              - paragraph
+              - heading "Asynchronous operations in Compose" [level=2] [ref=e417]
+              - paragraph [ref=e418]: Jetpack Compose lets you execute asynchronous operations using coroutines from within your composables.
+              - paragraph [ref=e419]:
+                - text: See the
+                - code [ref=e420]: LaunchedEffect
+                - text: ","
+                - code [ref=e421]: produceState
+                - text: ", and"
+                - code [ref=e422]: rememberCoroutineScope
+                - text: APIs in the
+                - link "side effects documentation" [ref=e423] [cursor=pointer]:
+                  - /url: /develop/ui/compose/side-effects
+                - text: for more information.
+              - heading "Navigation" [level=2] [ref=e424]
+              - paragraph [ref=e425]:
+                - text: The
+                - link "Navigation component" [ref=e426] [cursor=pointer]:
+                  - /url: /guide/navigation/get-started
+                - text: provides support for Jetpack Compose applications. See
+                - link "Navigating with Compose" [ref=e427] [cursor=pointer]:
+                  - /url: /guide/navigation#framework-options
+                - text: and
+                - link "Migrate Jetpack Navigation to Navigation Compose" [ref=e428] [cursor=pointer]:
+                  - /url: /develop/ui/compose/migrate/migration-scenarios/navigation
+                - text: for more information.
+              - heading "Hilt" [level=2] [ref=e429]
+              - paragraph [ref=e430]: Hilt is the recommended solution for dependency injection in Android apps, and works seamlessly with Compose.
+              - paragraph [ref=e431]:
+                - text: The
+                - code [ref=e432]: viewModel()
+                - text: function mentioned in the
+                - link "ViewModel section" [ref=e433] [cursor=pointer]:
+                  - /url: /develop/ui/compose/libraries#viewmodel
+                - text: automatically uses the ViewModel that Hilt constructs with the
+                - code [ref=e434]: "@HiltViewModel"
+                - text: annotation. We've provided documentation with information about
+                - link "Hilt's ViewModel integration" [ref=e435] [cursor=pointer]:
+                  - /url: /training/dependency-injection/hilt-jetpack#viewmodels
+                - text: .
+              - paragraph
+              - generic [ref=e437]:
+                - text: "@HiltViewModel class MyViewModel @Inject constructor( private val savedStateHandle: SavedStateHandle, private val repository: ExampleRepository ) : ViewModel() { /* ... */ } // import androidx.lifecycle.viewmodel.compose.viewModel @Composable fun MyScreen( viewModel: MyViewModel = viewModel() ) { /* ... */ }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e439] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L167-L178
+              - paragraph
+              - heading "Hilt and Navigation" [level=3] [ref=e440]
+              - paragraph [ref=e441]: "Hilt also integrates with the Navigation Compose library. Add the following additional dependencies to your Gradle file:"
+              - generic [ref=e443]:
+                - tablist [ref=e444]:
+                  - generic [ref=e445]:
+                    - tab "Groovy" [selected] [ref=e446]:
+                      - button "Groovy" [expanded] [ref=e447] [cursor=pointer]
+                    - tab "Kotlin" [ref=e448]:
+                      - button "Kotlin" [ref=e449] [cursor=pointer]
+                    - text: arrow_drop_down
+                - tabpanel "Groovy" [ref=e450]:
+                  - generic [ref=e452]: "dependencies { implementation 'androidx.hilt:hilt-navigation-compose:1.3.0' }"
+              - paragraph [ref=e453]:
+                - text: When using Navigation Compose, always use the
+                - code [ref=e454]: hiltViewModel
+                - text: composable function to obtain an instance of your
+                - code [ref=e455]: "@HiltViewModel"
+                - text: annotated
+                - code [ref=e456]: ViewModel
+                - text: . This works with fragments or activities that are annotated with
+                - code [ref=e457]: "@AndroidEntryPoint"
+                - text: .
+              - paragraph [ref=e458]:
+                - text: For example, if
+                - code [ref=e459]: ExampleScreen
+                - text: is a destination in a navigation graph, call
+                - code [ref=e460]: hiltViewModel()
+                - text: to get an instance of
+                - code [ref=e461]: ExampleViewModel
+                - text: "scoped to the destination as shown in the code snippet below:"
+              - paragraph
+              - generic [ref=e463]:
+                - text: "// import androidx.hilt.navigation.compose.hiltViewModel @Composable fun MyApp() { val navController = rememberNavController() val startRoute = \"example\" NavHost(navController, startDestination = startRoute) { composable(\"example\") { backStackEntry -> // Creates a ViewModel from the current BackStackEntry // Available in the androidx.hilt:hilt-navigation-compose artifact val viewModel = hiltViewModel<MyViewModel>() MyScreen(viewModel) } /* ... */ } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e465] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L187-L202
+              - paragraph
+              - paragraph [ref=e466]:
+                - text: If you need to retrieve the instance of a
+                - code [ref=e467]: ViewModel
+                - text: scoped to
+                - link "navigation routes" [ref=e468] [cursor=pointer]:
+                  - /url: /guide/navigation/design/nested-graphs#compose
+                - text: or
+                - link "the navigation graph" [ref=e469] [cursor=pointer]:
+                  - /url: /guide/navigation/use-graph/programmatic#share-ui-related-data-between-destinations-with-viewmodel
+                - text: instead, use the
+                - code [ref=e470]: hiltViewModel
+                - text: composable function and pass the corresponding
+                - code [ref=e471]: backStackEntry
+                - text: "as a parameter:"
+              - paragraph
+              - generic [ref=e473]:
+                - text: "// import androidx.hilt.navigation.compose.hiltViewModel // import androidx.navigation.compose.getBackStackEntry @Composable fun MyApp() { val navController = rememberNavController() val startRoute = \"example\" val innerStartRoute = \"exampleWithRoute\" NavHost(navController, startDestination = startRoute) { navigation(startDestination = innerStartRoute, route = \"Parent\") { // ... composable(\"exampleWithRoute\") { backStackEntry -> val parentEntry = remember(backStackEntry) { navController.getBackStackEntry(\"Parent\") } val parentViewModel = hiltViewModel<ParentViewModel>(parentEntry) ExampleWithRouteScreen(parentViewModel) } } } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e475] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L217-L237
+              - paragraph
+              - heading "Paging" [level=2] [ref=e476]
+              - paragraph [ref=e477]:
+                - text: The
+                - link "Paging library" [ref=e478] [cursor=pointer]:
+                  - /url: /topic/libraries/architecture/paging
+                - text: makes it easier for you to load data gradually and it's supported in Compose. The
+                - link "Paging release page" [ref=e479] [cursor=pointer]:
+                  - /url: /jetpack/androidx/releases/paging
+                - text: contains information about the extra
+                - code [ref=e480]: paging-compose
+                - text: dependency that needs to be added to the project and its version.
+              - paragraph [ref=e481]: "Here's an example of the Paging library's Compose APIs:"
+              - paragraph
+              - generic [ref=e483]:
+                - text: "@Composable fun MyScreen(flow: Flow<PagingData<String>>) { val lazyPagingItems = flow.collectAsLazyPagingItems() LazyColumn { items( lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it } ) { index -> val item = lazyPagingItems[index] Text(\"Item is $item\") } } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e485] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L247-L259
+              - paragraph
+              - paragraph [ref=e486]:
+                - text: Check out the
+                - link "Lists and grids documentation" [ref=e487] [cursor=pointer]:
+                  - /url: /develop/ui/compose/lists
+                - text: for more information about using Paging in Compose.
+              - heading "Maps" [level=2] [ref=e488]
+              - paragraph [ref=e489]:
+                - text: You can use the
+                - link "Maps Compose" [ref=e490] [cursor=pointer]:
+                  - /url: https://developers.google.com/maps/documentation/android-sdk/maps-compose
+                - text: "library to provide Google Maps in your app. Here's a usage example:"
+              - paragraph
+              - generic [ref=e492]:
+                - text: "@Composable fun MapsExample() { val singapore = LatLng(1.35, 103.87) val cameraPositionState = rememberCameraPositionState { position = CameraPosition.fromLatLngZoom(singapore, 10f) } GoogleMap( modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState ) { Marker( state = remember { MarkerState(position = singapore) }, title = \"Singapore\", snippet = \"Marker in Singapore\" ) } }"
+                - link "ComposeWithOtherLibraries.kt" [ref=e494] [cursor=pointer]:
+                  - /url: https://github.com/android/snippets/blob/8a83f8efe9ce36a09fb8026727a2310d081ac616/compose/snippets/src/main/java/com/example/compose/snippets/interop/ComposeWithOtherLibraries.kt#L265-L281
+              - paragraph
+              - generic [ref=e495]:
+                - generic [ref=e496]:
+                  - heading "Recommended for you" [level=2] [ref=e497]
+                  - button "About recommendations" [ref=e499] [cursor=pointer]:
+                    - img [ref=e500]
+                - generic [ref=e503]:
+                  - generic [ref=e504]:
+                    - heading "Side-effects in Compose" [level=3] [ref=e505]:
+                      - link "Side-effects in Compose" [ref=e506] [cursor=pointer]:
+                        - /url: https://developer.android.com/develop/ui/compose/side-effects?rec=CjpodHRwczovL2RldmVsb3Blci5hbmRyb2lkLmNvbS9kZXZlbG9wL3VpL2NvbXBvc2UvbGlicmFyaWVzEAEYCSABKAMwFDoDMy43
+                    - paragraph [ref=e507]: Explains how to safely manage and execute side-effects in Jetpack Compose applications using various Effect APIs for more predictable behavior and proper lifecycle management.
+                    - generic [ref=e508]: Updated May 20, 2026
+                  - generic [ref=e509]:
+                    - heading "State and Jetpack Compose" [level=3] [ref=e510]:
+                      - link "State and Jetpack Compose" [ref=e511] [cursor=pointer]:
+                        - /url: https://developer.android.com/develop/ui/compose/state?rec=CjpodHRwczovL2RldmVsb3Blci5hbmRyb2lkLmNvbS9kZXZlbG9wL3VpL2NvbXBvc2UvbGlicmFyaWVzEAIYCSABKAQwJDoDMy43
+                    - paragraph [ref=e512]: This document explains what state is in an Android app, how to manage it in Jetpack Compose using APIs like remember and mutableStateOf, how state hoisting improves composable reusability, and how to restore state across configuration changes with rememberSaveable. It also covers integrating various observable types for state management.
+                    - generic [ref=e513]: Updated May 20, 2026
+                  - generic [ref=e514]:
+                    - heading "Save UI state in Compose" [level=3] [ref=e515]:
+                      - link "Save UI state in Compose" [ref=e516] [cursor=pointer]:
+                        - /url: https://developer.android.com/develop/ui/compose/state-saving?rec=CjpodHRwczovL2RldmVsb3Blci5hbmRyb2lkLmNvbS9kZXZlbG9wL3VpL2NvbXBvc2UvbGlicmFyaWVzEAMYCSABKAUwFzoDMy43
+                    - paragraph [ref=e517]: "This document explains how to save and restore UI state in Jetpack Compose, covering different APIs like `rememberSaveable` and `SavedStateHandle` for various scenarios including configuration changes and system-initiated process death."
+                    - generic [ref=e518]: Updated May 20, 2026
+            - form "Was this helpful?" [ref=e520]:
+              - generic [ref=e521]: Was this helpful?
+              - generic [ref=e522]:
+                - button "Helpful" [ref=e523] [cursor=pointer]:
+                  - img
+                - button "Not helpful" [ref=e524] [cursor=pointer]:
+                  - img
+          - generic [ref=e526]:
+            - paragraph [ref=e527]:
+              - text: Content and code samples on this page are subject to the licenses described in the
+              - link "Content License" [ref=e528] [cursor=pointer]:
+                - /url: /license
+              - text: . Java and OpenJDK are trademarks or registered trademarks of Oracle and/or its affiliates.
+            - paragraph [ref=e529]: Last updated 2026-05-29 UTC.
+      - navigation "Promotions" [ref=e531]:
+        - list [ref=e532]:
+          - listitem [ref=e533]:
+            - link "X X" [ref=e534] [cursor=pointer]:
+              - /url: //x.com/AndroidDev
+              - img "X" [ref=e536]
+              - text: X
+            - generic [ref=e537]: Follow @AndroidDev on X
+          - listitem [ref=e538]:
+            - link "YouTube YouTube" [ref=e539] [cursor=pointer]:
+              - /url: //www.youtube.com/user/androiddevelopers
+              - img "YouTube" [ref=e541]
+              - text: YouTube
+            - generic [ref=e542]: Check out Android Developers on YouTube
+          - listitem [ref=e543]:
+            - link "LinkedIn LinkedIn" [ref=e544] [cursor=pointer]:
+              - /url: //www.linkedin.com/showcase/androiddev
+              - img "LinkedIn" [ref=e546]
+              - text: LinkedIn
+            - generic [ref=e547]: Connect with the Android Developers community on LinkedIn
+      - navigation "Footer links" [ref=e549]:
+        - list [ref=e550]:
+          - listitem [ref=e551]:
+            - heading "More Android" [level=3] [ref=e552]
+            - list [ref=e553]:
+              - listitem [ref=e554]:
+                - link "Android" [ref=e555] [cursor=pointer]:
+                  - /url: //www.android.com
+              - listitem [ref=e556]:
+                - link "Android for Enterprise" [ref=e557] [cursor=pointer]:
+                  - /url: //www.android.com/enterprise/
+              - listitem [ref=e558]:
+                - link "Security" [ref=e559] [cursor=pointer]:
+                  - /url: //www.android.com/security-center/
+              - listitem [ref=e560]:
+                - link "Source" [ref=e561] [cursor=pointer]:
+                  - /url: //source.android.com
+              - listitem [ref=e562]:
+                - link "News" [ref=e563] [cursor=pointer]:
+                  - /url: /news
+              - listitem [ref=e564]:
+                - link "Blog" [ref=e565] [cursor=pointer]:
+                  - /url: //android-developers.googleblog.com/
+              - listitem [ref=e566]:
+                - link "Podcasts" [ref=e567] [cursor=pointer]:
+                  - /url: /podcasts
+          - listitem [ref=e568]:
+            - heading "Discover" [level=3] [ref=e569]
+            - list [ref=e570]:
+              - listitem [ref=e571]:
+                - link "Gaming" [ref=e572] [cursor=pointer]:
+                  - /url: /games
+              - listitem [ref=e573]:
+                - link "Machine Learning" [ref=e574] [cursor=pointer]:
+                  - /url: /ml
+              - listitem [ref=e575]:
+                - link "Health & Fitness" [ref=e576] [cursor=pointer]:
+                  - /url: /health-and-fitness
+              - listitem [ref=e577]:
+                - link "Camera & Media" [ref=e578] [cursor=pointer]:
+                  - /url: /media
+              - listitem [ref=e579]:
+                - link "Privacy" [ref=e580] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=e581]:
+                - link "5G" [ref=e582] [cursor=pointer]:
+                  - /url: /training/connectivity/5g
+          - listitem [ref=e583]:
+            - heading "Android Devices" [level=3] [ref=e584]
+            - list [ref=e585]:
+              - listitem [ref=e586]:
+                - link "Large screens" [ref=e587] [cursor=pointer]:
+                  - /url: /large-screens
+              - listitem [ref=e588]:
+                - link "Wear OS" [ref=e589] [cursor=pointer]:
+                  - /url: /wear
+              - listitem [ref=e590]:
+                - link "ChromeOS devices" [ref=e591] [cursor=pointer]:
+                  - /url: /chrome-os
+              - listitem [ref=e592]:
+                - link "Android for cars" [ref=e593] [cursor=pointer]:
+                  - /url: /cars
+              - listitem [ref=e594]:
+                - link "Android TV" [ref=e595] [cursor=pointer]:
+                  - /url: /tv
+          - listitem [ref=e596]:
+            - heading "Releases" [level=3] [ref=e597]
+            - list [ref=e598]:
+              - listitem [ref=e599]:
+                - link "Android 15" [ref=e600] [cursor=pointer]:
+                  - /url: /about/versions/15
+              - listitem [ref=e601]:
+                - link "Android 14" [ref=e602] [cursor=pointer]:
+                  - /url: /about/versions/14
+              - listitem [ref=e603]:
+                - link "Android 13" [ref=e604] [cursor=pointer]:
+                  - /url: /about/versions/13
+              - listitem [ref=e605]:
+                - link "Android 12" [ref=e606] [cursor=pointer]:
+                  - /url: /about/versions/12
+              - listitem [ref=e607]:
+                - link "Android 11" [ref=e608] [cursor=pointer]:
+                  - /url: /about/versions/11
+              - listitem [ref=e609]:
+                - link "Android 10" [ref=e610] [cursor=pointer]:
+                  - /url: /about/versions/10
+              - listitem [ref=e611]:
+                - link "Pie" [ref=e612] [cursor=pointer]:
+                  - /url: /about/versions/pie
+          - listitem [ref=e613]:
+            - heading "Documentation and Downloads" [level=3] [ref=e614]
+            - list [ref=e615]:
+              - listitem [ref=e616]:
+                - link "Android Studio guide" [ref=e617] [cursor=pointer]:
+                  - /url: /studio/intro
+              - listitem [ref=e618]:
+                - link "Developers guides" [ref=e619] [cursor=pointer]:
+                  - /url: /guide
+              - listitem [ref=e620]:
+                - link "API reference" [ref=e621] [cursor=pointer]:
+                  - /url: /reference
+              - listitem [ref=e622]:
+                - link "Download Studio" [ref=e623] [cursor=pointer]:
+                  - /url: /studio
+              - listitem [ref=e624]:
+                - link "Android NDK" [ref=e625] [cursor=pointer]:
+                  - /url: /ndk
+          - listitem [ref=e626]:
+            - heading "Support" [level=3] [ref=e627]
+            - list [ref=e628]:
+              - listitem [ref=e629]:
+                - link "Report platform bug" [ref=e630] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=190923&template=841312
+              - listitem [ref=e631]:
+                - link "Report documentation bug" [ref=e632] [cursor=pointer]:
+                  - /url: //issuetracker.google.com/issues/new?component=192697
+              - listitem [ref=e633]:
+                - link "Google Play support" [ref=e634] [cursor=pointer]:
+                  - /url: //support.google.com/googleplay/android-developer
+              - listitem [ref=e635]:
+                - link "Join research studies" [ref=e636] [cursor=pointer]:
+                  - /url: https://g.co/userresearch/androiddeveloperfooter
+      - generic [ref=e638]:
+        - navigation "Other Google Developers websites" [ref=e639]:
+          - link "Google Developers" [ref=e640] [cursor=pointer]:
+            - /url: https://developers.google.com/
+            - img "Google Developers" [ref=e642]
+          - list [ref=e643]:
+            - listitem [ref=e644]:
+              - link "Android" [ref=e645] [cursor=pointer]:
+                - /url: //developer.android.com
+            - listitem [ref=e646]:
+              - link "Chrome" [ref=e647] [cursor=pointer]:
+                - /url: //developer.chrome.com/home
+            - listitem [ref=e648]:
+              - link "Firebase" [ref=e649] [cursor=pointer]:
+                - /url: //firebase.google.com
+            - listitem [ref=e650]:
+              - link "Google Cloud Platform" [ref=e651] [cursor=pointer]:
+                - /url: //cloud.google.com
+            - listitem [ref=e652]:
+              - link "All products" [ref=e653] [cursor=pointer]:
+                - /url: //developers.google.com/products/
+        - navigation "Utility links" [ref=e654]:
+          - list [ref=e655]:
+            - listitem [ref=e656]:
+              - link "Privacy" [ref=e657] [cursor=pointer]:
+                - /url: //policies.google.com/privacy
+            - listitem [ref=e658]:
+              - text: "|"
+              - link "License" [ref=e659] [cursor=pointer]:
+                - /url: /license
+            - listitem [ref=e660]:
+              - text: "|"
+              - link "Brand guidelines" [ref=e661] [cursor=pointer]:
+                - /url: /distribute/marketing-tools/brand-guidelines
+            - text: "|"
+            - listitem [ref=e662]:
+              - generic [ref=e663]: Get news and tips by email
+              - link "Subscribe" [ref=e664] [cursor=pointer]:
+                - /url: /updates
+          - generic "Select your language preference." [ref=e665]:
+            - button "English" [ref=e666] [cursor=pointer]:
+              - img
+              - generic [ref=e667]: English
+              - img

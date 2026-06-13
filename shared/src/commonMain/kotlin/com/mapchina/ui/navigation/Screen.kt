@@ -1,8 +1,9 @@
 package com.mapchina.ui.navigation
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable sealed class Screen
+@Serializable sealed class Screen : NavKey
 
 @Serializable data object MapScreen : Screen()
 @Serializable data object AttractionsScreen : Screen()
@@ -24,3 +25,4 @@ import kotlinx.serialization.Serializable
 @Serializable data class CustomAttractionScreen(val regionId: String, val latitude: String = "0.0", val longitude: String = "0.0") : Screen()
 @Serializable data object CommunityScreen : Screen()
 @Serializable data class PostDetailScreen(val postId: String) : Screen()
+@Serializable data object StatsScreen : Screen()

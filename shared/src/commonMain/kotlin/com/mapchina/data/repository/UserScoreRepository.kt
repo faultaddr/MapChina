@@ -2,7 +2,7 @@ package com.mapchina.data.repository
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 class UserScoreRepository(private val database: MapChinaDatabase) {
 

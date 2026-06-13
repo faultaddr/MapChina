@@ -59,7 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.mapchina.domain.model.FootprintLevel
@@ -81,7 +81,8 @@ enum class AttractionFilter(val label: String) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AttractionsScreen(
-    navController: NavHostController,
+    onNavigate: (NavKey) -> Unit,
+    onBack: () -> Unit,
     viewModel: AttractionViewModel? = null,
     modifier: Modifier = Modifier
 ) {
@@ -349,7 +350,7 @@ fun AttractionsScreen(
                         AttractionCard(
                             attraction = attraction,
                             onClick = {
-                                navController.navigate(AttractionDetailScreen(attraction.id))
+                                onNavigate(AttractionDetailScreen(attraction.id))
                             }
                         )
                     }
@@ -359,7 +360,7 @@ fun AttractionsScreen(
 
         // Premium FAB
         FloatingActionButton(
-            onClick = { navController.navigate(CustomAttractionScreen(regionId = "")) },
+            onClick = { onNavigate(CustomAttractionScreen(regionId = "")) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = bottomPadding + 16.dp),

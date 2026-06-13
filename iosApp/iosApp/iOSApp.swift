@@ -6,22 +6,22 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .ignoresSafeArea(.container, edges: .top)
         }
     }
 }
 
 struct ContentView: View {
     var body: some View {
-        ComposeView()
-            .ignoresSafeArea()
+        ComposeViewControllerWrapper()
+            .ignoresSafeArea(.container, edges: .top)
     }
 }
 
-struct ComposeView: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let controller = MainKt.MainViewController()
-        return controller.view
+struct ComposeViewControllerWrapper: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        return MainKtKt.MainViewController()
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }

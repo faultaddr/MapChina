@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -96,7 +97,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "用地图点亮你的中国足迹",
+            Copy.SLOGAN,
             color = MapChinaColors.TextSecondary,
             fontSize = 14.sp
         )

@@ -8,7 +8,9 @@ import com.mapchina.data.remote.BoundaryLoader
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
+import com.mapchina.platform.AndroidMapShareHelper
 import com.mapchina.platform.ExternalNavigator
+import com.mapchina.platform.MapShareHelper
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -20,4 +22,5 @@ actual val platformModule: Module = module {
     single { DevicePhotoProvider().apply { context = get<Context>() } }
     single { LocationProvider().apply { context = get<Context>() } }
     single { ExternalNavigator(get<Context>()) }
+    single<MapShareHelper> { AndroidMapShareHelper(get<Context>()) }
 }

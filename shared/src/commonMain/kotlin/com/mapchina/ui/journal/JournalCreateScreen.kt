@@ -59,9 +59,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import coil3.compose.AsyncImage
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -77,6 +79,7 @@ fun JournalCreateScreen(
     var description by remember { mutableStateOf("") }
     val createUi by viewModel.createUi.collectAsState()
     var showLocationSearch by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(attractionId) {
         attractionId?.let { viewModel.setInitialAttraction(it) }
@@ -95,9 +98,7 @@ fun JournalCreateScreen(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-            }
+            com.mapchina.ui.common.BackButton(onClick = onBack)
             Text(
                 "写游记",
                 color = MapChinaColors.TextPrimary,
@@ -176,6 +177,7 @@ fun JournalCreateScreen(
                     results = createUi.searchResults,
                     onQueryChange = { viewModel.searchLocations(it) },
                     onSelect = { item ->
+                        haptic.perform(HapticType.SELECTION)
                         viewModel.selectLocation(item)
                         showLocationSearch = false
                     }
@@ -262,6 +264,7 @@ fun JournalCreateScreen(
             Button(
                 onClick = {
                     if (title.isNotBlank()) {
+                        haptic.perform(HapticType.SUCCESS)
                         viewModel.createJournal(
                             title = title,
                             description = description,

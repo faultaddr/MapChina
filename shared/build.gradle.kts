@@ -10,7 +10,12 @@ plugins {
 kotlin {
     androidTarget()
 
-    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+        languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             baseName = "shared"
             isStatic = true
@@ -24,10 +29,12 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.materialIconsExtended)
-            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
-            implementation("org.jetbrains.androidx.navigation:navigation-runtime:2.8.0-alpha10")
+            implementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.1")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+            implementation("org.jetbrains.androidx.savedstate:savedstate:1.4.0")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             implementation("io.ktor:ktor-client-core:3.3.3")
             implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
@@ -40,13 +47,12 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
             implementation("app.cash.sqldelight:android-driver:2.0.2")
             implementation("io.insert-koin:koin-android:4.0.4")
-            implementation("com.amap.api:3dmap:10.0.600")
             implementation("androidx.exifinterface:exifinterface:1.4.2")
             implementation("androidx.ink:ink-authoring-compose:1.0.0")
             implementation("androidx.ink:ink-authoring:1.0.0")
