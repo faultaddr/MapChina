@@ -32,6 +32,8 @@ import com.mapchina.domain.model.UserAchievement
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 
 @Composable
 fun AchievementUnlockDialog(
@@ -40,6 +42,7 @@ fun AchievementUnlockDialog(
     onDismiss: () -> Unit,
     onShare: (() -> Unit)? = null
 ) {
+    val haptic = LocalHapticFeedback.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -86,13 +89,13 @@ fun AchievementUnlockDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = onDismiss,
+                        onClick = { haptic.perform(HapticType.LIGHT); onDismiss() },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.CardBackgroundLight)
                     ) { Text("继续探索") }
                     if (onShare != null) {
                         Button(
-                            onClick = onShare,
+                            onClick = { haptic.perform(HapticType.MEDIUM); onShare() },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
                         ) { Text("分享") }

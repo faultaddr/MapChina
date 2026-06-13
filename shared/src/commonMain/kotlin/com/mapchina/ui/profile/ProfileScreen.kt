@@ -65,6 +65,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.map.MapTheme
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.domain.model.AchievementRarity
+import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.domain.model.LEVEL_DEFINITIONS
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AchievementWithProgress
 import com.mapchina.ui.stats.StatsUi
@@ -92,6 +97,7 @@ fun ProfileScreen(
     settingsRepository: SettingsRepository? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel?.loadProfile() }
     val profile by (viewModel?.profile?.collectAsState() ?: remember { mutableStateOf(ProfileUi("未登录", null, null)) })
     val isLoggedIn by (viewModel?.isLoggedIn?.collectAsState() ?: remember { mutableStateOf(false) })
@@ -133,7 +139,7 @@ fun ProfileScreen(
                         subtitle = Copy.FEATURE_JOURNAL_SUBTITLE,
                         tint = MapChinaColors.Primary,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToJournals?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToJournals?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Default.WorkspacePremium,
@@ -141,7 +147,7 @@ fun ProfileScreen(
                         subtitle = Copy.FEATURE_BADGE_SUBTITLE,
                         tint = MapChinaColors.AccentGold,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToBadgeWall?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToBadgeWall?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Default.Map,
@@ -149,7 +155,7 @@ fun ProfileScreen(
                         subtitle = Copy.FEATURE_PROVINCE_SUBTITLE,
                         tint = MapChinaColors.FootprintDeep,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToProvinceConquest?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToProvinceConquest?.invoke() }
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -159,7 +165,7 @@ fun ProfileScreen(
                         subtitle = Copy.FEATURE_ATLAS_SUBTITLE,
                         tint = MapChinaColors.RarityEpic,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToAtlas?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToAtlas?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Default.Edit,
@@ -167,7 +173,7 @@ fun ProfileScreen(
                         subtitle = Copy.FEATURE_CARVING_SUBTITLE,
                         tint = Color(0xFF8B7355),
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToCarvings?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToCarvings?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Outlined.BarChart,
@@ -202,9 +208,9 @@ fun ProfileScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(Copy.SETTINGS, style = MapChinaTypography.Caption, color = MapChinaColors.TextTertiary, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(10.dp))
-                    SettingsRow(Copy.PHOTO_MARKERS, photoMarkersVisible, { photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
+                    SettingsRow(Copy.PHOTO_MARKERS, photoMarkersVisible, { haptic.perform(HapticType.SELECTION); photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
                     Spacer(modifier = Modifier.height(6.dp))
-                    SettingsRow(Copy.AUTO_FOOTPRINT, autoMarkFootprint, { autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
+                    SettingsRow(Copy.AUTO_FOOTPRINT, autoMarkFootprint, { haptic.perform(HapticType.SELECTION); autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
                     Spacer(modifier = Modifier.height(10.dp))
                     Text("地图主题", style = MapChinaTypography.Title, color = MapChinaColors.TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -223,7 +229,7 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel?.logout() }
+                        .clickable { haptic.perform(HapticType.WARNING); viewModel?.logout() }
                         .padding(vertical = 8.dp)
                 )
             }
@@ -488,6 +494,7 @@ fun LevelBadgeIcon(level: Int, modifier: Modifier = Modifier, useLightIcon: Bool
 
 @Composable
 private fun MapThemeSelector(settingsRepository: SettingsRepository?) {
+    val haptic = LocalHapticFeedback.current
     var selectedTheme by remember {
         mutableStateOf(MapTheme.fromName(settingsRepository?.getString("map_theme")))
     }
@@ -508,6 +515,7 @@ private fun MapThemeSelector(settingsRepository: SettingsRepository?) {
                     .background(MapChinaColors.Background)
                     .border(borderW, borderCol, RoundedCornerShape(8.dp))
                     .clickable {
+                        haptic.perform(HapticType.SELECTION)
                         selectedTheme = theme
                         settingsRepository?.setString("map_theme", theme.name)
                     }

@@ -53,6 +53,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.platform.rememberHapticFeedback
 import com.mapchina.ui.navigation.AppNavHost
 import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.navigation.AttractionsScreen
@@ -85,6 +88,8 @@ internal val ShareModeState = mutableStateOf(false)
 
 @Composable
 fun MapChinaApp(onSplashReady: () -> Unit = {}) {
+    val haptic = rememberHapticFeedback()
+    CompositionLocalProvider(LocalHapticFeedback provides haptic) {
     MapChinaTheme {
         var showSplash by remember { mutableStateOf(true) }
 
@@ -123,6 +128,7 @@ fun MapChinaApp(onSplashReady: () -> Unit = {}) {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -150,6 +156,7 @@ private fun MapChinaBottomBar(
     currentKey: NavKey,
     backStack: SnapshotStateList<NavKey>
 ) {
+    val haptic = LocalHapticFeedback.current
     Surface(
         color = MapChinaColors.SurfaceElevated,
         shadowElevation = 12.dp,
@@ -176,6 +183,7 @@ private fun MapChinaBottomBar(
                         .clip(MapChinaRadius.Medium)
                         .clickable {
                             if (currentKey::class != item.screen::class) {
+                                haptic.perform(HapticType.SELECTION)
                                 backStack.clear()
                                 backStack.add(item.screen)
                             }

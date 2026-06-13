@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapTheme
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 
 private data class MenuItem(
     val label: String,
@@ -80,15 +82,18 @@ fun MapFab(
     val fabSurfaceColor = if (isDarkTheme) Color(0xFF1A2332) else MapChinaColors.SurfaceElevated
     val fabTextColor = if (isDarkTheme) Color(0xFFE0E0E0) else MapChinaColors.TextPrimary
     val fabTextTertiary = if (isDarkTheme) Color(0xFF90A4AE) else MapChinaColors.TextTertiary
+    val haptic = LocalHapticFeedback.current
     val menuItems = buildList {
         if (onNavigateToNational != null) {
             add(MenuItem("回到全国", Icons.Default.Explore, fabPrimaryColor) {
+                haptic.perform(HapticType.LIGHT)
                 onExpandedChange(false)
                 onNavigateToNational()
             })
         }
         if (onDepart != null) {
             add(MenuItem("随机出发", Icons.Default.Navigation, fabPrimaryVariant) {
+                haptic.perform(HapticType.LIGHT)
                 onExpandedChange(false)
                 onDepart()
             })
@@ -98,6 +103,7 @@ fun MapFab(
             if (photoMarkersVisible) Icons.Filled.PhotoCamera else Icons.Outlined.PhotoCamera,
             if (photoMarkersVisible) MapChinaColors.FootprintPassBy else fabTextTertiary
         ) {
+            haptic.perform(HapticType.LIGHT)
             onTogglePhotos()
         })
         if (onShare != null) {
@@ -108,6 +114,7 @@ fun MapFab(
         }
         if (onMyLocation != null) {
             add(MenuItem("当前定位", Icons.Default.MyLocation, MapChinaColors.AccentBlue) {
+                haptic.perform(HapticType.LIGHT)
                 onExpandedChange(false)
                 onMyLocation()
             })
@@ -129,10 +136,12 @@ fun MapFab(
             modifier = Modifier.pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
+                        haptic.perform(HapticType.HEAVY)
                         onExpandedChange(false)
                         onNavigateToNational?.invoke()
                     },
                     onTap = {
+                        haptic.perform(HapticType.MEDIUM)
                         onExpandedChange(!isExpanded)
                     }
                 )

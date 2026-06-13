@@ -61,6 +61,8 @@ import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.domain.service.AchievementUnlockResult
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
 import com.mapchina.ui.navigation.CarvingListScreen
@@ -104,6 +106,8 @@ fun MapScreen(
         viewModel.refreshMapTheme()
     }
 
+    val haptic = LocalHapticFeedback.current
+
     val currentLevel by viewModel.currentLevel.collectAsState()
     val currentMapTheme by remember { androidx.compose.runtime.derivedStateOf {
         val rs = mapController.renderState.value
@@ -120,6 +124,10 @@ fun MapScreen(
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
     val autoMarkMessage by viewModel.autoMarkMessage.collectAsState()
+
+    LaunchedEffect(achievementResult) {
+        if (achievementResult != null) haptic.perform(HapticType.SUCCESS)
+    }
 
     LaunchedEffect(regions) {
         if (regions.isEmpty()) {
@@ -159,6 +167,7 @@ fun MapScreen(
     // Single tap on region → pulse + show card
     mapController.setOnRegionTapListener { regionId ->
         if (bottomPanel is BottomPanel.Region && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
+        haptic.perform(HapticType.MEDIUM)
         mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
         viewModel.showRegionPanel(regionId)
@@ -669,6 +678,7 @@ private fun AttractionSheetCard(
     }
 
     var showLevelMenu by remember { mutableStateOf(false) }
+    val sheetHaptic = LocalHapticFeedback.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -729,6 +739,7 @@ private fun AttractionSheetCard(
                         text = { LevelMenuItemContent(Copy.FOOTPRINT_DEEP, MapChinaColors.FootprintDeep, attraction.visitLevel == FootprintLevel.DEEP) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.DEEP)
                         }
                     )
@@ -736,6 +747,7 @@ private fun AttractionSheetCard(
                         text = { LevelMenuItemContent(Copy.FOOTPRINT_SHORT, MapChinaColors.FootprintShortVisit, attraction.visitLevel == FootprintLevel.SHORT_VISIT) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.SHORT_VISIT)
                         }
                     )
@@ -743,6 +755,7 @@ private fun AttractionSheetCard(
                         text = { LevelMenuItemContent(Copy.FOOTPRINT_PASS, MapChinaColors.FootprintPassBy, attraction.visitLevel == FootprintLevel.PASS_BY) },
                         onClick = {
                             showLevelMenu = false
+                            sheetHaptic.perform(HapticType.SUCCESS)
                             onMarkVisit(attraction.id, attraction.regionId, FootprintLevel.PASS_BY)
                         }
                     )
@@ -762,6 +775,7 @@ private fun AttractionSheetCard(
                             },
                             onClick = {
                                 showLevelMenu = false
+                                sheetHaptic.perform(HapticType.WARNING)
                                 onRemoveVisit(attraction.id)
                             }
                         )
