@@ -95,9 +95,7 @@ fun JournalCreateScreen(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-            }
+            com.mapchina.ui.common.BackButton(onClick = onBack)
             Text(
                 "写游记",
                 color = MapChinaColors.TextPrimary,

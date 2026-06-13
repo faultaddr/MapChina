@@ -53,9 +53,7 @@ fun CustomAttractionScreen(
         TopAppBar(
             title = { Text("添加景点", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold) },
             navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-                }
+                com.mapchina.ui.common.BackButton(onClick = onBack)
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )

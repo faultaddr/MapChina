@@ -1,8 +1,9 @@
 package com.mapchina.ui.navigation
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-@Serializable sealed class Screen
+@Serializable sealed class Screen : NavKey
 
 @Serializable data object MapScreen : Screen()
 @Serializable data object AttractionsScreen : Screen()

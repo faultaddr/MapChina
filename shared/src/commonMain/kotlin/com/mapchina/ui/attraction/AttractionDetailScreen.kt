@@ -69,7 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import coil3.compose.AsyncImage
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.domain.model.FootprintLevel
@@ -87,7 +87,8 @@ import kotlinx.datetime.toLocalDateTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionDetailScreen(
-    navController: NavHostController,
+    onNavigate: (NavKey) -> Unit,
+    onBack: () -> Unit,
     attraction: AttractionUi?,
     detail: AttractionDetail?,
     journals: List<Journal> = emptyList(),
@@ -189,22 +190,14 @@ fun AttractionDetailScreen(
                 )
 
                 // Back button
-                IconButton(
-                    onClick = { navController.popBackStack() },
+                com.mapchina.ui.common.BackButton(
+                    onClick = onBack,
                     modifier = Modifier
                         .statusBarsPadding()
-                        .padding(start = 8.dp, top = 4.dp)
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.3f * backAlpha.value))
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
-                        tint = Color.White.copy(alpha = backAlpha.value),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                        .padding(start = 8.dp, top = 4.dp),
+                    tint = Color.White.copy(alpha = backAlpha.value),
+                    backgroundColor = Color.Black.copy(alpha = 0.3f * backAlpha.value)
+                )
             }
 
             // Scrollable content with fade-in
@@ -297,7 +290,7 @@ fun AttractionDetailScreen(
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = {
-                            navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
+                            navigator.openUrl(detail.appointmentUrl!!)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -515,21 +508,14 @@ private fun FullscreenImageViewer(
             )
         }
 
-        IconButton(
+        com.mapchina.ui.common.BackButton(
             onClick = onDismiss,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f))
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "关闭",
-                tint = Color.White
-            )
-        }
+                .padding(16.dp),
+            tint = Color.White,
+            backgroundColor = Color.White.copy(alpha = 0.2f)
+        )
 
         if (imageUrls.size > 1) {
             Text(

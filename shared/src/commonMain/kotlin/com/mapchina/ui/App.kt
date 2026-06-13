@@ -41,6 +41,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,11 +52,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavKey
 import com.mapchina.ui.navigation.AppNavHost
 import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.navigation.AttractionsScreen
@@ -83,6 +81,8 @@ val bottomNavItems = listOf(
 
 internal val LocalScaffoldBottomPadding = compositionLocalOf { 0.dp }
 
+internal val ShareModeState = mutableStateOf(false)
+
 @Composable
 fun MapChinaApp(onSplashReady: () -> Unit = {}) {
     MapChinaTheme {
@@ -96,13 +96,12 @@ fun MapChinaApp(onSplashReady: () -> Unit = {}) {
                 }
             )
         } else {
-            val navController = rememberNavController()
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
+            val backStack = remember { mutableStateListOf<NavKey>(MapScreen) }
+            val currentKey = backStack.last()
 
             val showBottomBar = bottomNavItems.any { item ->
-                currentDestination?.hasRoute(item.screen::class) == true
-            }
+                currentKey::class == item.screen::class
+            } && !ShareModeState.value
 
             Scaffold(
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -112,14 +111,14 @@ fun MapChinaApp(onSplashReady: () -> Unit = {}) {
                         enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { it / 3 },
                         exit = fadeOut(tween(150)) + slideOutVertically(tween(150)) { it / 3 }
                     ) {
-                        MapChinaBottomBar(currentDestination, navController)
+                        MapChinaBottomBar(currentKey, backStack)
                     }
                 }
             ) { innerPadding ->
                 CompositionLocalProvider(
                     LocalScaffoldBottomPadding provides innerPadding.calculateBottomPadding()
                 ) {
-                    AppNavHost(navController = navController)
+                    AppNavHost(backStack = backStack)
                 }
             }
         }
@@ -148,8 +147,8 @@ private fun SplashScreen(onFinish: () -> Unit) {
 
 @Composable
 private fun MapChinaBottomBar(
-    currentDestination: androidx.navigation.NavDestination?,
-    navController: androidx.navigation.NavHostController
+    currentKey: NavKey,
+    backStack: SnapshotStateList<NavKey>
 ) {
     Surface(
         color = MapChinaColors.SurfaceElevated,
@@ -164,9 +163,7 @@ private fun MapChinaBottomBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             bottomNavItems.forEach { item ->
-                val selected = currentDestination?.hierarchy?.any {
-                    it.hasRoute(item.screen::class)
-                } == true
+                val selected = currentKey::class == item.screen::class
 
                 val tint by animateColorAsState(
                     targetValue = if (selected) MapChinaColors.Primary else MapChinaColors.TextTertiary,
@@ -178,12 +175,9 @@ private fun MapChinaBottomBar(
                     modifier = Modifier
                         .clip(MapChinaRadius.Medium)
                         .clickable {
-                            navController.navigate(item.screen) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                            if (currentKey::class != item.screen::class) {
+                                backStack.clear()
+                                backStack.add(item.screen)
                             }
                         }
                         .padding(horizontal = 20.dp, vertical = 8.dp),

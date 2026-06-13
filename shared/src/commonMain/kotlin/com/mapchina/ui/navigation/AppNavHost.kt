@@ -9,22 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AtlasScreen as AtlasScreenComposable
 import com.mapchina.ui.achievement.AtlasDetailScreen as AtlasDetailScreenComposable
@@ -56,300 +48,266 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
-    NavHost(
-        navController = navController,
-        startDestination = MapScreen,
+fun AppNavHost(
+    backStack: MutableList<NavKey>,
+    modifier: Modifier = Modifier
+) {
+    val onBack: () -> Unit = { backStack.removeLastOrNull() }
+    val navigate: (NavKey) -> Unit = { backStack.add(it) }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = onBack,
         modifier = modifier,
-        enterTransition = {
-            slideInVertically(initialOffsetY = { it / 3 }) + fadeIn(tween(300))
-        },
-        exitTransition = {
-            fadeOut(tween(150))
-        },
-        popEnterTransition = {
-            fadeIn(tween(300))
-        },
-        popExitTransition = {
-            slideOutVertically(targetOffsetY = { it / 3 }) + fadeOut(tween(300))
-        }
-    ) {
-        composable<MapScreen> {
-            MapScreenComposable(navController = navController, viewModel = koinInject())
-        }
-        composable<AttractionsScreen> {
-            AttractionsScreenComposable(navController = navController, viewModel = koinInject())
-        }
-        composable<ProfileScreen> {
-            val profileVm: com.mapchina.ui.profile.ProfileViewModel = koinInject()
-            val achievementVm: AchievementViewModel = koinInject()
-            val statsVm: StatsViewModel = koinInject()
-            ProfileScreenComposable(
-                viewModel = profileVm,
-                achievementViewModel = achievementVm,
-                statsViewModel = statsVm,
-                onNavigateToLogin = { navController.navigate(com.mapchina.ui.navigation.LoginScreen) },
-                onNavigateToJournals = { navController.navigate(com.mapchina.ui.navigation.JournalListScreen) },
-                onNavigateToBadgeWall = { navController.navigate(BadgeWallScreen) },
-                onNavigateToProvinceConquest = { navController.navigate(ProvinceConquestScreen) },
-                onNavigateToAtlas = { navController.navigate(com.mapchina.ui.navigation.AtlasScreen) },
-                onNavigateToCarvings = { navController.navigate(com.mapchina.ui.navigation.CarvingListScreen(showAll = "true")) },
-                onNavigateToStats = { navController.navigate(com.mapchina.ui.navigation.StatsScreen) },
-                settingsRepository = profileVm.settingsRepository
-            )
-        }
-        composable<BadgeWallScreen> {
-            val vm: AchievementViewModel = koinInject()
-            BadgeWallScreen(
-                viewModel = vm,
-                onBadgeClick = { id -> navController.navigate(BadgeDetailScreen(id)) }
-            )
-        }
-        composable<BadgeDetailScreen> { backStackEntry ->
-            val vm: AchievementViewModel = koinInject()
-            val ui by vm.ui.collectAsState()
-            val achievementId = backStackEntry.arguments?.getString("achievementId") ?: ""
-            val item = ui.allAchievements.find { it.definition.id == achievementId }
-            BadgeDetailScreen(item = item)
-        }
-        composable<LoginScreen> {
-            val authService: AuthService = koinInject()
-            val apiClient: com.mapchina.data.remote.MapChinaApiClient = koinInject()
-            val scope = rememberCoroutineScope()
-            var loginError by remember { mutableStateOf("") }
-            LoginScreenComposable(
-                onLoginSuccess = { navController.popBackStack() },
-                onQuickStart = { nickname ->
-                    authService.quickStart(nickname)
-                    navController.popBackStack()
-                },
-                onPhoneLogin = { phone, code ->
-                    loginError = ""
-                    scope.launch {
-                        try {
-                            val resp = apiClient.login(phone, code)
-                            apiClient.accessToken = resp.accessToken
-                            authService.onLogin(com.mapchina.data.model.UserDto(
-                                id = resp.userId,
-                                phone = phone,
-                                nickname = resp.nickname,
-                                avatar = null,
-                                createdAt = Clock.System.now().toEpochMilliseconds()
-                            ))
-                            navController.popBackStack()
-                        } catch (e: Exception) {
-                            loginError = e.message ?: "登录失败"
-                            
+        entryProvider = entryProvider {
+            entry<MapScreen> {
+                val vm: com.mapchina.ui.map.MapViewModel = koinInject()
+                MapScreenComposable(
+                    onNavigate = navigate,
+                    onBack = onBack,
+                    viewModel = vm,
+                    mapController = vm.persistentMapController
+                )
+            }
+            entry<AttractionsScreen> {
+                AttractionsScreenComposable(
+                    onNavigate = navigate,
+                    onBack = onBack,
+                    viewModel = koinInject()
+                )
+            }
+            entry<ProfileScreen> {
+                val profileVm: com.mapchina.ui.profile.ProfileViewModel = koinInject()
+                val achievementVm: AchievementViewModel = koinInject()
+                val statsVm: StatsViewModel = koinInject()
+                ProfileScreenComposable(
+                    viewModel = profileVm,
+                    achievementViewModel = achievementVm,
+                    statsViewModel = statsVm,
+                    onNavigateToLogin = { navigate(LoginScreen) },
+                    onNavigateToJournals = { navigate(JournalListScreen) },
+                    onNavigateToBadgeWall = { navigate(BadgeWallScreen) },
+                    onNavigateToProvinceConquest = { navigate(ProvinceConquestScreen) },
+                    onNavigateToAtlas = { navigate(AtlasScreen) },
+                    onNavigateToCarvings = { navigate(CarvingListScreen(showAll = "true")) },
+                    onNavigateToStats = { navigate(StatsScreen) },
+                    settingsRepository = profileVm.settingsRepository
+                )
+            }
+            entry<BadgeWallScreen> {
+                val vm: AchievementViewModel = koinInject()
+                BadgeWallScreen(
+                    viewModel = vm,
+                    onBadgeClick = { id -> navigate(BadgeDetailScreen(id)) }
+                )
+            }
+            entry<BadgeDetailScreen> { key ->
+                val vm: AchievementViewModel = koinInject()
+                val ui by vm.ui.collectAsState()
+                val item = ui.allAchievements.find { it.definition.id == key.achievementId }
+                BadgeDetailScreen(item = item)
+            }
+            entry<LoginScreen> {
+                val authService: AuthService = koinInject()
+                val apiClient: com.mapchina.data.remote.MapChinaApiClient = koinInject()
+                val scope = rememberCoroutineScope()
+                var loginError by remember { mutableStateOf("") }
+                LoginScreenComposable(
+                    onLoginSuccess = onBack,
+                    onQuickStart = { nickname ->
+                        authService.quickStart(nickname)
+                        onBack()
+                    },
+                    onPhoneLogin = { phone, code ->
+                        loginError = ""
+                        scope.launch {
+                            try {
+                                val resp = apiClient.login(phone, code)
+                                apiClient.accessToken = resp.accessToken
+                                authService.onLogin(com.mapchina.data.model.UserDto(
+                                    id = resp.userId,
+                                    phone = phone,
+                                    nickname = resp.nickname,
+                                    avatar = null,
+                                    createdAt = Clock.System.now().toEpochMilliseconds()
+                                ))
+                                onBack()
+                            } catch (e: Exception) {
+                                loginError = e.message ?: "登录失败"
+                            }
+                        }
+                    },
+                    onSendCode = { phone ->
+                        scope.launch {
+                            try { apiClient.sendLoginCode(phone) } catch (e: Exception) {  }
                         }
                     }
-                },
-                onSendCode = { phone ->
-                    scope.launch {
-                        try { apiClient.sendLoginCode(phone) } catch (e: Exception) {  }
-                    }
-                }
-            )
-        }
-        composable<RegionDetailScreen> { backStackEntry ->
-            val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
-            val mapViewModel: com.mapchina.ui.map.MapViewModel = koinInject()
-            RegionDetailScreenComposable(
-                regionId = regionId,
-                viewModel = mapViewModel,
-                onBack = { navController.popBackStack() },
-                onChildRegionClick = { id -> navController.navigate(RegionDetailScreen(id)) }
-            )
-        }
-        composable<ProvinceConquestScreen> {
-            val vm: ProvinceConquestViewModel = koinInject()
-            ProvinceConquestScreenComposable(
-                viewModel = vm,
-                onProvinceClick = { code -> navController.navigate(ProvinceDetailScreen(code)) }
-            )
-        }
-        composable<ProvinceDetailScreen> { backStackEntry ->
-            val vm: ProvinceConquestViewModel = koinInject()
-            val provinceCode = backStackEntry.arguments?.getString("provinceCode") ?: ""
-            ProvinceDetailScreenComposable(
-                viewModel = vm,
-                provinceCode = provinceCode
-            )
-        }
-        composable<com.mapchina.ui.navigation.AtlasScreen> {
-            val vm: AtlasViewModel = koinInject()
-            AtlasScreenComposable(
-                viewModel = vm,
-                onAtlasClick = { atlasId -> navController.navigate(com.mapchina.ui.navigation.AtlasDetailScreen(atlasId)) }
-            )
-        }
-        composable<com.mapchina.ui.navigation.AtlasDetailScreen> { backStackEntry ->
-            val vm: AtlasViewModel = koinInject()
-            val atlasId = backStackEntry.arguments?.getString("atlasId") ?: ""
-            AtlasDetailScreenComposable(
-                viewModel = vm,
-                atlasId = atlasId
-            )
-        }
-        composable<AttractionDetailScreen>(
-            enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Start,
-                    animationSpec = tween(350)
-                ) + fadeIn(animationSpec = tween(300))
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(200))
-            },
-            popEnterTransition = {
-                fadeIn(animationSpec = tween(250))
-            },
-            popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.End,
-                    animationSpec = tween(300)
-                ) + fadeOut(animationSpec = tween(200))
+                )
             }
-        ) { backStackEntry ->
-            val attractionId = backStackEntry.arguments?.getString("attractionId") ?: ""
-            val viewModel: AttractionViewModel = koinInject()
-            var attraction by remember(attractionId) { mutableStateOf(viewModel.getAttractionById(attractionId)) }
-            val detail = remember(attractionId) { viewModel.getAttractionDetail(attractionId) }
-            val journalVm: JournalViewModel = koinInject()
-            val journals = remember(attractionId) { journalVm.getJournalsByAttraction(attractionId) }
-            AttractionDetailScreen(
-                navController = navController,
-                attraction = attraction,
-                detail = detail,
-                journals = journals,
-                onMarkVisit = { level ->
-                    attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
-                    attraction = viewModel.getAttractionById(attractionId)
-                },
-                onRemoveVisit = {
-                    attraction?.let { viewModel.removeVisit(it.id) }
-                    attraction = viewModel.getAttractionById(attractionId)
-                },
-                onWriteJournal = {
-                    attraction?.let { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen(attractionId = it.id)) }
-                },
-                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) },
-                onOpenCarving = {
-                    attraction?.let {
-                        navController.navigate(com.mapchina.ui.navigation.CarvingScreen(regionId = it.regionId, regionName = "", attractionId = it.id, attractionName = it.name))
+            entry<RegionDetailScreen> { key ->
+                val mapViewModel: com.mapchina.ui.map.MapViewModel = koinInject()
+                RegionDetailScreenComposable(
+                    regionId = key.regionId,
+                    viewModel = mapViewModel,
+                    onBack = onBack,
+                    onChildRegionClick = { id -> navigate(RegionDetailScreen(id)) }
+                )
+            }
+            entry<ProvinceConquestScreen> {
+                val vm: ProvinceConquestViewModel = koinInject()
+                ProvinceConquestScreenComposable(
+                    viewModel = vm,
+                    onProvinceClick = { code -> navigate(ProvinceDetailScreen(code)) }
+                )
+            }
+            entry<ProvinceDetailScreen> { key ->
+                val vm: ProvinceConquestViewModel = koinInject()
+                ProvinceDetailScreenComposable(
+                    viewModel = vm,
+                    provinceCode = key.provinceCode
+                )
+            }
+            entry<AtlasScreen> {
+                val vm: AtlasViewModel = koinInject()
+                AtlasScreenComposable(
+                    viewModel = vm,
+                    onAtlasClick = { atlasId -> navigate(AtlasDetailScreen(atlasId)) }
+                )
+            }
+            entry<AtlasDetailScreen> { key ->
+                val vm: AtlasViewModel = koinInject()
+                AtlasDetailScreenComposable(
+                    viewModel = vm,
+                    atlasId = key.atlasId
+                )
+            }
+            entry<AttractionDetailScreen> { key ->
+                val viewModel: AttractionViewModel = koinInject()
+                var attraction by remember(key.attractionId) { mutableStateOf(viewModel.getAttractionById(key.attractionId)) }
+                val detail = remember(key.attractionId) { viewModel.getAttractionDetail(key.attractionId) }
+                val journalVm: JournalViewModel = koinInject()
+                val journals = remember(key.attractionId) { journalVm.getJournalsByAttraction(key.attractionId) }
+                AttractionDetailScreen(
+                    onNavigate = navigate,
+                    onBack = onBack,
+                    attraction = attraction,
+                    detail = detail,
+                    journals = journals,
+                    onMarkVisit = { level ->
+                        attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
+                        attraction = viewModel.getAttractionById(key.attractionId)
+                    },
+                    onRemoveVisit = {
+                        attraction?.let { viewModel.removeVisit(it.id) }
+                        attraction = viewModel.getAttractionById(key.attractionId)
+                    },
+                    onWriteJournal = {
+                        attraction?.let { navigate(JournalCreateScreen(attractionId = it.id)) }
+                    },
+                    onJournalClick = { id -> navigate(JournalDetailScreen(id)) },
+                    onOpenCarving = {
+                        attraction?.let {
+                            navigate(CarvingScreen(regionId = it.regionId, regionName = "", attractionId = it.id, attractionName = it.name))
+                        }
                     }
-                }
-            )
+                )
+            }
+            entry<JournalListScreen> {
+                val vm: JournalViewModel = koinInject()
+                JournalListScreenComposable(
+                    viewModel = vm,
+                    onJournalClick = { id -> navigate(JournalDetailScreen(id)) },
+                    onCreateClick = { navigate(JournalCreateScreen()) },
+                    onBack = onBack
+                )
+            }
+            entry<JournalDetailScreen> { key ->
+                val vm: JournalViewModel = koinInject()
+                JournalDetailScreenComposable(
+                    journalId = key.journalId,
+                    viewModel = vm,
+                    onBack = onBack,
+                    onDelete = onBack
+                )
+            }
+            entry<JournalCreateScreen> { key ->
+                val vm: JournalViewModel = koinInject()
+                JournalCreateScreenComposable(
+                    viewModel = vm,
+                    regionId = key.regionId,
+                    attractionId = key.attractionId,
+                    onSave = onBack,
+                    onBack = onBack
+                )
+            }
+            entry<CarvingScreen> { key ->
+                val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
+                com.mapchina.ui.carving.CarvingScreen(
+                    regionId = key.regionId,
+                    regionName = key.regionName,
+                    viewModel = vm,
+                    onBack = onBack,
+                    attractionId = key.attractionId,
+                    attractionName = key.attractionName,
+                    carvingId = key.carvingId
+                )
+            }
+            entry<CarvingListScreen> { key ->
+                val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
+                val showAll = key.showAll == "true"
+                com.mapchina.ui.carving.CarvingListScreen(
+                    viewModel = vm,
+                    title = if (showAll) "我的碑刻" else "碑刻 · ${key.regionName ?: ""}",
+                    regionId = key.regionId,
+                    attractionId = key.attractionId,
+                    showAll = showAll,
+                    onCreateClick = {
+                        val rId = key.regionId ?: ""
+                        val rName = key.regionName ?: ""
+                        navigate(CarvingScreen(regionId = rId, regionName = rName, attractionId = key.attractionId))
+                    },
+                    onEditClick = { carving ->
+                        navigate(CarvingScreen(
+                            regionId = carving.regionId,
+                            regionName = carving.regionName,
+                            attractionId = carving.attractionId,
+                            attractionName = carving.attractionName,
+                            carvingId = carving.id
+                        ))
+                    },
+                    onBack = onBack
+                )
+            }
+            entry<CustomAttractionScreen> { key ->
+                val vm: AttractionViewModel = koinInject()
+                CustomAttractionScreenComposable(
+                    regionId = key.regionId,
+                    latitude = key.latitude.toDoubleOrNull() ?: 0.0,
+                    longitude = key.longitude.toDoubleOrNull() ?: 0.0,
+                    viewModel = vm,
+                    onSave = onBack,
+                    onBack = onBack
+                )
+            }
+            entry<StatsScreen> {
+                val vm: StatsViewModel = koinInject()
+                StatsScreenComposable(viewModel = vm)
+            }
+            entry<CommunityScreen> {
+                val vm: CommunityViewModel = koinInject()
+                CommunityScreenComposable(
+                    viewModel = vm,
+                    onPostClick = { postId -> navigate(PostDetailScreen(postId)) }
+                )
+            }
+            entry<PostDetailScreen> { key ->
+                val vm: CommunityViewModel = koinInject()
+                PostDetailScreenComposable(
+                    postId = key.postId,
+                    viewModel = vm,
+                    onBack = onBack
+                )
+            }
         }
-        composable<com.mapchina.ui.navigation.JournalListScreen> {
-            val vm: JournalViewModel = koinInject()
-            JournalListScreenComposable(
-                viewModel = vm,
-                onJournalClick = { id -> navController.navigate(com.mapchina.ui.navigation.JournalDetailScreen(id)) },
-                onCreateClick = { navController.navigate(com.mapchina.ui.navigation.JournalCreateScreen()) },
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable<com.mapchina.ui.navigation.JournalDetailScreen> { backStackEntry ->
-            val vm: JournalViewModel = koinInject()
-            val journalId = backStackEntry.arguments?.getString("journalId") ?: ""
-            JournalDetailScreenComposable(
-                journalId = journalId,
-                viewModel = vm,
-                onBack = { navController.popBackStack() },
-                onDelete = { navController.popBackStack() }
-            )
-        }
-        composable<com.mapchina.ui.navigation.JournalCreateScreen> { backStackEntry ->
-            val vm: JournalViewModel = koinInject()
-            val regionId = backStackEntry.arguments?.getString("regionId")
-            val attractionId = backStackEntry.arguments?.getString("attractionId")
-            JournalCreateScreenComposable(
-                viewModel = vm,
-                regionId = regionId,
-                attractionId = attractionId,
-                onSave = { navController.popBackStack() },
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable<com.mapchina.ui.navigation.CarvingScreen> { backStackEntry ->
-            val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
-            val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
-            val regionName = backStackEntry.arguments?.getString("regionName") ?: ""
-            val attractionId = backStackEntry.arguments?.getString("attractionId")
-            val attractionName = backStackEntry.arguments?.getString("attractionName")
-            val carvingId = backStackEntry.arguments?.getString("carvingId")
-            com.mapchina.ui.carving.CarvingScreen(
-                regionId = regionId,
-                regionName = regionName,
-                viewModel = vm,
-                onBack = { navController.popBackStack() },
-                attractionId = attractionId,
-                attractionName = attractionName,
-                carvingId = carvingId
-            )
-        }
-        composable<com.mapchina.ui.navigation.CarvingListScreen> { backStackEntry ->
-            val vm: com.mapchina.ui.carving.CarvingViewModel = koinInject()
-            val regionId = backStackEntry.arguments?.getString("regionId")
-            val regionName = backStackEntry.arguments?.getString("regionName")
-            val attractionId = backStackEntry.arguments?.getString("attractionId")
-            val showAll = backStackEntry.arguments?.getString("showAll") == "true"
-            com.mapchina.ui.carving.CarvingListScreen(
-                viewModel = vm,
-                title = if (showAll) "我的碑刻" else "碑刻 · ${regionName ?: ""}",
-                regionId = regionId,
-                attractionId = attractionId,
-                showAll = showAll,
-                onCreateClick = {
-                    val rId = regionId ?: ""
-                    val rName = regionName ?: ""
-                    navController.navigate(com.mapchina.ui.navigation.CarvingScreen(regionId = rId, regionName = rName, attractionId = attractionId))
-                },
-                onEditClick = { carving ->
-                    navController.navigate(com.mapchina.ui.navigation.CarvingScreen(
-                        regionId = carving.regionId,
-                        regionName = carving.regionName,
-                        attractionId = carving.attractionId,
-                        attractionName = carving.attractionName,
-                        carvingId = carving.id
-                    ))
-                },
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable<CustomAttractionScreen> { backStackEntry ->
-            val vm: AttractionViewModel = koinInject()
-            val regionId = backStackEntry.arguments?.getString("regionId") ?: ""
-            val latitude = backStackEntry.arguments?.getString("latitude")?.toDoubleOrNull() ?: 0.0
-            val longitude = backStackEntry.arguments?.getString("longitude")?.toDoubleOrNull() ?: 0.0
-            CustomAttractionScreenComposable(
-                regionId = regionId,
-                latitude = latitude,
-                longitude = longitude,
-                viewModel = vm,
-                onSave = { navController.popBackStack() },
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable<com.mapchina.ui.navigation.StatsScreen> {
-            val vm: StatsViewModel = koinInject()
-            StatsScreenComposable(viewModel = vm)
-        }
-        composable<CommunityScreen> {
-            val vm: CommunityViewModel = koinInject()
-            CommunityScreenComposable(
-                viewModel = vm,
-                onPostClick = { postId -> navController.navigate(PostDetailScreen(postId)) }
-            )
-        }
-        composable<PostDetailScreen> { backStackEntry ->
-            val vm: CommunityViewModel = koinInject()
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            PostDetailScreenComposable(
-                postId = postId,
-                viewModel = vm,
-                onBack = { navController.popBackStack() }
-            )
-        }
-    }
+    )
 }

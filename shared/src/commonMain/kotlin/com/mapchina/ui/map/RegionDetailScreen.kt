@@ -71,9 +71,7 @@ fun RegionDetailScreen(
         TopAppBar(
             title = { Text(region?.name ?: "区域详情", color = MapChinaColors.TextPrimary) },
             navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = MapChinaColors.TextPrimary)
-                }
+                com.mapchina.ui.common.BackButton(onClick = onBack)
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
