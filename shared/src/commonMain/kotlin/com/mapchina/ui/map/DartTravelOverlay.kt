@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapController
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -151,9 +153,12 @@ fun DartTravelOverlay(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+
     // Landing
     LaunchedEffect(phase) {
         if (phase == 1) {
+            haptic.perform(HapticType.HEAVY)
             particles.clear()
             for (i in 0..23) {
                 val angle = (i.toFloat() / 24) * 2 * Math.PI.toFloat() + Random.nextFloat() * 0.2f
@@ -296,6 +301,7 @@ fun DartTravelOverlay(
                     .padding(top = 16.dp, end = 20.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable {
+                        haptic.perform(HapticType.LIGHT)
                         if (phase == 0) {
                             phase = 1
                             currentDotIndex = finalDotIndex

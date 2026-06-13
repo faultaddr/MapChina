@@ -22,6 +22,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 
 data class BreadcrumbItem(val id: String, val name: String)
 
@@ -44,7 +46,8 @@ fun BreadcrumbNav(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (path.size > 1) {
-                IconButton(onClick = onNavigateUp) {
+                val haptic = LocalHapticFeedback.current
+                IconButton(onClick = { haptic.perform(HapticType.MEDIUM); onNavigateUp() }) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "返回上级",
@@ -100,13 +103,14 @@ fun BreadcrumbNav(
                         )
                     }
                     else -> {
+                        val haptic = LocalHapticFeedback.current
                         Text(
                             item.name,
                             fontSize = 14.sp,
                             color = MapChinaColors.Primary.copy(alpha = 0.7f),
                             textDecoration = TextDecoration.Underline,
                             modifier = Modifier
-                                .clickable { onNavigateTo(item.id) }
+                                .clickable { haptic.perform(HapticType.LIGHT); onNavigateTo(item.id) }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }

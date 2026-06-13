@@ -34,6 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.ui.theme.MapChinaColors
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 
 @Composable
 fun OnboardingOverlay(
@@ -41,6 +43,7 @@ fun OnboardingOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(),
@@ -121,7 +124,7 @@ fun OnboardingOverlay(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = onDismiss,
+                    onClick = { haptic.perform(HapticType.MEDIUM); onDismiss() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)

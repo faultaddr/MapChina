@@ -51,6 +51,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
 import kotlinx.coroutines.delay
@@ -71,6 +73,7 @@ fun RegionCard(
     var footprintExpanded by remember { mutableStateOf(false) }
     var confirmMessage by remember { mutableStateOf<String?>(null) }
     var lastMarkedLevel by remember { mutableStateOf<FootprintLevel?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(confirmMessage) {
         if (confirmMessage != null) {
@@ -129,7 +132,7 @@ fun RegionCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .clickable(onClick = onClose),
+                    .clickable(onClick = { haptic.perform(HapticType.LIGHT); onClose() }),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -178,7 +181,7 @@ fun RegionCard(
             ActionChip(
                 label = "标记足迹",
                 color = MapChinaColors.Primary,
-                onClick = { footprintExpanded = !footprintExpanded }
+                onClick = { haptic.perform(HapticType.MEDIUM); footprintExpanded = !footprintExpanded }
             )
 
             // Drill down
@@ -186,7 +189,7 @@ fun RegionCard(
                 ActionChip(
                     label = "查看下级",
                     color = MapChinaColors.AccentBlue,
-                    onClick = onDrillDown
+                    onClick = { haptic.perform(HapticType.HEAVY); onDrillDown() }
                 )
             }
 
@@ -195,7 +198,7 @@ fun RegionCard(
                 ActionChip(
                     label = "${attractionCount}个景点",
                     color = MapChinaColors.FootprintShortVisit,
-                    onClick = onShowAttractions
+                    onClick = { haptic.perform(HapticType.LIGHT); onShowAttractions() }
                 )
             }
 
@@ -203,7 +206,7 @@ fun RegionCard(
             ActionChip(
                 label = "题刻",
                 color = Color(0xFF8B7355),
-                onClick = onOpenCarving
+                onClick = { haptic.perform(HapticType.LIGHT); onOpenCarving() }
             )
         }
 
@@ -223,6 +226,7 @@ fun RegionCard(
                     label = "路过",
                     color = MapChinaColors.FootprintPassBy,
                     onClick = {
+                        haptic.perform(HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.PASS_BY)
                         lastMarkedLevel = FootprintLevel.PASS_BY
                         footprintExpanded = false
@@ -234,6 +238,7 @@ fun RegionCard(
                     label = "短玩",
                     color = MapChinaColors.FootprintShortVisit,
                     onClick = {
+                        haptic.perform(HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.SHORT_VISIT)
                         lastMarkedLevel = FootprintLevel.SHORT_VISIT
                         footprintExpanded = false
@@ -245,6 +250,7 @@ fun RegionCard(
                     label = "深度",
                     color = MapChinaColors.FootprintDeep,
                     onClick = {
+                        haptic.perform(HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.DEEP)
                         lastMarkedLevel = FootprintLevel.DEEP
                         footprintExpanded = false
@@ -296,6 +302,7 @@ fun RegionCard(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
                                     .clickable {
+                                        haptic.perform(HapticType.WARNING)
                                         onRemoveFootprint(region.regionId)
                                         confirmMessage = null
                                         lastMarkedLevel = null

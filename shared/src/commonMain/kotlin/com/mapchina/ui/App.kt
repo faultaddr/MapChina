@@ -54,6 +54,9 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.platform.rememberHapticFeedback
 import com.mapchina.ui.navigation.AppNavHost
 import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.navigation.AttractionsScreen
@@ -80,6 +83,8 @@ internal val LocalScaffoldBottomPadding = compositionLocalOf { 0.dp }
 
 @Composable
 fun MapChinaApp(onSplashReady: () -> Unit = {}) {
+    val haptic = rememberHapticFeedback()
+    CompositionLocalProvider(LocalHapticFeedback provides haptic) {
     MapChinaTheme {
         var showSplash by remember { mutableStateOf(true) }
 
@@ -119,6 +124,7 @@ fun MapChinaApp(onSplashReady: () -> Unit = {}) {
             }
         }
     }
+    }
 }
 
 @Composable
@@ -149,6 +155,7 @@ private fun MapChinaBottomBar(
     currentDestination: androidx.navigation.NavDestination?,
     navController: androidx.navigation.NavHostController
 ) {
+    val haptic = LocalHapticFeedback.current
     Surface(
         color = BarBackground,
         shadowElevation = 12.dp,
@@ -176,6 +183,7 @@ private fun MapChinaBottomBar(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .clickable {
+                            haptic.perform(HapticType.SELECTION)
                             navController.navigate(item.screen) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true

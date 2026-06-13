@@ -74,6 +74,8 @@ import coil3.compose.AsyncImage
 import com.mapchina.data.remote.AttractionDetail
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.platform.ExternalNavigator
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.coroutineScope
@@ -98,6 +100,7 @@ fun AttractionDetailScreen(
     onOpenCarving: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     if (attraction == null) {
         Box(
             modifier.fillMaxSize().background(MapChinaColors.Background),
@@ -276,6 +279,7 @@ fun AttractionDetailScreen(
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
+                        haptic.perform(HapticType.MEDIUM)
                         navigator.navigateToAmap(attraction.latitude, attraction.longitude, attraction.name)
                     },
                     modifier = Modifier
@@ -316,7 +320,7 @@ fun AttractionDetailScreen(
 
                 // Visit section
                 Spacer(Modifier.height(20.dp))
-                VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = onMarkVisit, onRemoveVisit = onRemoveVisit)
+                VisitSection(currentLevel = attraction.visitLevel, onMarkVisit = { level -> haptic.perform(HapticType.SUCCESS); onMarkVisit(level) }, onRemoveVisit = { haptic.perform(HapticType.WARNING); onRemoveVisit?.invoke() })
 
                 // Write journal & carving buttons (secondary)
                 if (onWriteJournal != null || onOpenCarving != null) {
@@ -327,7 +331,7 @@ fun AttractionDetailScreen(
                     ) {
                         if (onWriteJournal != null) {
                             OutlinedButton(
-                                onClick = { onWriteJournal.invoke() },
+                                onClick = { haptic.perform(HapticType.LIGHT); onWriteJournal.invoke() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp),
@@ -344,7 +348,7 @@ fun AttractionDetailScreen(
                         }
                         if (onOpenCarving != null) {
                             OutlinedButton(
-                                onClick = { onOpenCarving.invoke() },
+                                onClick = { haptic.perform(HapticType.LIGHT); onOpenCarving.invoke() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp),

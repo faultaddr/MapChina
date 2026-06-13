@@ -63,6 +63,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.data.repository.SettingsRepository
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.domain.model.AchievementRarity
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.LEVEL_DEFINITIONS
@@ -90,6 +92,7 @@ fun ProfileScreen(
     onLoginSuccess: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel?.loadProfile() }
     val profile by (viewModel?.profile?.collectAsState() ?: remember { mutableStateOf(ProfileUi("未登录", null, null)) })
     val isLoggedIn by (viewModel?.isLoggedIn?.collectAsState() ?: remember { mutableStateOf(false) })
@@ -175,6 +178,7 @@ private fun ProfileTab(
     settingsRepository: SettingsRepository?,
     onLogout: (() -> Unit)?
 ) {
+    val haptic = LocalHapticFeedback.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -254,7 +258,7 @@ private fun ProfileTab(
                         subtitle = "记录旅途故事",
                         tint = MapChinaColors.Primary,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToJournals?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToJournals?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Default.WorkspacePremium,
@@ -262,7 +266,7 @@ private fun ProfileTab(
                         subtitle = "收集旅行荣誉",
                         tint = MapChinaColors.AccentGold,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToBadgeWall?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToBadgeWall?.invoke() }
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,7 +276,7 @@ private fun ProfileTab(
                         subtitle = "点亮中国版图",
                         tint = MapChinaColors.FootprintDeep,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToProvinceConquest?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToProvinceConquest?.invoke() }
                     )
                     FeatureCard(
                         icon = Icons.Default.AutoStories,
@@ -280,7 +284,7 @@ private fun ProfileTab(
                         subtitle = "按主题探索中国",
                         tint = MapChinaColors.RarityEpic,
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToAtlas?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToAtlas?.invoke() }
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -290,7 +294,7 @@ private fun ProfileTab(
                         subtitle = "石壁留名题字",
                         tint = Color(0xFF8B7355),
                         modifier = Modifier.weight(1f),
-                        onClick = { onNavigateToCarvings?.invoke() }
+                        onClick = { haptic.perform(HapticType.LIGHT); onNavigateToCarvings?.invoke() }
                     )
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -312,9 +316,9 @@ private fun ProfileTab(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("设置", color = MapChinaColors.TextTertiary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(10.dp))
-                    SettingsRow("照片标记", photoMarkersVisible, { photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
+                    SettingsRow("照片标记", photoMarkersVisible, { haptic.perform(HapticType.SELECTION); photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
                     Spacer(modifier = Modifier.height(6.dp))
-                    SettingsRow("自动标记足迹", autoMarkFootprint, { autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
+                    SettingsRow("自动标记足迹", autoMarkFootprint, { haptic.perform(HapticType.SELECTION); autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
                 }
             }
         }
@@ -329,7 +333,7 @@ private fun ProfileTab(
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onLogout?.invoke() }
+                        .clickable { haptic.perform(HapticType.WARNING); onLogout?.invoke() }
                         .padding(vertical = 8.dp)
                 )
             }
