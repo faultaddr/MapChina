@@ -1,6 +1,8 @@
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { Navbar } from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import type { Metadata } from 'next';
 
 type Props = {
@@ -31,7 +33,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider>
-      {children}
+      <Navbar />
+      <div className="pt-0">{children}</div>
+      <Footer />
     </NextIntlClientProvider>
   );
 }

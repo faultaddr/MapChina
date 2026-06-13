@@ -1,11 +1,17 @@
-import { useTranslations } from 'next-intl';
+import HeroSection from '@/components/home/HeroSection';
+import FeatureCards from '@/components/home/FeatureCards';
+import ThemeGallery from '@/components/home/ThemeGallery';
+import CommunityPicks from '@/components/home/CommunityPicks';
+import DownloadCTA from '@/components/home/DownloadCTA';
 
 export default function HomePage() {
-  const t = useTranslations('hero');
-
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="font-heading text-4xl font-bold text-ink">{t('slogan')}</h1>
+    <main>
+      <HeroSection />
+      <FeatureCards />
+      <ThemeGallery />
+      <CommunityPicks />
+      <DownloadCTA />
     </main>
   );
 }
