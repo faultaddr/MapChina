@@ -9,6 +9,7 @@ import com.mapchina.server.database.configureDatabase
 import com.mapchina.server.routes.authRoutes
 import com.mapchina.server.routes.communityRoutes
 import com.mapchina.server.routes.dataRoutes
+import com.mapchina.server.routes.publicRoutes
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -64,5 +65,6 @@ fun Application.configureRouting(jwtProvider: com.mapchina.server.auth.JwtProvid
         logoutRoutes()
         dataRoutes(jwtProvider)
         communityRoutes(jwtProvider)
+        publicRoutes()
     }
 }
