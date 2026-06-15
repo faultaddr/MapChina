@@ -1,5 +1,4 @@
 import { fetchAttractions } from '@/lib/api';
-import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -26,14 +25,14 @@ export default async function AttractionsPage() {
           {attractions.map((item) => (
             <Link key={item.id} href={`/attractions/${item.id}`}>
               <div className="group overflow-hidden rounded-2xl bg-surface transition-all hover:shadow-lg hover:scale-[1.02]">
-                <div className="relative aspect-[4/3] bg-border">
-                  {item.imageUrl && (
-                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-                  )}
+                <div className="relative flex aspect-[4/3] items-center justify-center bg-border">
+                  <span className="text-5xl opacity-20">{item.name[0]}</span>
                 </div>
                 <div className="p-4">
                   <h2 className="font-heading font-semibold text-ink">{item.name}</h2>
-                  <p className="mt-1 line-clamp-2 text-sm text-ink-secondary">{item.description}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-ink-secondary">
+                    {item.description ?? `${item.visitCount} 次访问`}
+                  </p>
                 </div>
               </div>
             </Link>

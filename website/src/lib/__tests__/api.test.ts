@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchAttractions, fetchAttraction, fetchJournals, fetchJournal } from '../api';
+import { fetchAttractions, fetchAttraction, fetchRegions, fetchRegion, fetchCommunityFeed, fetchCommunityPost } from '../api';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -8,9 +8,10 @@ beforeEach(() => {
 describe('fetchAttractions', () => {
   it('fetches attractions with default params', async () => {
     const mockResponse = {
-      success: true,
-      data: [{ id: '1', name: '故宫' }],
-      meta: { total: 1, page: 1, limit: 20 },
+      data: [{ id: '1', name: '故宫', regionId: 'r1', level: '5A', latitude: 39.9, longitude: 116.4, description: null, visitCount: 100 }],
+      total: 1,
+      page: 1,
+      limit: 20,
     };
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
@@ -20,6 +21,20 @@ describe('fetchAttractions', () => {
     const result = await fetchAttractions();
     expect(result!.data).toHaveLength(1);
     expect(result!.data[0].name).toBe('故宫');
+    expect(result!.total).toBe(1);
+  });
+
+  it('passes sort and regionId params', async () => {
+    const mockResponse = { data: [], total: 0, page: 1, limit: 20 };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as Response);
+
+    await fetchAttractions(1, 10, 'popular', 'r1');
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort=popular');
+    expect(calledUrl).toContain('regionId=r1');
   });
 
   it('returns null on API error', async () => {
@@ -42,47 +57,76 @@ describe('fetchAttractions', () => {
 
 describe('fetchAttraction', () => {
   it('fetches single attraction by id', async () => {
-    const mockResponse = {
-      success: true,
-      data: { id: '1', name: '故宫' },
-      meta: { total: 1, page: 1, limit: 1 },
-    };
+    const mockAttraction = { id: '1', name: '故宫', regionId: 'r1', level: '5A', latitude: 39.9, longitude: 116.4, description: 'test', visitCount: 100 };
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(mockResponse),
+      json: () => Promise.resolve(mockAttraction),
     } as Response);
 
     const result = await fetchAttraction('1');
-    expect(result!.data.id).toBe('1');
+    expect(result!.id).toBe('1');
+    expect(result!.name).toBe('故宫');
   });
-});
 
-describe('fetchJournals', () => {
-  it('fetches journals with custom params', async () => {
-    const mockResponse = {
-      success: true,
-      data: [{ id: 'j1', title: '北京之旅' }],
-      meta: { total: 1, page: 2, limit: 10 },
-    };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockResponse),
-    } as Response);
-
-    const result = await fetchJournals(2, 10);
-    expect(result!.data).toHaveLength(1);
-    expect(result!.meta.page).toBe(2);
-  });
-});
-
-describe('fetchJournal', () => {
   it('returns null on 404', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 404,
     } as Response);
 
-    const result = await fetchJournal('nonexistent');
+    const result = await fetchAttraction('nonexistent');
+    expect(result).toBeNull();
+  });
+});
+
+describe('fetchRegions', () => {
+  it('fetches regions with level and parentId filters', async () => {
+    const mockResponse = {
+      data: [{ id: 'r1', name: '北京', level: 'province', parentId: null }],
+      total: 1,
+      page: 1,
+      limit: 50,
+    };
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as Response);
+
+    const result = await fetchRegions(1, 50, 'province', 'p1');
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('level=province');
+    expect(calledUrl).toContain('parentId=p1');
+    expect(result!.data).toHaveLength(1);
+  });
+});
+
+describe('fetchCommunityFeed', () => {
+  it('fetches community posts', async () => {
+    const mockResponse = {
+      data: [{ id: 'c1', nickname: '旅行者', avatarUrl: null, title: '北京之旅', content: '内容', coverImage: null, regionId: null, attractionId: null, likeCount: 10, commentCount: 3, createdAt: 1700000000000 }],
+      total: 1,
+      page: 1,
+      limit: 20,
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as Response);
+
+    const result = await fetchCommunityFeed();
+    expect(result!.data).toHaveLength(1);
+    expect(result!.data[0].title).toBe('北京之旅');
+  });
+});
+
+describe('fetchCommunityPost', () => {
+  it('returns null on 404', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    } as Response);
+
+    const result = await fetchCommunityPost('nonexistent');
     expect(result).toBeNull();
   });
 });

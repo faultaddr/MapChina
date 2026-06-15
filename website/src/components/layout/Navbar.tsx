@@ -14,7 +14,7 @@ export function Navbar() {
 
   const links = [
     { href: '/attractions', label: t('attractions') },
-    { href: '/journals', label: t('journals') },
+    { href: '/community', label: t('community') },
     { href: '/about', label: t('about') },
   ];
 

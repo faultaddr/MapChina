@@ -1,4 +1,4 @@
-import type { ApiResponse, Attraction, Journal } from '@/types';
+import type { PaginatedResponse, Attraction, Region, CommunityPost } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const TIMEOUT_MS = 8000;
@@ -17,16 +17,18 @@ async function fetchWithTimeout(url: string, revalidate?: number): Promise<Respo
   }
 }
 
+// ---- Attractions (public) ----
+
 export async function fetchAttractions(
   page = 1,
   limit = 20,
   sort = 'popular',
-): Promise<ApiResponse<Attraction[]> | null> {
+  regionId?: string,
+): Promise<PaginatedResponse<Attraction> | null> {
   try {
-    const res = await fetchWithTimeout(
-      `${API_URL}/api/attractions?page=${page}&limit=${limit}&sort=${sort}`,
-      3600,
-    );
+    const params = new URLSearchParams({ page: String(page), limit: String(limit), sort });
+    if (regionId) params.set('regionId', regionId);
+    const res = await fetchWithTimeout(`${API_URL}/public/attractions?${params}`, 3600);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -34,11 +36,9 @@ export async function fetchAttractions(
   }
 }
 
-export async function fetchAttraction(
-  id: string,
-): Promise<ApiResponse<Attraction> | null> {
+export async function fetchAttraction(id: string): Promise<Attraction | null> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/api/attractions/${id}`, 1800);
+    const res = await fetchWithTimeout(`${API_URL}/public/attractions/${id}`, 1800);
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -46,14 +46,45 @@ export async function fetchAttraction(
   }
 }
 
-export async function fetchJournals(
+// ---- Regions (public) ----
+
+export async function fetchRegions(
+  page = 1,
+  limit = 50,
+  level?: string,
+  parentId?: string,
+): Promise<PaginatedResponse<Region> | null> {
+  try {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (level) params.set('level', level);
+    if (parentId) params.set('parentId', parentId);
+    const res = await fetchWithTimeout(`${API_URL}/public/regions?${params}`, 3600);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchRegion(id: string): Promise<Region | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/public/regions/${id}`, 1800);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ---- Community (public) ----
+
+export async function fetchCommunityFeed(
   page = 1,
   limit = 20,
-  sort = 'popular',
-): Promise<ApiResponse<Journal[]> | null> {
+): Promise<PaginatedResponse<CommunityPost> | null> {
   try {
     const res = await fetchWithTimeout(
-      `${API_URL}/api/journals?page=${page}&limit=${limit}&sort=${sort}`,
+      `${API_URL}/public/community/feed?page=${page}&limit=${limit}`,
       3600,
     );
     if (!res.ok) return null;
@@ -63,11 +94,9 @@ export async function fetchJournals(
   }
 }
 
-export async function fetchJournal(
-  id: string,
-): Promise<ApiResponse<Journal> | null> {
+export async function fetchCommunityPost(id: string): Promise<CommunityPost | null> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/api/journals/${id}`, 1800);
+    const res = await fetchWithTimeout(`${API_URL}/public/community/posts/${id}`, 1800);
     if (!res.ok) return null;
     return await res.json();
   } catch {

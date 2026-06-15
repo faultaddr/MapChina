@@ -1,8 +1,8 @@
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-  meta: { total: number; page: number; limit: number };
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface Attraction {
@@ -12,16 +12,27 @@ export interface Attraction {
   level: string;
   latitude: number;
   longitude: number;
-  description: string;
-  imageUrl?: string;
+  description: string | null;
+  visitCount: number;
 }
 
-export interface Journal {
+export interface Region {
   id: string;
+  name: string;
+  level: string;
+  parentId: string | null;
+}
+
+export interface CommunityPost {
+  id: string;
+  nickname: string;
+  avatarUrl: string | null;
   title: string;
   content: string;
-  author: { id: string; nickname: string; avatar?: string };
-  regionId: string;
-  images: string[];
-  createdAt: string;
+  coverImage: string | null;
+  regionId: string | null;
+  attractionId: string | null;
+  likeCount: number;
+  commentCount: number;
+  createdAt: number;
 }
