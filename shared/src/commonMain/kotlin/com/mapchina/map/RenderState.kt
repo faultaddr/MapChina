@@ -9,6 +9,7 @@ data class RenderState(
     val imageMarkers: Map<String, ImageMarkerData> = emptyMap(),
     val polylines: Map<String, PolylineData> = emptyMap(),
     val labels: Map<String, LabelData> = emptyMap(),
+    val neighborOutlines: List<List<Pair<Double, Double>>> = emptyList(),
     val pulseTarget: String? = null,
     val oceanColor: Color = Color(0xFFE8F4F8),
     val backgroundTheme: MapTheme = MapTheme.DEFAULT,

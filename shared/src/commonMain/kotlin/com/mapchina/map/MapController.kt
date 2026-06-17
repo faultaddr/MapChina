@@ -184,6 +184,12 @@ class MapController {
         _renderState.update { it.copy(labels = emptyMap()) }
     }
 
+    // ---- Neighbor outlines ----
+
+    fun setNeighborOutlines(outlines: List<List<Pair<Double, Double>>>) {
+        _renderState.update { it.copy(neighborOutlines = outlines) }
+    }
+
     // ---- Ocean background ----
 
     fun setOceanColor(color: androidx.compose.ui.graphics.Color) {

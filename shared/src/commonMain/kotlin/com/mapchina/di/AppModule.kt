@@ -61,7 +61,7 @@ val appModule = module {
     single { RegionMatcher(get()) }
 
     single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>(), getOrNull<AchievementRepository>()) }
-    single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get()) }
+    single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get(), get(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>()) }
     single { StatsViewModel(get(), get(), get(), get(), get()) }
     single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
     single { AchievementViewModel(get(), get(), get()) }

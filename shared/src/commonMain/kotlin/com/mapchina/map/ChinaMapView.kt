@@ -86,6 +86,22 @@ fun ChinaMapView(
                 )
             }
 
+            // L0.7: Neighbor country outlines (浅灰描边，提供地理参照)
+            val neighborStrokeWidth = if (zoom < 6f) 0.8.dp.toPx() else 0.5.dp.toPx()
+            for (outline in renderState.neighborOutlines) {
+                val path = Path()
+                for ((i, point) in outline.withIndex()) {
+                    val offset = projection.project(point.first, point.second)
+                    if (i == 0) path.moveTo(offset.x, offset.y)
+                    else path.lineTo(offset.x, offset.y)
+                }
+                drawPath(
+                    path,
+                    color = MapChinaColors.BorderMedium.copy(alpha = 0.5f),
+                    style = Stroke(width = neighborStrokeWidth)
+                )
+            }
+
             // L1/L2: Region overlays
             pathCache.buildIfChanged(renderState.overlays, projection, zoom)
 
@@ -111,6 +127,23 @@ fun ChinaMapView(
                 for (path in overlayPaths) {
                     drawPath(path, color = fillColor)
                     drawPath(path, color = strokeColor, style = Stroke(width = strokeWidth))
+                }
+            }
+
+            // L3.5: China boundary glow — 碧玉色光晕环绕中国，让留白变设计感
+            // 对每个已访问省份画一层扩展的半透明光晕
+            if (renderState.overlays.isNotEmpty()) {
+                val glowColor = MapChinaColors.Primary.copy(alpha = 0.06f)
+                for ((regionId, overlayPaths) in pathCache.paths) {
+                    val data = renderState.overlays[regionId] ?: continue
+                    if (!data.isVisited) continue
+                    for (path in overlayPaths) {
+                        drawPath(
+                            path,
+                            color = glowColor,
+                            style = Stroke(width = 12.dp.toPx())
+                        )
+                    }
                 }
             }
 

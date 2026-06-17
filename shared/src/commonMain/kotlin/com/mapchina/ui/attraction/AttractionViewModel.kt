@@ -10,6 +10,8 @@ import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.RegionMatcher
+import com.mapchina.platform.LocationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,8 @@ class AttractionViewModel(
     private val detailProvider: AttractionDetailProvider?,
     private val attractionService: AttractionService? = null,
     private val userId: String = "",
+    private val locationProvider: LocationProvider? = null,
+    private val regionMatcher: RegionMatcher? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -119,6 +123,14 @@ class AttractionViewModel(
         if (existing != null) return existing
         val domain = attractionRepository.getAttraction(attractionId) ?: return null
         return domain.toUi()
+    }
+
+    fun resolveCurrentLocationForNewAttraction(): Triple<String, Double, Double>? {
+        val provider = locationProvider ?: return null
+        val loc = provider.getCurrentLocation() ?: return null
+        val match = regionMatcher?.match(loc.first, loc.second)
+        val regionId = match?.district?.id ?: match?.city?.id ?: match?.province?.id ?: ""
+        return Triple(regionId, loc.first, loc.second)
     }
 
     fun clearSelection() {

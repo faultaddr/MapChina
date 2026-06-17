@@ -59,6 +59,8 @@ import androidx.ink.brush.Brush
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.strokes.Stroke
+import com.mapchina.platform.HapticType
+import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.ui.theme.MapChinaColors
 import org.jetbrains.compose.resources.painterResource
 import mapchina.shared.generated.resources.Res
@@ -81,6 +83,7 @@ actual fun CarvingScreen(
     attractionName: String?,
     carvingId: String?
 ) {
+    val haptic = LocalHapticFeedback.current
     var finishedStrokes by remember { mutableStateOf(listOf<Stroke>()) }
     var brushType by remember { mutableStateOf(CarvingBrushType.IRON_CHISEL) }
     var brushColor by remember { mutableStateOf(Color(0xFF1A1612)) }
@@ -102,7 +105,6 @@ actual fun CarvingScreen(
     }
 
     val titleName = attractionName ?: regionName
-
     val carvingBrush = rememberCarvingBrush(brushType, brushColor, brushSize)
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -134,9 +136,7 @@ actual fun CarvingScreen(
                     Text("保存", color = MapChinaColors.Primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
                 if (finishedStrokes.isNotEmpty()) {
-                    IconButton(onClick = {
-                        finishedStrokes = finishedStrokes.dropLast(1)
-                    }) {
+                    IconButton(onClick = { finishedStrokes = finishedStrokes.dropLast(1) }) {
                         Text("撤销", color = MapChinaColors.TextSecondary, fontSize = 13.sp)
                     }
                     IconButton(onClick = { finishedStrokes = emptyList() }) {
@@ -191,17 +191,17 @@ actual fun CarvingScreen(
                 )
             }
 
-            // Layer 4: Finished strokes — cliff carving effect
+            // Layer 4: Finished strokes — realistic cliff carving
             if (finishedStrokes.isNotEmpty()) {
-                // 4a: Weathered edge blur
+                // 4a: Rock deformation shadow — wide dark halo simulating rock displaced by chisel
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
                         val path = strokeToPath(stroke)
                         drawPath(
                             path = path,
-                            color = Color(0x261A1612),
+                            color = Color(0x181A1612),
                             style = DrawStroke(
-                                width = stroke.brush.size + 12f,
+                                width = stroke.brush.size + 20f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             )
@@ -209,15 +209,15 @@ actual fun CarvingScreen(
                     }
                 }
 
-                // 4b: Deep shadow (offset +4,+4, wide, dark)
+                // 4b: V-groove deep shadow (offset +5,+5, wide, very dark)
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
-                        val path = strokeToPath(stroke, offsetDx = 4f, offsetDy = 4f)
+                        val path = strokeToPath(stroke, offsetDx = 5f, offsetDy = 5f)
                         drawPath(
                             path = path,
-                            color = Color(0x80000000),
+                            color = Color(0x90000000),
                             style = DrawStroke(
-                                width = stroke.brush.size + 10f,
+                                width = stroke.brush.size + 12f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -226,7 +226,24 @@ actual fun CarvingScreen(
                     }
                 }
 
-                // 4c: Groove colour (with dash for iron chisel + spalling)
+                // 4c: V-groove inner shadow (offset +2,+2, medium width)
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for (stroke in finishedStrokes) {
+                        val path = strokeToPath(stroke, offsetDx = 2f, offsetDy = 2f)
+                        drawPath(
+                            path = path,
+                            color = Color(0x60000000),
+                            style = DrawStroke(
+                                width = stroke.brush.size + 6f,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Miter,
+                                miter = 3f
+                            )
+                        )
+                    }
+                }
+
+                // 4d: Groove floor — the actual carved channel
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for ((index, stroke) in finishedStrokes.withIndex()) {
                         val path = strokeToPath(stroke)
@@ -234,20 +251,21 @@ actual fun CarvingScreen(
                         val color = stroke.brush.colorIntArgb.toComposeColor()
 
                         val pathEffect = when (brushType) {
-                            CarvingBrushType.IRON_CHISEL -> PathEffect.dashPathEffect(floatArrayOf(8f, 4f))
+                            CarvingBrushType.IRON_CHISEL -> PathEffect.dashPathEffect(floatArrayOf(6f, 3f))
                             else -> null
                         }
 
+                        // Spalling: random alpha breaks simulate chipped rock
                         val rng = kotlin.random.Random(
                             if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 31 + index else index
                         )
-                        val spallAlpha = if (rng.nextFloat() < 0.15f) 0.3f + rng.nextFloat() * 0.3f else 1f
+                        val spallAlpha = if (rng.nextFloat() < 0.2f) 0.4f + rng.nextFloat() * 0.3f else 1f
 
                         drawPath(
                             path = path,
                             color = color.copy(alpha = spallAlpha),
                             style = DrawStroke(
-                                width = width + rng.nextFloat() * 4f - 2f,
+                                width = width + rng.nextFloat() * 3f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f,
@@ -257,15 +275,15 @@ actual fun CarvingScreen(
                     }
                 }
 
-                // 4d: Upper-rim highlight (offset -2,-2, thin, warm white)
+                // 4e: Upper-rim highlight (offset -2,-2, thin, warm white) — light catching the V-groove edge
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
                         val path = strokeToPath(stroke, offsetDx = -2f, offsetDy = -2f)
                         drawPath(
                             path = path,
-                            color = Color(0x40FFF8E1),
+                            color = Color(0x55FFF0D0),
                             style = DrawStroke(
-                                width = stroke.brush.size * 0.2f,
+                                width = stroke.brush.size * 0.25f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -274,18 +292,72 @@ actual fun CarvingScreen(
                     }
                 }
 
-                // 4e: Lichen patches
+                // 4f: Chisel impact craters — small dots at stroke input points
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for ((index, stroke) in finishedStrokes.withIndex()) {
+                        val rng = kotlin.random.Random(
+                            if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 17 + index else index
+                        )
+                        // Sample every few input points for impact marks
+                        val step = maxOf(1, stroke.inputs.size / 8)
+                        var i = 0
+                        while (i < stroke.inputs.size) {
+                            val input = stroke.inputs[i]
+                            // Small crater: dark dot with slight offset
+                            val craterRadius = 1.5f + rng.nextFloat() * 2f
+                            drawCircle(
+                                color = Color(0x40000000),
+                                radius = craterRadius + 1f,
+                                center = Offset(input.x + 1f, input.y + 1f)
+                            )
+                            drawCircle(
+                                color = Color(0x701A1612),
+                                radius = craterRadius,
+                                center = Offset(input.x, input.y)
+                            )
+                            i += step
+                        }
+                    }
+                }
+
+                // 4g: Rock debris / splatter particles
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for ((index, stroke) in finishedStrokes.withIndex()) {
+                        val rng = kotlin.random.Random(
+                            if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 53 + index else index
+                        )
+                        // Scatter debris along the stroke
+                        val debrisCount = minOf(20, stroke.inputs.size / 3)
+                        for (d in 0 until debrisCount) {
+                            val inputIdx = rng.nextInt(stroke.inputs.size)
+                            val input = stroke.inputs[inputIdx]
+                            val dx = (rng.nextFloat() - 0.5f) * (stroke.brush.size + 16f)
+                            val dy = (rng.nextFloat() - 0.5f) * (stroke.brush.size + 16f)
+                            val debrisRadius = 0.5f + rng.nextFloat() * 1.5f
+                            val debrisAlpha = 0.15f + rng.nextFloat() * 0.25f
+
+                            // Small rock fragment
+                            drawCircle(
+                                color = Color(0xFF3D3529).copy(alpha = debrisAlpha),
+                                radius = debrisRadius,
+                                center = Offset(input.x + dx, input.y + dy)
+                            )
+                        }
+                    }
+                }
+
+                // 4h: Lichen patches
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for ((index, stroke) in finishedStrokes.withIndex()) {
                         val rng = kotlin.random.Random(
                             if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 31 + index + 7 else index + 7
                         )
-                        if (rng.nextFloat() < 0.3f) {
+                        if (rng.nextFloat() < 0.25f) {
                             if (stroke.inputs.size == 0) continue
                             val lastInput = stroke.inputs.get(stroke.inputs.size - 1)
                             drawCircle(
-                                color = Color(0xFF2D4A2D).copy(alpha = 0.25f + rng.nextFloat() * 0.15f),
-                                radius = 4f + rng.nextFloat() * 4f,
+                                color = Color(0xFF2D4A2D).copy(alpha = 0.2f + rng.nextFloat() * 0.15f),
+                                radius = 3f + rng.nextFloat() * 5f,
                                 center = Offset(lastInput.x + rng.nextFloat() * 10f - 5f, lastInput.y + rng.nextFloat() * 10f - 5f)
                             )
                         }
@@ -298,7 +370,7 @@ actual fun CarvingScreen(
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = 0.6f }
+                        .graphicsLayer { alpha = 0.55f }
                 ) {
                     for (stroke in existingStrokes) {
                         val path = strokeToPath(stroke, offsetDx = 4f, offsetDy = 4f)
@@ -306,7 +378,20 @@ actual fun CarvingScreen(
                             path = path,
                             color = Color(0x55000000),
                             style = DrawStroke(
-                                width = stroke.brush.size + 8f,
+                                width = stroke.brush.size + 10f,
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Miter,
+                                miter = 3f
+                            )
+                        )
+                    }
+                    for (stroke in existingStrokes) {
+                        val path = strokeToPath(stroke, offsetDx = 2f, offsetDy = 2f)
+                        drawPath(
+                            path = path,
+                            color = Color(0x40000000),
+                            style = DrawStroke(
+                                width = stroke.brush.size + 5f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -317,7 +402,7 @@ actual fun CarvingScreen(
                         val path = strokeToPath(stroke)
                         drawPath(
                             path = path,
-                            color = stroke.brush.colorIntArgb.toComposeColor().copy(alpha = 0.6f),
+                            color = stroke.brush.colorIntArgb.toComposeColor().copy(alpha = 0.55f),
                             style = DrawStroke(
                                 width = stroke.brush.size,
                                 cap = StrokeCap.Round,
@@ -330,7 +415,7 @@ actual fun CarvingScreen(
                         val path = strokeToPath(stroke, offsetDx = -2f, offsetDy = -2f)
                         drawPath(
                             path = path,
-                            color = Color(0x25FFF8E1),
+                            color = Color(0x25FFF0D0),
                             style = DrawStroke(
                                 width = stroke.brush.size * 0.2f,
                                 cap = StrokeCap.Round,
@@ -342,13 +427,15 @@ actual fun CarvingScreen(
                 }
             }
 
-            // Layer 6: In-progress strokes
-            // key() forces InProgressStrokes to recreate when brush changes,
-            // otherwise it ignores defaultBrush updates after initial composition
+            // Layer 6: In-progress strokes with haptic feedback
             key(carvingBrush) {
                 InProgressStrokes(
                     defaultBrush = carvingBrush,
                     onStrokesFinished = { newStrokes ->
+                        // Trigger heavy haptic on each finished stroke — simulates chisel strike
+                        repeat(newStrokes.size) {
+                            haptic.perform(HapticType.HEAVY)
+                        }
                         finishedStrokes = finishedStrokes + newStrokes
                     }
                 )
@@ -377,7 +464,10 @@ actual fun CarvingScreen(
                         BrushTypeButton(
                             type = type,
                             selected = brushType == type,
-                            onClick = { brushType = type }
+                            onClick = {
+                                haptic.perform(HapticType.SELECTION)
+                                brushType = type
+                            }
                         )
                     }
                 }
@@ -401,7 +491,10 @@ actual fun CarvingScreen(
                         ColorDot(
                             color = color,
                             selected = brushColor == color,
-                            onClick = { brushColor = color }
+                            onClick = {
+                                haptic.perform(HapticType.LIGHT)
+                                brushColor = color
+                            }
                         )
                     }
                 }
@@ -418,7 +511,10 @@ actual fun CarvingScreen(
                     listOf(8f to "细", 14f to "中", 24f to "粗").forEach { (size, label) ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { brushSize = size }
+                            modifier = Modifier.clickable {
+                                haptic.perform(HapticType.LIGHT)
+                                brushSize = size
+                            }
                         ) {
                             Box(
                                 modifier = Modifier

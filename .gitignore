@@ -13,4 +13,5 @@ scripts/output/
 xcuserdata/
 *.xcuserstate
 gen_bg_flux.py
-docs/superpowers/plans/
+docs/superpowers/plans/*.tmp
+.next/
