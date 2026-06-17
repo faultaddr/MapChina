@@ -1,11 +1,11 @@
 package com.mapchina.ui.theme
 
 object Copy {
-    // Footprint levels — 微古风 2 字统一
+    // Footprint levels - 简洁直觉
     const val FOOTPRINT_DEEP = "深游"
     const val FOOTPRINT_SHORT = "小驻"
     const val FOOTPRINT_PASS = "途经"
-    const val FOOTPRINT_NONE = "未至"
+    const val FOOTPRINT_NONE = "未到访"
 
     // Marked confirmation
     const val MARKED_DEEP = "已标记：深游"
@@ -30,19 +30,19 @@ object Copy {
     const val PHOTO_MARKERS = "照片标记"
     const val AUTO_FOOTPRINT = "自动标记足迹"
 
-    // Feature cards — 微古风：2字标题 + 古风动宾副标题
-    const val FEATURE_JOURNAL_TITLE = "游录"
-    const val FEATURE_JOURNAL_SUBTITLE = "记行旅见闻"
+    // Feature cards - 直觉易懂
+    const val FEATURE_JOURNAL_TITLE = "游记"
+    const val FEATURE_JOURNAL_SUBTITLE = "记录旅途"
     const val FEATURE_BADGE_TITLE = "勋章"
-    const val FEATURE_BADGE_SUBTITLE = "收行旅荣誉"
+    const val FEATURE_BADGE_SUBTITLE = "旅行荣誉"
     const val FEATURE_PROVINCE_TITLE = "征版"
-    const val FEATURE_PROVINCE_SUBTITLE = "点亮中国版图"
+    const val FEATURE_PROVINCE_SUBTITLE = "点亮版图"
     const val FEATURE_ATLAS_TITLE = "图鉴"
-    const val FEATURE_ATLAS_SUBTITLE = "按主题览胜"
+    const val FEATURE_ATLAS_SUBTITLE = "主题览胜"
     const val FEATURE_CARVING_TITLE = "碑刻"
-    const val FEATURE_CARVING_SUBTITLE = "石壁留名题字"
-    const val FEATURE_STATS_TITLE = "览数"
-    const val FEATURE_STATS_SUBTITLE = "足迹成就总览"
+    const val FEATURE_CARVING_SUBTITLE = "留墨题字"
+    const val FEATURE_STATS_TITLE = "统计"
+    const val FEATURE_STATS_SUBTITLE = "数据总览"
 
     // Level
     const val LEVEL_SCORE_UNIT = "山河值"

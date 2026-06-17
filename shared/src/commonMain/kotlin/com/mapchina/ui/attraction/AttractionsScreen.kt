@@ -1,11 +1,8 @@
 package com.mapchina.ui.attraction
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +24,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,11 +95,9 @@ fun AttractionsScreen(
     })
     val searchQuery by (viewModel?.searchQuery?.collectAsState() ?: remember { mutableStateOf("") })
     var selectedFilter by remember { mutableStateOf(AttractionFilter.ALL) }
-    var searchExpanded by remember { mutableStateOf(false) }
     var showMoreFilters by remember { mutableStateOf(false) }
 
-    val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED)
-    val moreFilters = listOf(AttractionFilter.CUSTOM, AttractionFilter.UNVISITED)
+    val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED, AttractionFilter.UNVISITED, AttractionFilter.CUSTOM)
 
     val filteredAttractions = remember(attractions, selectedFilter) {
         when (selectedFilter) {
@@ -116,136 +116,120 @@ fun AttractionsScreen(
 
     Box(modifier = modifier.fillMaxSize().background(MapChinaColors.Background)) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Hero header with gradient
-            Box(
+            // Header - 大标题 + 进度
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MapChinaColors.Primary.copy(alpha = 0.08f),
-                                MapChinaColors.Background
-                            )
-                        )
-                    )
                     .statusBarsPadding()
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
             ) {
-                Column {
+                Text(
+                    "探索中国",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MapChinaColors.TextPrimary
+                )
+                if (totalCount > 0) {
+                    Spacer(Modifier.height(6.dp))
                     Row(
-                        verticalAlignment = Alignment.Bottom,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (totalCount > 0) {
-                            Text(
-                                "$visitedCount/$totalCount 已探索",
-                                color = MapChinaColors.TextTertiary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(bottom = 3.dp)
-                            )
-                        }
+                        Text(
+                            "$visitedCount",
+                            color = MapChinaColors.Primary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "/$totalCount 景点已探索",
+                            color = MapChinaColors.TextTertiary,
+                            fontSize = 13.sp
+                        )
+                        Spacer(Modifier.weight(1f))
+                        val percent = (visitedCount.toFloat() / totalCount * 100).toInt()
+                        Text(
+                            "$percent%",
+                            color = MapChinaColors.Primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     Spacer(Modifier.height(4.dp))
-                    if (totalCount > 0) {
-                        val progress by animateFloatAsState(
-                            targetValue = visitedCount.toFloat() / totalCount,
-                            animationSpec = tween(600),
-                            label = "headerProgress"
-                        )
+                    val progress by animateFloatAsState(
+                        targetValue = visitedCount.toFloat() / totalCount,
+                        animationSpec = tween(600),
+                        label = "headerProgress"
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MapChinaColors.BorderSubtle)
+                    ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth(progress)
                                 .height(3.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(MapChinaColors.BorderSubtle)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(progress)
-                                    .height(3.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            colors = listOf(
-                                                MapChinaColors.Primary,
-                                                MapChinaColors.PrimaryVariant
-                                            )
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            MapChinaColors.Primary,
+                                            MapChinaColors.PrimaryVariant
                                         )
                                     )
-                            )
-                        }
+                                )
+                        )
                     }
                 }
             }
 
-            // Search bar (collapsible)
-            AnimatedVisibility(
-                visible = searchExpanded,
-                enter = expandVertically(tween(200)),
-                exit = shrinkVertically(tween(150))
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel?.searchAttractions(it) },
-                    label = { Text("搜索景点", color = MapChinaColors.TextTertiary) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = MapChinaColors.Primary.copy(alpha = 0.6f)
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel?.searchAttractions("") }) {
-                                Text("✕", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MapChinaColors.TextPrimary,
-                        unfocusedTextColor = MapChinaColors.TextSecondary,
-                        focusedBorderColor = MapChinaColors.Primary,
-                        unfocusedBorderColor = MapChinaColors.BorderMedium,
-                        focusedContainerColor = MapChinaColors.SurfaceElevated,
-                        unfocusedContainerColor = MapChinaColors.SurfaceElevated,
-                        cursorColor = MapChinaColors.Primary
+            // 常驻搜索栏
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel?.searchAttractions(it) },
+                placeholder = { Text("搜索景点...", color = MapChinaColors.TextTertiary, fontSize = 14.sp) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MapChinaColors.TextTertiary,
+                        modifier = Modifier.size(18.dp)
                     )
-                )
-            }
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel?.searchAttractions("") }) {
+                            Text("✕", color = MapChinaColors.TextTertiary, fontSize = 14.sp)
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MapChinaColors.TextPrimary,
+                    unfocusedTextColor = MapChinaColors.TextSecondary,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = MapChinaColors.SurfaceElevated,
+                    unfocusedContainerColor = MapChinaColors.SurfaceElevated,
+                    cursorColor = MapChinaColors.Primary
+                ),
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
+            )
 
-            // Filter chips row with search toggle
+            // 横向滚动筛选 chips
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Search icon toggle
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = if (searchExpanded) MapChinaColors.Primary.copy(alpha = 0.12f) else MapChinaColors.SurfaceElevated,
-                    modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(bounded = true, radius = 20.dp),
-                        onClick = { searchExpanded = !searchExpanded }
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "搜索",
-                        tint = if (searchExpanded) MapChinaColors.Primary else MapChinaColors.TextSecondary,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp).size(16.dp)
-                    )
-                }
-
                 primaryFilters.forEach { filter ->
                     val isSelected = selectedFilter == filter
                     val chipColor by animateColorAsState(
@@ -265,59 +249,11 @@ fun AttractionsScreen(
                     ) {
                         Text(
                             filter.label,
-                            color = if (isSelected) MapChinaColors.SurfaceElevated else MapChinaColors.TextSecondary,
+                            color = if (isSelected) Color.White else MapChinaColors.TextSecondary,
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                         )
-                    }
-                }
-
-                // "更多" dropdown
-                Box {
-                    val isMoreSelected = selectedFilter in moreFilters
-                    val moreChipColor by animateColorAsState(
-                        targetValue = if (isMoreSelected) MapChinaColors.Primary else MapChinaColors.SurfaceElevated,
-                        animationSpec = tween(200),
-                        label = "moreChip"
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = moreChipColor,
-                        shadowElevation = if (isMoreSelected) 2.dp else 0.dp,
-                        modifier = Modifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(bounded = true, radius = 20.dp),
-                            onClick = { showMoreFilters = true }
-                        )
-                    ) {
-                        Text(
-                            if (isMoreSelected) selectedFilter.label else "更多",
-                            color = if (isMoreSelected) MapChinaColors.SurfaceElevated else MapChinaColors.TextSecondary,
-                            fontSize = 12.sp,
-                            fontWeight = if (isMoreSelected) FontWeight.Bold else FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMoreFilters,
-                        onDismissRequest = { showMoreFilters = false }
-                    ) {
-                        moreFilters.forEach { filter ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        filter.label,
-                                        color = if (selectedFilter == filter) MapChinaColors.Primary else MapChinaColors.TextPrimary,
-                                        fontWeight = if (selectedFilter == filter) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                onClick = {
-                                    selectedFilter = filter
-                                    showMoreFilters = false
-                                }
-                            )
-                        }
                     }
                 }
             }
@@ -325,7 +261,7 @@ fun AttractionsScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (attractions.isEmpty()) {
-                // Skeleton loading state
+                // Skeleton loading
                 LazyColumn(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottomPadding + 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -342,12 +278,15 @@ fun AttractionsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                LazyColumn(
+                // 双列瀑布流
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = bottomPadding + 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredAttractions, key = { it.id }) { attraction ->
-                        AttractionCard(
+                        WaterfallCard(
                             attraction = attraction,
                             onClick = {
                                 onNavigate(AttractionDetailScreen(attraction.id))
@@ -358,9 +297,16 @@ fun AttractionsScreen(
             }
         }
 
-        // Premium FAB
+        // FAB - 碧玉渐变
         FloatingActionButton(
-            onClick = { onNavigate(CustomAttractionScreen(regionId = "")) },
+            onClick = {
+                val resolved = viewModel?.resolveCurrentLocationForNewAttraction()
+                if (resolved != null) {
+                    onNavigate(CustomAttractionScreen(regionId = resolved.first, latitude = resolved.second.toString(), longitude = resolved.third.toString()))
+                } else {
+                    onNavigate(CustomAttractionScreen(regionId = ""))
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = bottomPadding + 16.dp),
@@ -373,14 +319,14 @@ fun AttractionsScreen(
             Icon(
                 Icons.Default.Add,
                 contentDescription = "添加景点",
-                tint = MapChinaColors.SurfaceElevated
+                tint = Color.White
             )
         }
     }
 }
 
 @Composable
-private fun AttractionCard(
+private fun WaterfallCard(
     attraction: AttractionUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -405,9 +351,9 @@ private fun AttractionCard(
     }
 
     val visitLabel = when (attraction.visitLevel) {
-        FootprintLevel.DEEP -> "深度游览"
-        FootprintLevel.SHORT_VISIT -> "短暂停留"
-        FootprintLevel.PASS_BY -> "路过"
+        FootprintLevel.DEEP -> "深游"
+        FootprintLevel.SHORT_VISIT -> "小驻"
+        FootprintLevel.PASS_BY -> "途经"
         null -> null
     }
 
@@ -420,42 +366,42 @@ private fun AttractionCard(
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Image or initial placeholder (enlarged)
-            Box {
+        Column {
+            // 大图区域
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.2f)
+            ) {
                 if (attraction.imageUrl != null) {
                     SubcomposeAsyncImage(
                         model = attraction.imageUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(width = 100.dp, height = 84.dp)
-                            .clip(RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp))
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         val state = painter.state.collectAsState().value
                         when (state) {
                             is coil3.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                            else -> InitialPlaceholder(attraction.name, levelColor, widthDp = 100, heightDp = 84)
+                            else -> GridPlaceholder(attraction.name, levelColor)
                         }
                     }
                 } else {
-                    InitialPlaceholder(attraction.name, levelColor, widthDp = 100, heightDp = 84)
+                    GridPlaceholder(attraction.name, levelColor)
                 }
 
-                // Level badge overlaid on image
+                // Level badge - 右上角
                 if (attraction.level == "A5" || attraction.level == "A4") {
                     Surface(
                         shape = RoundedCornerShape(4.dp),
                         color = levelColor.copy(alpha = 0.9f),
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(6.dp)
+                            .padding(8.dp)
                     ) {
                         Text(
                             levelBadge,
-                            color = MapChinaColors.SurfaceElevated,
+                            color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
@@ -463,14 +409,14 @@ private fun AttractionCard(
                     }
                 }
 
-                // Visit indicator on image
+                // Visit badge - 左下角
                 if (visitColor != null && visitLabel != null) {
                     Surface(
                         shape = RoundedCornerShape(4.dp),
                         color = visitColor.copy(alpha = 0.85f),
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(6.dp)
+                            .padding(8.dp)
                     ) {
                         Text(
                             visitLabel,
@@ -483,54 +429,34 @@ private fun AttractionCard(
                 }
             }
 
-                Spacer(Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
+            // 标题
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Text(
+                    text = attraction.name,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MapChinaColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (visitColor == null) {
                     Text(
-                        text = attraction.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MapChinaColors.TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        "未到访",
+                        fontSize = 11.sp,
+                        color = MapChinaColors.TextTertiary,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
-                    if (attraction.description != null) {
-                        Text(
-                            text = attraction.description,
-                            fontSize = 12.sp,
-                            color = MapChinaColors.TextTertiary,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 3.dp)
-                        )
-                    }
-
-                    // Unvisited tag (visited shown on image)
-                    if (visitColor == null) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MapChinaColors.BorderSubtle.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Text(
-                                "未到访",
-                                fontSize = 11.sp,
-                                color = MapChinaColors.TextTertiary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
                 }
             }
         }
     }
+}
 
 @Composable
-private fun InitialPlaceholder(name: String, tintColor: Color, widthDp: Int = 68, heightDp: Int = 68) {
+private fun GridPlaceholder(name: String, tintColor: Color) {
     Box(
         Modifier
-            .size(width = widthDp.dp, height = heightDp.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -543,8 +469,8 @@ private fun InitialPlaceholder(name: String, tintColor: Color, widthDp: Int = 68
     ) {
         Text(
             name.take(1),
-            color = tintColor.copy(alpha = 0.6f),
-            fontSize = 24.sp,
+            color = tintColor.copy(alpha = 0.5f),
+            fontSize = 36.sp,
             fontWeight = FontWeight.Bold
         )
     }

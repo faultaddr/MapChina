@@ -915,8 +915,17 @@ class MapViewModel(
         }
     }
 
+    private var neighborOutlinesLoaded = false
+
     private fun syncOverlaysToMap(boundaries: Map<String, String>? = null) {
         val controller = _mapController ?: return
+
+        // Load neighbor outlines once
+        if (!neighborOutlinesLoaded) {
+            neighborOutlinesLoaded = true
+            controller.setNeighborOutlines(com.mapchina.map.NeighborOutlines.all)
+        }
+
         val regionIds = mutableSetOf<String>()
         val labels = mutableMapOf<String, LabelData>()
 
