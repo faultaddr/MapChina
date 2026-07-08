@@ -8,7 +8,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.navigation.compose.rememberNavController
 import org.junit.Test
 
 @RunWith(RobolectricTestRunner::class)
@@ -17,7 +16,7 @@ class MapScreenTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test fun mapScreen_displaysInitializingMessage() = runComposeUiTest {
-        setContent { MapScreen(navController = rememberNavController()) }
+        setContent { MapScreen(onNavigate = {}, onBack = {}) }
         onNodeWithText("足迹地图（初始化中）").assertIsDisplayed()
     }
 }

@@ -8,7 +8,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.navigation.compose.rememberNavController
 import org.junit.Test
 
 @RunWith(RobolectricTestRunner::class)
@@ -17,7 +16,7 @@ class AttractionsScreenTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test fun attractionsScreen_displaysFilterChips() = runComposeUiTest {
-        setContent { AttractionsScreen(navController = rememberNavController()) }
+        setContent { AttractionsScreen(onNavigate = {}, onBack = {}) }
         onNodeWithText("全部").assertIsDisplayed()
         onNodeWithText("5A").assertIsDisplayed()
         onNodeWithText("4A").assertIsDisplayed()
