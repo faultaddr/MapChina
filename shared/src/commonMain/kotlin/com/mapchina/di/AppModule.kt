@@ -74,6 +74,7 @@ val appModule = module {
             getOrNull<LocationProvider>(),
             getOrNull<RegionMatcher>(),
             getOrNull<AchievementRepository>(),
+            get<AuthService>().getCurrentUser()?.id.orEmpty(),
             footprintSuggestionService = getOrNull<FootprintSuggestionService>()
         )
     }

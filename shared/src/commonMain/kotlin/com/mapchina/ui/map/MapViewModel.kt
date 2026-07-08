@@ -64,6 +64,19 @@ data class CityDot(
     val lng: Double
 )
 
+interface CurrentLocationProvider {
+    fun getCurrentLocation(): Pair<Double, Double>?
+    fun isAvailable(): Boolean
+}
+
+private class PlatformCurrentLocationProvider(
+    private val delegate: LocationProvider
+) : CurrentLocationProvider {
+    override fun getCurrentLocation(): Pair<Double, Double>? = delegate.getCurrentLocation()
+
+    override fun isAvailable(): Boolean = delegate.isAvailable()
+}
+
 class MapViewModel(
     private val footprintService: FootprintService,
     private val regionRepository: RegionRepository,
@@ -77,7 +90,8 @@ class MapViewModel(
     private val achievementRepository: AchievementRepository? = null,
     private val userId: String = "",
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val footprintSuggestionService: FootprintSuggestionService? = null
+    private val footprintSuggestionService: FootprintSuggestionService? = null,
+    private val currentLocationProvider: CurrentLocationProvider? = locationProvider?.let(::PlatformCurrentLocationProvider)
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -517,7 +531,7 @@ class MapViewModel(
     private val lastAutoMarkedRegionIds = mutableListOf<String>()
 
     fun autoMarkFromGps() {
-        val provider = locationProvider ?: return
+        val provider = currentLocationProvider ?: return
         val matcher = regionMatcher ?: return
         val suggestionService = footprintSuggestionService ?: return
         if (!provider.isAvailable()) return

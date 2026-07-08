@@ -11,6 +11,7 @@ import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.FootprintSuggestionService
+import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
@@ -22,6 +23,7 @@ import kotlin.test.assertNull
 class MapViewModelTest {
 
     private lateinit var viewModel: MapViewModel
+    private lateinit var attractionService: AttractionService
     private lateinit var footprintService: FootprintService
     private lateinit var regionRepo: RegionRepository
     private lateinit var footprintRepo: FootprintRepository
@@ -33,7 +35,7 @@ class MapViewModelTest {
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
         val attractionRepo = AttractionRepository(database)
-        val attractionService = AttractionService(attractionRepo)
+        attractionService = AttractionService(attractionRepo)
         footprintService = FootprintService(footprintRepo, regionRepo, null)
         suggestionService = FootprintSuggestionService(regionRepo, footprintService)
         viewModel = MapViewModel(
@@ -169,9 +171,49 @@ class MapViewModelTest {
     }
 
     @Test
+    fun autoMarkFromGps_createsSuggestionMessageWithoutWritingFootprint() {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+        regionRepo.updateBoundariesInTransaction(
+            listOf(
+                "110000" to "[[116.0,39.0],[117.0,39.0],[117.0,40.0],[116.0,40.0],[116.0,39.0]]",
+                "110100" to "[[116.2,39.7],[116.8,39.7],[116.8,40.0],[116.2,40.0],[116.2,39.7]]",
+                "110101" to "[[116.4,39.9],[116.5,39.9],[116.5,40.0],[116.4,40.0],[116.4,39.9]]"
+            )
+        )
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            regionMatcher = RegionMatcher(regionRepo),
+            userId = "testUser",
+            dispatcher = UnconfinedTestDispatcher(),
+            footprintSuggestionService = suggestionService,
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+        )
+
+        gpsViewModel.autoMarkFromGps()
+
+        assertEquals(1, gpsViewModel.footprintSuggestions.value.size)
+        assertEquals("110101", gpsViewModel.footprintSuggestions.value.first().regionId)
+        assertEquals("发现可能足迹：北京市 / 北京市 / 东城区", gpsViewModel.autoMarkMessage.value)
+        assertEquals(null, footprintRepo.getFootprint("testUser", "110101"))
+    }
+
+    @Test
     fun togglePhotoMarkers_showsPhaseMessage() {
         viewModel.togglePhotoMarkers()
 
         assertEquals("照片回溯将在后续版本开放", viewModel.autoMarkMessage.value)
     }
+}
+
+private class FakeCurrentLocationProvider(
+    private val location: Pair<Double, Double>?
+) : CurrentLocationProvider {
+    override fun isAvailable(): Boolean = location != null
+
+    override fun getCurrentLocation(): Pair<Double, Double>? = location
 }

@@ -141,14 +141,15 @@ class AttractionViewModel(
 
     fun markVisit(attractionId: String, regionId: String, level: FootprintLevel) {
         val attractionName = getAttractionById(attractionId)?.name ?: attractionId
-        val suggestionCreated = footprintSuggestionService?.offerFromAttractionVisit(
-            userId = userId,
-            attractionId = attractionId,
-            regionId = regionId,
-            attractionName = attractionName,
-            level = level
-        ) != null
-        if (!suggestionCreated) {
+        if (footprintSuggestionService != null) {
+            footprintSuggestionService.offerFromAttractionVisit(
+                userId = userId,
+                attractionId = attractionId,
+                regionId = regionId,
+                attractionName = attractionName,
+                level = level
+            )
+        } else {
             footprintService.recordAttractionVisit(userId, attractionId, level)
         }
         refreshAttractions()
