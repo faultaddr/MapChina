@@ -49,6 +49,10 @@ class FootprintService(
         return FootprintResult(isSuccess = true, footprint = footprint, achievementResult = achievementResult)
     }
 
+    fun recordAttractionVisit(userId: String, attractionId: String, level: FootprintLevel) {
+        footprintRepository.recordAttractionVisit(userId, attractionId, level)
+    }
+
     fun removeAttractionVisit(userId: String, attractionId: String) {
         footprintRepository.removeAttractionVisit(userId, attractionId)
     }

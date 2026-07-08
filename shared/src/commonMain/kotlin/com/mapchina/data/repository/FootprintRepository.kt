@@ -26,10 +26,18 @@ class FootprintRepository(private val database: MapChinaDatabase) {
         )
     }
 
-    fun markAttractionVisit(userId: String, attractionId: String, regionId: String, level: FootprintLevel) {
+    fun recordAttractionVisit(userId: String, attractionId: String, level: FootprintLevel) {
         database.attractionVisitQueries.upsertVisit(
-            userId, attractionId, level.name, Clock.System.now().toEpochMilliseconds(), null
+            userId,
+            attractionId,
+            level.name,
+            Clock.System.now().toEpochMilliseconds(),
+            null
         )
+    }
+
+    fun markAttractionVisit(userId: String, attractionId: String, regionId: String, level: FootprintLevel) {
+        recordAttractionVisit(userId, attractionId, level)
         markFootprint(userId, regionId, level)
         cascadeToParentRegions(userId, regionId)
     }
