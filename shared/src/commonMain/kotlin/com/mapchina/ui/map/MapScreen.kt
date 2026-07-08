@@ -124,6 +124,7 @@ fun MapScreen(
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
     val autoMarkMessage by viewModel.autoMarkMessage.collectAsState()
+    val footprintSuggestions by viewModel.footprintSuggestions.collectAsState()
 
     LaunchedEffect(achievementResult) {
         if (achievementResult != null) haptic.perform(HapticType.SUCCESS)
@@ -149,6 +150,7 @@ fun MapScreen(
     val bottomPanel by viewModel.bottomPanel.collectAsState()
     val previewAttraction by viewModel.previewAttraction.collectAsState()
     val shareMode by viewModel.shareMode.collectAsState()
+    val topFootprintSuggestion = footprintSuggestions.firstOrNull()
 
     // Derive showRegionCard from bottomPanel for RegionCard visibility
     val showRegionPanel = bottomPanel is BottomPanel.Region && selectedRegion != null
@@ -271,8 +273,23 @@ fun MapScreen(
             )
         }
 
-        // Bottom RegionCard (hidden in share mode)
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
+        if (topFootprintSuggestion != null && !shareMode && !showRegionPanel) {
+            FootprintSuggestionCard(
+                suggestion = topFootprintSuggestion,
+                onConfirm = { level ->
+                    viewModel.confirmSuggestion(topFootprintSuggestion.id, level)
+                },
+                onDismiss = {
+                    viewModel.dismissSuggestion(topFootprintSuggestion.id)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 12.dp, end = 12.dp, bottom = bottomBarOffset + 8.dp)
+            )
+        }
+
+        // Bottom RegionCard (hidden in share mode)
         AnimatedVisibility(
             visible = showRegionPanel && !shareMode,
             enter = slideInVertically(
