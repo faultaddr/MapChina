@@ -52,6 +52,7 @@ dependencies {
     testImplementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
     testImplementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
     testImplementation("org.jetbrains.androidx.navigation3:navigation3-ui:1.1.1")
+    testImplementation("app.cash.sqldelight:sqlite-driver:2.0.2")
     testImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("androidx.test:runner:1.6.2")
     testImplementation("junit:junit:4.13.2")

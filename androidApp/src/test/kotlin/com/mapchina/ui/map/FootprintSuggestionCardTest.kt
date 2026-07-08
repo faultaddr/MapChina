@@ -48,6 +48,10 @@ class FootprintSuggestionCardTest {
         onNodeWithText("确认后会同时将上级地区标记为途经").assertIsDisplayed()
         onNodeWithText("途经").performClick()
         assertEquals(FootprintLevel.PASS_BY, confirmed)
+        onNodeWithText("小驻").performClick()
+        assertEquals(FootprintLevel.SHORT_VISIT, confirmed)
+        onNodeWithText("深游").performClick()
+        assertEquals(FootprintLevel.DEEP, confirmed)
         onNodeWithText("忽略").performClick()
         assertEquals(true, dismissed)
     }

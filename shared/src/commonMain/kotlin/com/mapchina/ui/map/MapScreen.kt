@@ -274,7 +274,7 @@ fun MapScreen(
         }
 
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
-        if (topFootprintSuggestion != null && !shareMode && !showRegionPanel) {
+        if (topFootprintSuggestion != null && !shareMode && bottomPanel !is BottomPanel.Region) {
             FootprintSuggestionCard(
                 suggestion = topFootprintSuggestion,
                 onConfirm = { level ->
