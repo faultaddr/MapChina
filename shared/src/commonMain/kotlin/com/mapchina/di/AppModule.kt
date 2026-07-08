@@ -102,7 +102,15 @@ val appModule = module {
     single { CarvingRepository(get()) }
     single { CarvingViewModel(get()) }
     single { CommunityViewModel(get()) }
-    single { DiscoverViewModel() }
+    single {
+        DiscoverViewModel(
+            attractionRepository = get(),
+            footprintRepository = get(),
+            regionRepository = get(),
+            suggestionService = get(),
+            userId = get<AuthService>().getCurrentUser()?.id.orEmpty()
+        )
+    }
     single { ShanheViewModel() }
 }
 
