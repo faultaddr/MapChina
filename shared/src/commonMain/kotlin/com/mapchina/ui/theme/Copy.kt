@@ -51,9 +51,18 @@ object Copy {
 
     // Tabs
     const val TAB_MAP = "地图"
+    const val TAB_FOOTPRINT = "足迹"
+    const val TAB_DISCOVER = "发现"
+    const val TAB_SHANHE = "山河"
     const val TAB_ATTRACTION = "景点"
     const val TAB_COMMUNITY = "社区"
     const val TAB_PROFILE = "我的"
+
+    // Reset shells
+    const val DISCOVER_TITLE = "发现下一站"
+    const val DISCOVER_SUBTITLE = "推荐能帮你点亮版图的景点和城市"
+    const val SHANHE_TITLE = "山河"
+    const val SHANHE_SUBTITLE = "成就、图鉴、碑刻和统计"
 
     // Share
     const val SHARE_MAP = "分享"

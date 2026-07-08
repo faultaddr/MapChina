@@ -32,6 +32,8 @@ import com.mapchina.ui.attraction.CustomAttractionScreen as CustomAttractionScre
 import com.mapchina.ui.community.CommunityScreen as CommunityScreenComposable
 import com.mapchina.ui.community.PostDetailScreen as PostDetailScreenComposable
 import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.ui.discover.DiscoverScreen as DiscoverScreenComposable
+import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.journal.JournalListScreen as JournalListScreenComposable
@@ -42,6 +44,8 @@ import com.mapchina.ui.map.RegionDetailScreen as RegionDetailScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
 import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
 import com.mapchina.ui.profile.LoginScreen as LoginScreenComposable
+import com.mapchina.ui.shanhe.ShanheScreen as ShanheScreenComposable
+import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AuthService
 import kotlinx.coroutines.launch
@@ -68,6 +72,14 @@ fun AppNavHost(
                     viewModel = vm,
                     mapController = vm.persistentMapController
                 )
+            }
+            entry<DiscoverScreen> {
+                val vm: DiscoverViewModel = koinInject()
+                DiscoverScreenComposable(viewModel = vm, onNavigate = navigate)
+            }
+            entry<ShanheScreen> {
+                val vm: ShanheViewModel = koinInject()
+                ShanheScreenComposable(viewModel = vm, onNavigate = navigate)
             }
             entry<AttractionsScreen> {
                 AttractionsScreenComposable(

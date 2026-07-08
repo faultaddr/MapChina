@@ -24,10 +24,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Attractions
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -47,21 +47,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
 import com.mapchina.platform.rememberHapticFeedback
 import com.mapchina.ui.navigation.AppNavHost
+import com.mapchina.ui.navigation.DiscoverScreen
 import com.mapchina.ui.navigation.MapScreen
-import com.mapchina.ui.navigation.AttractionsScreen
-import com.mapchina.ui.navigation.CommunityScreen
 import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.Screen
+import com.mapchina.ui.navigation.ShanheScreen
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaTheme
 import com.mapchina.ui.theme.Copy
@@ -76,9 +74,9 @@ import mapchina.shared.generated.resources.splash
 data class BottomNavItem(val screen: Screen, val label: String, val icon: ImageVector)
 
 val bottomNavItems = listOf(
-    BottomNavItem(MapScreen, Copy.TAB_MAP, Icons.Default.LocationOn),
-    BottomNavItem(AttractionsScreen, Copy.TAB_ATTRACTION, Icons.Default.Attractions),
-    BottomNavItem(CommunityScreen, Copy.TAB_COMMUNITY, Icons.Default.AutoStories),
+    BottomNavItem(MapScreen, Copy.TAB_FOOTPRINT, Icons.Default.LocationOn),
+    BottomNavItem(DiscoverScreen, Copy.TAB_DISCOVER, Icons.Default.Explore),
+    BottomNavItem(ShanheScreen, Copy.TAB_SHANHE, Icons.Default.WorkspacePremium),
     BottomNavItem(ProfileScreen, Copy.TAB_PROFILE, Icons.Default.Person),
 )
 

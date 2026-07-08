@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable sealed class Screen : NavKey
 
 @Serializable data object MapScreen : Screen()
+@Serializable data object DiscoverScreen : Screen()
+@Serializable data object ShanheScreen : Screen()
 @Serializable data object AttractionsScreen : Screen()
 @Serializable data object BadgeWallScreen : Screen()
 @Serializable data class BadgeDetailScreen(val achievementId: String) : Screen()

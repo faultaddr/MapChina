@@ -27,6 +27,7 @@ import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.carving.CarvingViewModel
 import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.data.remote.MapChinaApiClient
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
@@ -36,6 +37,7 @@ import com.mapchina.ui.achievement.AtlasViewModel
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
+import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -100,6 +102,8 @@ val appModule = module {
     single { CarvingRepository(get()) }
     single { CarvingViewModel(get()) }
     single { CommunityViewModel(get()) }
+    single { DiscoverViewModel() }
+    single { ShanheViewModel() }
 }
 
 expect val platformModule: Module
