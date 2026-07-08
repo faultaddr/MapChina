@@ -34,6 +34,17 @@ class FootprintSuggestionService(
         )
     }
 
+    fun offerFromAttractionVisit(
+        userId: String,
+        attractionId: String,
+        regionId: String,
+        attractionName: String,
+        level: FootprintLevel
+    ): FootprintSuggestion? {
+        footprintService.recordAttractionVisit(userId, attractionId, level)
+        return offerFromAttractionVisit(regionId, attractionName, level)
+    }
+
     fun offerFromLocation(match: RegionMatch): FootprintSuggestion? {
         val region = match.district ?: match.city ?: match.province ?: return null
         val confidence = when {
@@ -104,7 +115,7 @@ class FootprintSuggestionService(
         var parentId = regionRepository.getRegion(regionId)?.parentId
         while (parentId != null) {
             val parent = regionRepository.getRegion(parentId) ?: break
-            footprintService.markFootprint(userId, parent.id, FootprintLevel.PASS_BY)
+            footprintService.markPassiveFootprint(userId, parent.id, FootprintLevel.PASS_BY)
             parentId = parent.parentId
         }
     }
