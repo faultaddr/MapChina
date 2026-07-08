@@ -88,7 +88,7 @@ Expected: `BUILD SUCCESSFUL`.
 Run:
 
 ```bash
-adb shell monkey -p com.mapchina.androidApp 1
+adb shell monkey -p com.mapchina.android 1
 ```
 
 Expected: app opens on the connected device or emulator.
@@ -1773,7 +1773,7 @@ Expected: `BUILD SUCCESSFUL`.
 Run:
 
 ```bash
-adb shell monkey -p com.mapchina.androidApp 1
+adb shell monkey -p com.mapchina.android 1
 ```
 
 Expected: app opens on device/emulator.
