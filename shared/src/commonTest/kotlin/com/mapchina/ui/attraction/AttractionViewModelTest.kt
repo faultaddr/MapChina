@@ -72,7 +72,15 @@ class AttractionViewModelTest {
 
     @Test
     fun markVisit_updatesAttractionState() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, null, "u1", UnconfinedTestDispatcher())
+        val vm = AttractionViewModel(
+            attractionRepo,
+            footprintService,
+            footprintRepo,
+            null,
+            attractionService = null,
+            userId = "u1",
+            dispatcher = UnconfinedTestDispatcher()
+        )
         vm.searchAttractions("故宫")
         vm.markVisit("a1", "110101", FootprintLevel.DEEP)
 
