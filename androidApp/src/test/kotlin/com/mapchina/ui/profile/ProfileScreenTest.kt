@@ -5,10 +5,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import com.mapchina.ui.theme.Copy
 import org.junit.Test
 
 @RunWith(RobolectricTestRunner::class)
@@ -29,11 +30,10 @@ class ProfileScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
-    @Test fun profileScreen_displaysFeatureCards() = runComposeUiTest {
+    @Test fun profileScreen_keepsSettingsAndRemovesGrowthEntries() = runComposeUiTest {
         setContent { ProfileScreen() }
-        onNodeWithText(Copy.FEATURE_JOURNAL_TITLE).assertIsDisplayed()
-        onNodeWithText(Copy.FEATURE_BADGE_TITLE).assertIsDisplayed()
-        onNodeWithText(Copy.FEATURE_PROVINCE_TITLE).assertIsDisplayed()
-        onNodeWithText(Copy.FEATURE_ATLAS_TITLE).assertIsDisplayed()
+        onNodeWithText("账号与设置").assertIsDisplayed()
+        onAllNodesWithText("勋章").assertCountEquals(0)
+        onAllNodesWithText("图鉴").assertCountEquals(0)
     }
 }
