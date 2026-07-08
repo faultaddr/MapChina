@@ -2,8 +2,8 @@ package com.mapchina.ui
 
 import com.mapchina.ui.navigation.DiscoverScreen
 import com.mapchina.ui.navigation.MapScreen
+import com.mapchina.ui.navigation.ProfileScreen
 import com.mapchina.ui.navigation.ShanheScreen
-import com.mapchina.ui.navigation.Screen
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -18,7 +18,9 @@ class AppNavigationTest {
 
     @Test
     fun navKeys_existForNewMainTabs() {
-        val screens: List<Screen> = listOf(MapScreen, DiscoverScreen, ShanheScreen)
-        assertEquals(3, screens.size)
+        assertEquals(
+            listOf(MapScreen, DiscoverScreen, ShanheScreen, ProfileScreen),
+            bottomNavItems.map { it.screen }
+        )
     }
 }
