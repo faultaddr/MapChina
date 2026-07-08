@@ -10,6 +10,7 @@ import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.map.MapZoomLevel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
@@ -24,6 +25,7 @@ class MapViewModelTest {
     private lateinit var footprintService: FootprintService
     private lateinit var regionRepo: RegionRepository
     private lateinit var footprintRepo: FootprintRepository
+    private lateinit var suggestionService: FootprintSuggestionService
 
     @BeforeTest
     fun setup() {
@@ -33,7 +35,22 @@ class MapViewModelTest {
         val attractionRepo = AttractionRepository(database)
         val attractionService = AttractionService(attractionRepo)
         footprintService = FootprintService(footprintRepo, regionRepo, null)
-        viewModel = MapViewModel(footprintService, regionRepo, footprintRepo, attractionService, null, null, null, null, null, null, "testUser", UnconfinedTestDispatcher())
+        suggestionService = FootprintSuggestionService(regionRepo, footprintService)
+        viewModel = MapViewModel(
+            footprintService,
+            regionRepo,
+            footprintRepo,
+            attractionService,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "testUser",
+            UnconfinedTestDispatcher(),
+            suggestionService
+        )
     }
 
     @Test
@@ -101,5 +118,60 @@ class MapViewModelTest {
         assertNotNull(viewModel.selectedRegion.value)
         viewModel.clearSelection()
         assertNull(viewModel.selectedRegion.value)
+    }
+
+    @Test
+    fun footprintSuggestions_exposesPendingSuggestions() {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+
+        suggestionService.offerFromAttractionVisit(
+            regionId = "110101",
+            attractionName = "故宫博物院",
+            level = FootprintLevel.DEEP
+        )
+
+        assertEquals(1, viewModel.footprintSuggestions.value.size)
+        assertEquals("110101", viewModel.footprintSuggestions.value.first().regionId)
+    }
+
+    @Test
+    fun confirmSuggestion_writesFootprintAndClearsPendingSuggestion() {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+
+        val suggestion = suggestionService.offerFromAttractionVisit(
+            regionId = "110101",
+            attractionName = "故宫博物院",
+            level = FootprintLevel.SHORT_VISIT
+        )
+
+        viewModel.confirmSuggestion(suggestion!!.id, FootprintLevel.SHORT_VISIT)
+
+        assertEquals(FootprintLevel.SHORT_VISIT, footprintRepo.getFootprint("testUser", "110101")?.level)
+        assertEquals(0, viewModel.footprintSuggestions.value.size)
+    }
+
+    @Test
+    fun dismissSuggestion_removesPendingSuggestion() {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        val suggestion = suggestionService.offerFromAttractionVisit(
+            regionId = "110000",
+            attractionName = "天安门",
+            level = FootprintLevel.PASS_BY
+        )
+
+        viewModel.dismissSuggestion(suggestion!!.id)
+
+        assertEquals(0, viewModel.footprintSuggestions.value.size)
+    }
+
+    @Test
+    fun togglePhotoMarkers_showsPhaseMessage() {
+        viewModel.togglePhotoMarkers()
+
+        assertEquals("照片回溯将在后续版本开放", viewModel.autoMarkMessage.value)
     }
 }

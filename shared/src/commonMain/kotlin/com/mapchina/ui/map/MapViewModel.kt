@@ -11,6 +11,7 @@ import com.mapchina.domain.model.RegionLevel
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.map.MapController
 import com.mapchina.map.MapTheme
 import com.mapchina.platform.PhotoResult
@@ -75,7 +76,8 @@ class MapViewModel(
     private val regionMatcher: RegionMatcher? = null,
     private val achievementRepository: AchievementRepository? = null,
     private val userId: String = "",
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val footprintSuggestionService: FootprintSuggestionService? = null
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -145,6 +147,9 @@ class MapViewModel(
 
     private val _autoMarkMessage = MutableStateFlow<String?>(null)
     val autoMarkMessage: StateFlow<String?> = _autoMarkMessage.asStateFlow()
+
+    val footprintSuggestions: StateFlow<List<com.mapchina.domain.model.FootprintSuggestion>> =
+        footprintSuggestionService?.suggestions ?: MutableStateFlow(emptyList())
 
     private val _bottomPanel = MutableStateFlow<BottomPanel>(BottomPanel.None)
     val bottomPanel: StateFlow<BottomPanel> = _bottomPanel.asStateFlow()
@@ -514,60 +519,20 @@ class MapViewModel(
     fun autoMarkFromGps() {
         val provider = locationProvider ?: return
         val matcher = regionMatcher ?: return
+        val suggestionService = footprintSuggestionService ?: return
         if (!provider.isAvailable()) return
         vmScope.launch {
             val location = provider.getCurrentLocation() ?: return@launch
             val match = matcher.match(location.first, location.second)
-            val newRegions = mutableListOf<String>()
-            val footprints = getFootprintCache()
-
-            lastAutoMarkedRegionIds.clear()
-            for (region in listOfNotNull(match.province, match.city, match.district)) {
-                if (footprints[region.id] == null) {
-                    footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
-                    newRegions.add(region.name)
-                    lastAutoMarkedRegionIds.add(region.id)
-                }
-            }
-
-            if (newRegions.isNotEmpty()) {
-                invalidateCaches()
-                refreshRegions()
-                showAutoMarkMessage("从你的位置发现了 ${newRegions.size} 个新足迹")
+            val suggestion = suggestionService.offerFromLocation(match)
+            if (suggestion != null) {
+                showAutoMarkMessage("发现可能足迹：${suggestion.parentPath}")
             }
         }
     }
 
     private fun autoMarkFromPhotos() {
-        val provider = devicePhotoProvider ?: return
-        val matcher = regionMatcher ?: return
-        if (!provider.isAvailable()) return
-        vmScope.launch {
-            if (provider.checkPermission() != PhotoResult.SUCCESS) return@launch
-            val photos = provider.getPhotosWithLocation()
-            if (photos.isEmpty()) return@launch
-
-            val footprints = getFootprintCache()
-            val newRegionIds = mutableSetOf<String>()
-
-            lastAutoMarkedRegionIds.clear()
-            for (photo in photos) {
-                val match = matcher.match(photo.latitude, photo.longitude)
-                for (region in listOfNotNull(match.province, match.city, match.district)) {
-                    if (footprints[region.id] == null && region.id !in newRegionIds) {
-                        footprintService.markFootprint(userId, region.id, FootprintLevel.PASS_BY)
-                        newRegionIds.add(region.id)
-                        lastAutoMarkedRegionIds.add(region.id)
-                    }
-                }
-            }
-
-            if (newRegionIds.isNotEmpty()) {
-                invalidateCaches()
-                refreshRegions()
-                showAutoMarkMessage("从相册发现了 ${newRegionIds.size} 个新足迹")
-            }
-        }
+        showAutoMarkMessage("照片回溯将在后续版本开放")
     }
 
     fun dismissAutoMarkMessage() {
@@ -584,6 +549,21 @@ class MapViewModel(
             invalidateCaches()
             refreshRegions()
         }
+    }
+
+    fun confirmSuggestion(suggestionId: String, level: FootprintLevel) {
+        vmScope.launch {
+            val result = footprintSuggestionService?.confirm(userId, suggestionId, level) ?: return@launch
+            invalidateCaches()
+            refreshRegions()
+            if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
+                _achievementUnlock.value = result.achievementResult
+            }
+        }
+    }
+
+    fun dismissSuggestion(suggestionId: String) {
+        footprintSuggestionService?.dismiss(suggestionId)
     }
 
     private var autoMarkJob: kotlinx.coroutines.Job? = null

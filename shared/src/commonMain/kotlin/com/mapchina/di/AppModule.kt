@@ -10,6 +10,7 @@ import com.mapchina.data.repository.RegionRepository
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.CarvingRepository
@@ -45,6 +46,7 @@ val appModule = module {
     single { AttractionRepository(get()) }
     single { FootprintRepository(get()) }
     single { FootprintService(get(), get(), get()) }
+    single { FootprintSuggestionService(get(), get()) }
     single { AttractionService(get()) }
     single { AuthService() }
     single { MapChinaApiClient("http://192.168.31.62:8080", io.ktor.client.HttpClient()) }
@@ -60,8 +62,34 @@ val appModule = module {
     single { JournalService(get(), get(), get()) }
     single { RegionMatcher(get()) }
 
-    single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>(), getOrNull<AchievementRepository>()) }
-    single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get(), get(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>()) }
+    single {
+        MapViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            getOrNull<com.mapchina.data.remote.BoundaryLoader>(),
+            get(),
+            getOrNull<DevicePhotoProvider>(),
+            getOrNull<LocationProvider>(),
+            getOrNull<RegionMatcher>(),
+            getOrNull<AchievementRepository>(),
+            footprintSuggestionService = getOrNull<FootprintSuggestionService>()
+        )
+    }
+    single {
+        AttractionViewModel(
+            attractionRepository = get(),
+            footprintService = get(),
+            footprintRepository = get(),
+            detailProvider = getOrNull<AttractionDetailProvider>(),
+            attractionService = get(),
+            userId = get<AuthService>().getCurrentUser()?.id.orEmpty(),
+            locationProvider = getOrNull<LocationProvider>(),
+            regionMatcher = getOrNull<RegionMatcher>(),
+            footprintSuggestionService = getOrNull<FootprintSuggestionService>()
+        )
+    }
     single { StatsViewModel(get(), get(), get(), get(), get()) }
     single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
     single { AchievementViewModel(get(), get(), get()) }
