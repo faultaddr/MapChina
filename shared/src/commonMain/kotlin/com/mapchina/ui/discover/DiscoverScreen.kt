@@ -38,11 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
+import coil3.compose.AsyncImage
 import com.mapchina.ui.common.ExperiencePageHeader
 import com.mapchina.ui.common.ExperienceSectionHeader
 import com.mapchina.ui.LocalScaffoldBottomPadding
@@ -176,18 +178,54 @@ private fun DiscoverSpotlightCard(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            MapChinaColors.Primary,
-                            Color(0xFF2C8F87),
-                            Color(0xFFDEAA4C)
+                            Color(0xFF173B35),
+                            Color(0xFF245F58),
+                            Color(0xFFB9873A)
                         )
                     )
                 )
                 .clickable(enabled = hasRecommendation) {
                     recommendation?.let { onRecommendationClick(it.id) }
                 }
-                .padding(18.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (shouldUseSpotlightImage(recommendation?.imageUrl)) {
+                AsyncImage(
+                    model = recommendation?.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color(0x66000000),
+                                Color(0x22000000),
+                                Color(0xD9000000)
+                            )
+                        )
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                MapChinaColors.Primary.copy(alpha = 0.46f),
+                                Color.Transparent,
+                                MapChinaColors.AccentGold.copy(alpha = 0.28f)
+                            )
+                        )
+                    )
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(18.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Surface(shape = RoundedCornerShape(999.dp), color = Color.White.copy(alpha = 0.18f)) {
                         Row(
@@ -241,6 +279,10 @@ private fun DiscoverSpotlightCard(
             }
         }
     }
+}
+
+fun shouldUseSpotlightImage(imageUrl: String?): Boolean {
+    return !imageUrl.isNullOrBlank()
 }
 
 @Composable

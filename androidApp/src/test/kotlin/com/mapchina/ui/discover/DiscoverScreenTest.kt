@@ -20,6 +20,14 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class, sdk = [34])
 class DiscoverScreenTest {
+    @Test
+    fun spotlightUsesImageOnlyWhenRecommendationHasNonBlankImageUrl() {
+        assertEquals(false, shouldUseSpotlightImage(null))
+        assertEquals(false, shouldUseSpotlightImage(""))
+        assertEquals(false, shouldUseSpotlightImage("   "))
+        assertEquals(true, shouldUseSpotlightImage("https://example.com/huangshan.jpg"))
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun discoverContentShowsPendingAndRecommendations() = runComposeUiTest {

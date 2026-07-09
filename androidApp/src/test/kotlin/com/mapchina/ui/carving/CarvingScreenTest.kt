@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,6 +15,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class, sdk = [34])
 class CarvingScreenTest {
+    @Test
+    fun monumentalBrushIsDefaultAndScalesLargerThanChisel() {
+        assertEquals(CarvingBrushType.MONUMENTAL, defaultCarvingBrushType())
+        assertTrue(
+            adjustedCarvingBrushSize(CarvingBrushType.MONUMENTAL, 24f) >
+                adjustedCarvingBrushSize(CarvingBrushType.IRON_CHISEL, 24f)
+        )
+        assertTrue(adjustedCarvingBrushSize(CarvingBrushType.MONUMENTAL, 24f) >= 64f)
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun fieldSiteHeaderShowsPlaceContextAndEmptySaveHint() = runComposeUiTest {

@@ -85,9 +85,9 @@ actual fun CarvingScreen(
 ) {
     val haptic = LocalHapticFeedback.current
     var finishedStrokes by remember { mutableStateOf(listOf<Stroke>()) }
-    var brushType by remember { mutableStateOf(CarvingBrushType.IRON_CHISEL) }
+    var brushType by remember { mutableStateOf(defaultCarvingBrushType()) }
     var brushColor by remember { mutableStateOf(Color(0xFF1A1612)) }
-    var brushSize by remember { mutableStateOf(14f) }
+    var brushSize by remember { mutableStateOf(24f) }
     var emptySaveHintVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(carvingId, regionId) {
@@ -254,15 +254,16 @@ actual fun CarvingScreen(
 
             // Layer 4: Finished strokes — realistic cliff carving
             if (finishedStrokes.isNotEmpty()) {
+                val isMonumental = brushType == CarvingBrushType.MONUMENTAL
                 // 4a: Rock deformation shadow — wide dark halo simulating rock displaced by chisel
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     for (stroke in finishedStrokes) {
                         val path = strokeToPath(stroke)
                         drawPath(
                             path = path,
-                            color = Color(0x181A1612),
+                            color = if (isMonumental) Color(0x241A1612) else Color(0x181A1612),
                             style = DrawStroke(
-                                width = stroke.brush.size + 20f,
+                                width = stroke.brush.size + if (isMonumental) 34f else 20f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             )
@@ -276,9 +277,9 @@ actual fun CarvingScreen(
                         val path = strokeToPath(stroke, offsetDx = 5f, offsetDy = 5f)
                         drawPath(
                             path = path,
-                            color = Color(0x90000000),
+                            color = if (isMonumental) Color(0xAA000000) else Color(0x90000000),
                             style = DrawStroke(
-                                width = stroke.brush.size + 12f,
+                                width = stroke.brush.size + if (isMonumental) 22f else 12f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -293,9 +294,9 @@ actual fun CarvingScreen(
                         val path = strokeToPath(stroke, offsetDx = 2f, offsetDy = 2f)
                         drawPath(
                             path = path,
-                            color = Color(0x60000000),
+                            color = if (isMonumental) Color(0x72000000) else Color(0x60000000),
                             style = DrawStroke(
-                                width = stroke.brush.size + 6f,
+                                width = stroke.brush.size + if (isMonumental) 12f else 6f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -324,9 +325,9 @@ actual fun CarvingScreen(
 
                         drawPath(
                             path = path,
-                            color = color.copy(alpha = spallAlpha),
+                            color = color.copy(alpha = if (isMonumental) 0.92f else spallAlpha),
                             style = DrawStroke(
-                                width = width + rng.nextFloat() * 3f,
+                                width = width + if (isMonumental) 4f + rng.nextFloat() * 5f else rng.nextFloat() * 3f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f,
@@ -342,9 +343,9 @@ actual fun CarvingScreen(
                         val path = strokeToPath(stroke, offsetDx = -2f, offsetDy = -2f)
                         drawPath(
                             path = path,
-                            color = Color(0x55FFF0D0),
+                            color = if (isMonumental) Color(0x78FFF0D0) else Color(0x55FFF0D0),
                             style = DrawStroke(
-                                width = stroke.brush.size * 0.25f,
+                                width = stroke.brush.size * if (isMonumental) 0.34f else 0.25f,
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Miter,
                                 miter = 3f
@@ -365,9 +366,9 @@ actual fun CarvingScreen(
                         while (i < stroke.inputs.size) {
                             val input = stroke.inputs[i]
                             // Small crater: dark dot with slight offset
-                            val craterRadius = 1.5f + rng.nextFloat() * 2f
+                            val craterRadius = if (isMonumental) 2.6f + rng.nextFloat() * 3.2f else 1.5f + rng.nextFloat() * 2f
                             drawCircle(
-                                color = Color(0x40000000),
+                                color = if (isMonumental) Color(0x52000000) else Color(0x40000000),
                                 radius = craterRadius + 1f,
                                 center = Offset(input.x + 1f, input.y + 1f)
                             )
@@ -388,14 +389,14 @@ actual fun CarvingScreen(
                             if (stroke.inputs.size > 0) stroke.inputs.get(0).x.toInt() * 53 + index else index
                         )
                         // Scatter debris along the stroke
-                        val debrisCount = minOf(20, stroke.inputs.size / 3)
+                        val debrisCount = minOf(if (isMonumental) 36 else 20, stroke.inputs.size / if (isMonumental) 2 else 3)
                         for (d in 0 until debrisCount) {
                             val inputIdx = rng.nextInt(stroke.inputs.size)
                             val input = stroke.inputs[inputIdx]
-                            val dx = (rng.nextFloat() - 0.5f) * (stroke.brush.size + 16f)
-                            val dy = (rng.nextFloat() - 0.5f) * (stroke.brush.size + 16f)
-                            val debrisRadius = 0.5f + rng.nextFloat() * 1.5f
-                            val debrisAlpha = 0.15f + rng.nextFloat() * 0.25f
+                            val dx = (rng.nextFloat() - 0.5f) * (stroke.brush.size + if (isMonumental) 30f else 16f)
+                            val dy = (rng.nextFloat() - 0.5f) * (stroke.brush.size + if (isMonumental) 30f else 16f)
+                            val debrisRadius = if (isMonumental) 0.8f + rng.nextFloat() * 2.4f else 0.5f + rng.nextFloat() * 1.5f
+                            val debrisAlpha = if (isMonumental) 0.22f + rng.nextFloat() * 0.30f else 0.15f + rng.nextFloat() * 0.25f
 
                             // Small rock fragment
                             drawCircle(
@@ -570,7 +571,7 @@ actual fun CarvingScreen(
 
                 // Size selector
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    listOf(8f to "细", 14f to "中", 24f to "粗").forEach { (size, label) ->
+                    listOf(14f to "寸", 24f to "尺", 36f to "丈").forEach { (size, label) ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable {
@@ -610,6 +611,16 @@ actual fun CarvingScreen(
 
 fun shouldBlockEmptyCarvingSave(finishedStrokeCount: Int, existingStrokeCount: Int): Boolean {
     return finishedStrokeCount == 0 && existingStrokeCount == 0
+}
+
+fun defaultCarvingBrushType(): CarvingBrushType = CarvingBrushType.MONUMENTAL
+
+fun adjustedCarvingBrushSize(brushType: CarvingBrushType, baseSize: Float): Float {
+    return when (brushType) {
+        CarvingBrushType.IRON_CHISEL -> baseSize * 1.7f
+        CarvingBrushType.MONUMENTAL -> baseSize * 2.8f
+        CarvingBrushType.WEATHERED -> baseSize * 1.45f
+    }
 }
 
 @Composable
@@ -758,11 +769,12 @@ private fun rememberCarvingBrush(
 ): Brush {
     return remember(brushType, color, size) {
         val family = BrushFamily()
-        val (epsilon, adjustedSize) = when (brushType) {
-            CarvingBrushType.IRON_CHISEL -> 0.15f to size * 1.8f
-            CarvingBrushType.MONUMENTAL -> 0.05f to size * 2.2f
-            CarvingBrushType.WEATHERED -> 0.3f to size * 1.5f
+        val epsilon = when (brushType) {
+            CarvingBrushType.IRON_CHISEL -> 0.15f
+            CarvingBrushType.MONUMENTAL -> 0.04f
+            CarvingBrushType.WEATHERED -> 0.3f
         }
+        val adjustedSize = adjustedCarvingBrushSize(brushType, size)
         Brush.Builder()
             .setFamily(family)
             .setColorIntArgb(color.toArgb())
