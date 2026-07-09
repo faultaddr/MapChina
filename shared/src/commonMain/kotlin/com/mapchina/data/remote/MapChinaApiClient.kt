@@ -7,11 +7,15 @@ import com.mapchina.data.model.RegionDto
 import com.mapchina.data.model.UserDto
 import com.mapchina.sync.RemoteSyncClient
 import com.mapchina.sync.SyncDelta
+import com.mapchina.sync.SyncPushRequest
+import com.mapchina.sync.SyncPushResponse
+import com.mapchina.sync.SyncQueueItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -98,14 +102,15 @@ class MapChinaApiClient(
         }.body()
     }
 
-    override suspend fun pushChange(entityType: String, entityId: String, operation: String, payload: String): Boolean {
+    override suspend fun pushChanges(items: List<SyncQueueItem>): Boolean {
+        if (items.isEmpty()) return true
         return try {
-            val response: ApiResponse<Unit> = client.post("$baseUrl/sync/push") {
+            val response: SyncPushResponse = client.post("$baseUrl/sync/push") {
                 contentType(ContentType.Application.Json)
                 accessToken?.let { bearerAuth(it) }
-                setBody(mapOf("entityType" to entityType, "entityId" to entityId, "operation" to operation, "payload" to payload))
+                setBody(SyncPushRequest(items))
             }.body()
-            response.isSuccess()
+            response.accepted == items.size
         } catch (_: Exception) {
             false
         }
@@ -182,25 +187,16 @@ class MapChinaApiClient(
     }
 
     override suspend fun pullDelta(sinceTimestamp: Long): SyncDelta {
-        val response: ApiResponse<SyncDeltaResponse> = client.get("$baseUrl/sync/delta") {
-            accessToken?.let { bearerAuth(it) }
-            header("since", sinceTimestamp.toString())
-        }.body()
-        return if (response.isSuccess()) {
-            val data = (response as ApiResponse.Success).data
-            SyncDelta(footprints = data.footprints, timestamp = data.timestamp)
-        } else {
+        return try {
+            client.get("$baseUrl/sync/pull") {
+                accessToken?.let { bearerAuth(it) }
+                parameter("since", sinceTimestamp)
+            }.body()
+        } catch (_: Exception) {
             SyncDelta()
         }
     }
 }
-
-@kotlinx.serialization.Serializable
-data class SyncDeltaResponse(
-    val footprints: List<FootprintDto> = emptyList(),
-    val attractionVisits: List<com.mapchina.data.model.AttractionVisitDto> = emptyList(),
-    val timestamp: Long = 0L
-)
 
 @kotlinx.serialization.Serializable
 data class CommunityPostDto(

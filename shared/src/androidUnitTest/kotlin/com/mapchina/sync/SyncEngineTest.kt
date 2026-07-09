@@ -2,12 +2,10 @@ package com.mapchina.sync
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.local.TestDatabaseDriverFactory
-import com.mapchina.data.model.FootprintDto
-import com.mapchina.data.model.FootprintLevel
-import com.mapchina.domain.service.SyncService
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class SyncEngineTest {
 
@@ -23,8 +21,9 @@ class SyncEngineTest {
     }
 
     @Test
-    fun pushChanges_sendsPendingItems() {
+    fun pushChanges_sendsPendingItemsAsOneBatch() {
         database.syncQueueQueries.insertPending("FOOTPRINT", "510000", "UPSERT", """{"level":"DEEP"}""", 1000L)
+        database.syncQueueQueries.insertPending("CARVING", "carving-1", "UPSERT", """{"text":"山河"}""", 1100L)
         fakeApiClient.pushResult = true
 
         kotlinx.coroutines.runBlocking {
@@ -32,12 +31,14 @@ class SyncEngineTest {
         }
 
         assertEquals(0, database.syncQueueQueries.countPending().executeAsOne().toInt())
-        assertEquals(1, fakeApiClient.pushCallCount)
+        assertEquals(1, fakeApiClient.pushedBatches.size)
+        assertEquals(listOf("510000", "carving-1"), fakeApiClient.pushedBatches.single().map { it.entityId })
     }
 
     @Test
-    fun pushChanges_onFailure_incrementsRetry() {
+    fun pushChanges_onBatchFailure_incrementsRetryForEveryItem() {
         database.syncQueueQueries.insertPending("FOOTPRINT", "510000", "UPSERT", "{}", 1000L)
+        database.syncQueueQueries.insertPending("CARVING", "carving-1", "UPSERT", "{}", 1100L)
         fakeApiClient.pushResult = false
 
         kotlinx.coroutines.runBlocking {
@@ -45,8 +46,8 @@ class SyncEngineTest {
         }
 
         val pending = database.syncQueueQueries.selectPending(10).executeAsList()
-        assertEquals(1, pending.size)
-        assertEquals(1L, pending.first().retry_count)
+        assertEquals(2, pending.size)
+        assertEquals(listOf(1L, 1L), pending.map { it.retry_count })
     }
 
     @Test
@@ -67,8 +68,14 @@ class SyncEngineTest {
     fun pullChanges_mergesRemoteFootprints() {
         database.footprintQueries.upsertFootprint("u1", "510000", "PASS_BY", 1000L)
         fakeApiClient.delta = SyncDelta(
-            footprints = listOf(
-                FootprintDto("u1", "510000", FootprintLevel.DEEP, 2000L)
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.FOOTPRINT,
+                    entityId = "u1:510000",
+                    operation = SyncOperation.UPSERT,
+                    payload = """{"userId":"u1","regionId":"510000","level":"DEEP","timestamp":2000}""",
+                    updatedAt = 2000L
+                )
             ),
             timestamp = 2000L
         )
@@ -84,8 +91,14 @@ class SyncEngineTest {
     @Test
     fun pullChanges_remoteHasNoLocal_createsNew() {
         fakeApiClient.delta = SyncDelta(
-            footprints = listOf(
-                FootprintDto("u1", "110000", FootprintLevel.SHORT_VISIT, 1500L)
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.FOOTPRINT,
+                    entityId = "u1:110000",
+                    operation = SyncOperation.UPSERT,
+                    payload = """{"userId":"u1","regionId":"110000","level":"SHORT_VISIT","timestamp":1500}""",
+                    updatedAt = 1500L
+                )
             ),
             timestamp = 1500L
         )
@@ -96,6 +109,79 @@ class SyncEngineTest {
 
         val footprint = database.footprintQueries.selectByUserAndRegion("u1", "110000").executeAsOne()
         assertEquals("SHORT_VISIT", footprint.level)
+    }
+
+    @Test
+    fun pullChanges_mergesRemoteCarving() {
+        fakeApiClient.delta = SyncDelta(
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.CARVING,
+                    entityId = "carving-1",
+                    operation = SyncOperation.UPSERT,
+                    payload = """
+                        {
+                            "id":"carving-1",
+                            "userId":"u1",
+                            "regionId":"510000",
+                            "regionName":"四川",
+                            "imagePath":"/local/carving.png",
+                            "strokeData":"[]",
+                            "createdAt":2000,
+                            "attractionId":"attr-1",
+                            "attractionName":"青城山",
+                            "previewAspectRatio":1.4
+                        }
+                    """.trimIndent(),
+                    updatedAt = 2000L
+                )
+            ),
+            timestamp = 2000L
+        )
+
+        kotlinx.coroutines.runBlocking {
+            syncEngine.pullChanges(0L)
+        }
+
+        val carving = database.carvingQueries.selectById("carving-1").executeAsOne()
+        assertEquals("四川", carving.region_name)
+        assertEquals("/local/carving.png", carving.image_path)
+        assertEquals(1.4, carving.preview_aspect_ratio)
+    }
+
+    @Test
+    fun pullChanges_newerDeleteTombstoneRemovesLocalCarving() {
+        database.carvingQueries.insertCarving(
+            id = "carving-1",
+            user_id = "u1",
+            region_id = "510000",
+            region_name = "四川",
+            image_path = "/local/old.png",
+            stroke_data = "[]",
+            created_at = 1000L,
+            attraction_id = null,
+            attraction_name = null,
+            preview_aspect_ratio = null
+        )
+        fakeApiClient.delta = SyncDelta(
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.CARVING,
+                    entityId = "carving-1",
+                    operation = SyncOperation.DELETE,
+                    payload = "{}",
+                    updatedAt = 2000L,
+                    deleted = true
+                )
+            ),
+            timestamp = 2000L
+        )
+
+        kotlinx.coroutines.runBlocking {
+            syncEngine.pullChanges(0L)
+        }
+
+        assertNull(database.carvingQueries.selectById("carving-1").executeAsOneOrNull())
     }
 
     @Test
@@ -119,12 +205,12 @@ class SyncEngineTest {
 
 class FakeRemoteSyncClient : RemoteSyncClient {
     var pushResult: Boolean = true
-    var pushCallCount: Int = 0
+    val pushedBatches = mutableListOf<List<SyncQueueItem>>()
     var delta: SyncDelta = SyncDelta()
     var shouldThrow: Boolean = false
 
-    override suspend fun pushChange(entityType: String, entityId: String, operation: String, payload: String): Boolean {
-        pushCallCount++
+    override suspend fun pushChanges(items: List<SyncQueueItem>): Boolean {
+        pushedBatches += items
         return pushResult
     }
 
