@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class CommunityFeedUi(
     val posts: List<CommunityPostDto> = emptyList(),
@@ -43,7 +44,9 @@ class CommunityViewModel(
         val page = if (refresh) 1 else _feedUi.value.page
         _feedUi.value = _feedUi.value.copy(isLoading = true)
         vmScope.launch {
-            val posts = apiClient.getCommunityFeed(page = page)
+            val posts = withTimeoutOrNull(2500) {
+                apiClient.getCommunityFeed(page = page)
+            } ?: emptyList()
             val merged = if (refresh) posts else _feedUi.value.posts + posts
             _feedUi.value = CommunityFeedUi(
                 posts = merged,

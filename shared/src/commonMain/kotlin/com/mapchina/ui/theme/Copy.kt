@@ -55,7 +55,7 @@ object Copy {
     const val TAB_DISCOVER = "发现"
     const val TAB_SHANHE = "山河"
     const val TAB_ATTRACTION = "景点"
-    const val TAB_COMMUNITY = "社区"
+    const val TAB_COMMUNITY = "游记"
     const val TAB_PROFILE = "我的"
 
     // Reset shells
