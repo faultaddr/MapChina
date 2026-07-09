@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,9 +23,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.mapchina.ui.LocalScaffoldBottomPadding
+import com.mapchina.ui.common.ExperienceMetricPill
+import com.mapchina.ui.common.ExperiencePageHeader
+import com.mapchina.ui.common.ExperienceSectionHeader
+import com.mapchina.ui.common.ExperienceSoftCard
 import com.mapchina.ui.navigation.AttractionDetailScreen
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
@@ -66,9 +73,33 @@ fun DiscoverContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(Copy.DISCOVER_TITLE, color = MapChinaColors.TextPrimary, style = MapChinaTypography.Display)
-                Text(Copy.DISCOVER_SUBTITLE, color = MapChinaColors.TextSecondary, style = MapChinaTypography.Body)
+            ExperiencePageHeader(Copy.DISCOVER_TITLE, Copy.DISCOVER_SUBTITLE)
+        }
+        item {
+            val primaryRecommendation = ui.recommendations.firstOrNull()
+            ExperienceSoftCard {
+                Text("下一块可点亮", color = MapChinaColors.TextPrimary, style = MapChinaTypography.Title)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    primaryRecommendation?.reason ?: "先确认一个足迹，系统会推荐下一站",
+                    color = MapChinaColors.TextSecondary,
+                    style = MapChinaTypography.Body
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    ExperienceMetricPill(
+                        label = "待确认",
+                        value = ui.pendingSuggestions.size.toString(),
+                        accent = MapChinaColors.Primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ExperienceMetricPill(
+                        label = "推荐",
+                        value = ui.recommendations.size.toString(),
+                        accent = MapChinaColors.AccentBlue,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
         item {
@@ -79,7 +110,7 @@ fun DiscoverContent(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        item { DiscoverSectionTitle("待补录") }
+        item { ExperienceSectionHeader("待补录") }
         if (ui.pendingSuggestions.isEmpty()) {
             item { DiscoverEmptyLine("暂无待确认足迹") }
         } else {
@@ -87,33 +118,29 @@ fun DiscoverContent(
                 DiscoverInfoCard(
                     title = suggestion.parentPath,
                     subtitle = "${suggestion.evidenceLabel} · 可信度${suggestion.confidenceLabel}",
+                    badge = "去足迹确认",
                     onClick = {}
                 )
             }
         }
-        item { DiscoverSectionTitle("补地图推荐") }
+        item { ExperienceSectionHeader("补地图推荐") }
         if (ui.recommendations.isEmpty()) {
             item { DiscoverEmptyLine("暂无推荐") }
         } else {
             items(ui.recommendations, key = { it.id }) { recommendation ->
                 DiscoverInfoCard(
                     title = recommendation.title,
-                    subtitle = recommendation.reason,
+                    subtitle = "${recommendation.subtitle} · ${recommendation.reason}",
                     badge = recommendation.levelLabel,
                     onClick = { onRecommendationClick(recommendation.id) }
                 )
             }
         }
-        item { DiscoverSectionTitle("附近可点亮") }
+        item { ExperienceSectionHeader("附近可点亮") }
         item { DiscoverEmptyLine("开启定位后显示附近可点亮景点") }
-        item { DiscoverSectionTitle("主题路线") }
+        item { ExperienceSectionHeader("主题路线") }
         item { DiscoverEmptyLine("五岳、丝路、海岸线等主题路线将在推荐能力增强阶段补齐") }
     }
-}
-
-@Composable
-private fun DiscoverSectionTitle(text: String) {
-    Text(text, color = MapChinaColors.TextPrimary, style = MapChinaTypography.Title)
 }
 
 @Composable
@@ -136,20 +163,24 @@ private fun DiscoverInfoCard(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Row(
+        Column(
             modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(title, color = MapChinaColors.TextPrimary, style = MapChinaTypography.Title)
-                Text(subtitle, color = MapChinaColors.TextSecondary, style = MapChinaTypography.Body)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    color = MapChinaColors.TextPrimary,
+                    style = MapChinaTypography.Title,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                if (badge != null) {
+                    Text(badge, color = MapChinaColors.AccentBlue, style = MapChinaTypography.Caption)
+                }
             }
-            if (badge != null) {
-                Text(badge, color = MapChinaColors.AccentBlue, style = MapChinaTypography.Caption)
-            }
+            Text(subtitle, color = MapChinaColors.TextSecondary, style = MapChinaTypography.Body)
         }
     }
 }

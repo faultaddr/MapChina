@@ -59,12 +59,17 @@ class DiscoverScreenTest {
         }
 
         onNodeWithText("发现下一站").assertIsDisplayed()
+        onNodeWithText("下一块可点亮").assertIsDisplayed()
+        onNodeWithText("可点亮 安徽省 / 黄山市").assertIsDisplayed()
         onNodeWithText("待补录").assertIsDisplayed()
-        onNodeWithText("补地图推荐").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
         onNodeWithText("当前位置 · 可信度高").assertIsDisplayed()
+        onNodeWithText("去足迹确认").assertIsDisplayed()
+
+        onNode(hasScrollAction()).performScrollToNode(hasText("补地图推荐"))
+        onNodeWithText("补地图推荐").assertIsDisplayed()
         onNodeWithText("黄山风景区").assertIsDisplayed()
-        onNodeWithText("可点亮 安徽省 / 黄山市").assertIsDisplayed()
+        onNodeWithText("安徽省黄山市 · 可点亮 安徽省 / 黄山市").assertIsDisplayed()
         onNodeWithText("5A").assertIsDisplayed()
 
         onNodeWithText("黄山风景区").performClick()
