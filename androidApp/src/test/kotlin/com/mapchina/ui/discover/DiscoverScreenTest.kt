@@ -49,27 +49,34 @@ class DiscoverScreenTest {
         )
 
         var clickedRecommendation: String? = null
+        var openedPendingSuggestions = false
 
         setContent {
             DiscoverContent(
                 ui = ui,
                 onSearch = {},
-                onRecommendationClick = { clickedRecommendation = it }
+                onRecommendationClick = { clickedRecommendation = it },
+                onPendingSuggestionsClick = { openedPendingSuggestions = true }
             )
         }
 
         onNodeWithText("发现下一站").assertIsDisplayed()
-        onNodeWithText("下一块可点亮").assertIsDisplayed()
+        onNodeWithText("今日推荐").assertIsDisplayed()
+        onNodeWithText("优先点亮").assertIsDisplayed()
         onNodeWithText("可点亮 安徽省 / 黄山市").assertIsDisplayed()
-        onNodeWithText("待补录").assertIsDisplayed()
+
+        onNode(hasScrollAction()).performScrollToNode(hasText("有 1 条足迹待确认"))
+        onNodeWithText("有 1 条足迹待确认").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
-        onNodeWithText("当前位置 · 可信度高").assertIsDisplayed()
         onNodeWithText("去足迹确认").assertIsDisplayed()
 
-        onNode(hasScrollAction()).performScrollToNode(hasText("补地图推荐"))
-        onNodeWithText("补地图推荐").assertIsDisplayed()
+        onNodeWithText("去足迹确认").performClick()
+        assertEquals(true, openedPendingSuggestions)
+
+        onNode(hasScrollAction()).performScrollToNode(hasText("推荐去点亮"))
+        onNodeWithText("推荐去点亮").assertIsDisplayed()
         onNodeWithText("黄山风景区").assertIsDisplayed()
-        onNodeWithText("安徽省黄山市 · 可点亮 安徽省 / 黄山市").assertIsDisplayed()
+        onNodeWithText("安徽省黄山市").assertIsDisplayed()
         onNodeWithText("5A").assertIsDisplayed()
 
         onNodeWithText("黄山风景区").performClick()
