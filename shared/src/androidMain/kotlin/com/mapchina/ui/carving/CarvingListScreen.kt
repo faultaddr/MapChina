@@ -3,8 +3,9 @@ package com.mapchina.ui.carving
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,20 +20,20 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,7 +75,7 @@ actual fun CarvingListScreen(
     regionId: String?,
     attractionId: String?,
     showAll: Boolean,
-    onCreateClick: () -> Unit,
+    onCreateClick: (CarvingPlaceTarget) -> Unit,
     onEditClick: (Carving) -> Unit,
     onBack: () -> Unit
 ) {
@@ -89,6 +90,15 @@ actual fun CarvingListScreen(
     }
 
     var deleteTarget by remember { mutableStateOf<Carving?>(null) }
+    var showPlacePicker by remember { mutableStateOf(false) }
+    val contextTarget = remember(title, regionId, attractionId) {
+        CarvingPlaceTarget(
+            regionId = regionId?.takeIf { it.isNotBlank() } ?: "cn_landscape",
+            regionName = title.regionNameFromTitle().ifBlank { "中国山河" },
+            attractionId = attractionId,
+            attractionName = null
+        )
+    }
     if (deleteTarget != null) {
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
@@ -176,7 +186,13 @@ actual fun CarvingListScreen(
         }
 
         FloatingActionButton(
-            onClick = onCreateClick,
+            onClick = {
+                if (showAll && regionId.isNullOrBlank() && attractionId.isNullOrBlank()) {
+                    showPlacePicker = true
+                } else {
+                    onCreateClick(contextTarget)
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = 24.dp)
@@ -187,7 +203,141 @@ actual fun CarvingListScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = "新碑刻", modifier = Modifier.size(28.dp))
         }
+
+        if (showPlacePicker) {
+            CarvingPlacePickerSheet(
+                onDismiss = { showPlacePicker = false },
+                onPlaceClick = { target ->
+                    showPlacePicker = false
+                    onCreateClick(target)
+                }
+            )
+        }
     }
+}
+
+private val recommendedCarvingPlaces = listOf(
+    CarvingPlaceTarget(
+        regionId = "330100",
+        regionName = "杭州市",
+        attractionId = "mct_1033",
+        attractionName = "杭州市杭州西湖风景区"
+    ),
+    CarvingPlaceTarget(
+        regionId = "140000",
+        regionName = "山西省",
+        attractionId = "mct_847",
+        attractionName = "大同市云冈石窟景区"
+    ),
+    CarvingPlaceTarget(
+        regionId = "140000",
+        regionName = "山西省",
+        attractionId = "mct_762",
+        attractionName = "忻州市雁门关景区"
+    ),
+    CarvingPlaceTarget(
+        regionId = "cn_landscape",
+        regionName = "中国山河",
+        attractionId = null,
+        attractionName = null
+    )
+)
+
+@Composable
+private fun CarvingPlacePickerSheet(
+    onDismiss: () -> Unit,
+    onPlaceClick: (CarvingPlaceTarget) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0x66000000))
+                .clickable(onClick = onDismiss)
+        )
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 12.dp, vertical = 16.dp)
+                .navigationBarsPadding(),
+            shape = RoundedCornerShape(24.dp),
+            color = MapChinaColors.SurfaceElevated,
+            shadowElevation = 12.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    "选择留刻地点",
+                    color = MapChinaColors.TextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "先选一处真实山河，再把这一笔刻上去",
+                    color = MapChinaColors.TextSecondary,
+                    fontSize = 13.sp
+                )
+                recommendedCarvingPlaces.forEach { place ->
+                    CarvingPlaceRow(place = place, onClick = { onPlaceClick(place) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CarvingPlaceRow(place: CarvingPlaceTarget, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF8B7355).copy(alpha = 0.10f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .background(Color(0xFF8B7355).copy(alpha = 0.18f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = Color(0xFF8B7355),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    place.attractionName ?: place.regionName,
+                    color = MapChinaColors.TextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    place.regionName,
+                    color = MapChinaColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+            Text("去留刻", color = Color(0xFF8B7355), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+private fun String.regionNameFromTitle(): String {
+    return substringAfter("·", missingDelimiterValue = this).trim()
 }
 
 @OptIn(ExperimentalFoundationApi::class)

@@ -30,7 +30,7 @@ actual fun CarvingListScreen(
     regionId: String?,
     attractionId: String?,
     showAll: Boolean,
-    onCreateClick: () -> Unit,
+    onCreateClick: (CarvingPlaceTarget) -> Unit,
     onEditClick: (Carving) -> Unit,
     onBack: () -> Unit
 ) {

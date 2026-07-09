@@ -88,6 +88,7 @@ actual fun CarvingScreen(
     var brushType by remember { mutableStateOf(CarvingBrushType.IRON_CHISEL) }
     var brushColor by remember { mutableStateOf(Color(0xFF1A1612)) }
     var brushSize by remember { mutableStateOf(14f) }
+    var emptySaveHintVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(carvingId, regionId) {
         if (carvingId != null) {
@@ -104,14 +105,16 @@ actual fun CarvingScreen(
         if (saveComplete) onBack()
     }
 
-    val titleName = attractionName ?: regionName
+    val titleName = attractionName?.takeIf { it.isNotBlank() }
+        ?: regionName.takeIf { it.isNotBlank() }
+        ?: "中国山河"
     val carvingBrush = rememberCarvingBrush(brushType, brushColor, brushSize)
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = {
                 Text(
-                    "题刻 · $titleName",
+                    "摩崖留刻",
                     color = MapChinaColors.TextPrimary,
                     fontWeight = FontWeight.Bold
                 )
@@ -121,8 +124,17 @@ actual fun CarvingScreen(
             },
             actions = {
                 IconButton(onClick = {
+                    if (shouldBlockEmptyCarvingSave(finishedStrokes.size, existingStrokes.size)) {
+                        haptic.perform(HapticType.WARNING)
+                        emptySaveHintVisible = true
+                        return@IconButton
+                    }
                     val strokeData = try {
-                        serializeStrokes(finishedStrokes, brushType, brushColor.toArgb())
+                        if (finishedStrokes.isEmpty() && existingStrokeData != null) {
+                            existingStrokeData ?: "[]"
+                        } else {
+                            serializeStrokes(finishedStrokes, brushType, brushColor.toArgb())
+                        }
                     } catch (_: Exception) {
                         "[]"
                     }
@@ -166,12 +178,53 @@ actual fun CarvingScreen(
                 drawRect(
                     brush = ComposeBrush.radialGradient(
                         colors = listOf(
-                            Color(0x15D4C5A0),
+                            Color(0x22D8C19A),
                             Color.Transparent,
-                            Color(0x0D1A2020)
+                            Color(0x161A2020)
                         ),
-                        center = Offset(size.width * 0.45f, size.height * 0.4f),
-                        radius = size.width * 0.6f
+                        center = Offset(size.width * 0.42f, size.height * 0.34f),
+                        radius = size.width * 0.68f
+                    )
+                )
+            }
+
+            // Layer 2b: Site atmosphere — cracks, moss traces, and a subtle working area
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val crackColor = Color(0xFF211B17).copy(alpha = 0.24f)
+                val mossColor = Color(0xFF2F4B2F).copy(alpha = 0.20f)
+                val chalkDust = Color(0xFFF4E8D4).copy(alpha = 0.13f)
+
+                val leftCrack = Path().apply {
+                    moveTo(size.width * 0.12f, size.height * 0.18f)
+                    quadraticBezierTo(size.width * 0.20f, size.height * 0.28f, size.width * 0.16f, size.height * 0.42f)
+                    quadraticBezierTo(size.width * 0.12f, size.height * 0.56f, size.width * 0.21f, size.height * 0.70f)
+                }
+                drawPath(
+                    path = leftCrack,
+                    color = crackColor,
+                    style = DrawStroke(width = 2.4f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+
+                val upperCrack = Path().apply {
+                    moveTo(size.width * 0.56f, size.height * 0.12f)
+                    quadraticBezierTo(size.width * 0.66f, size.height * 0.18f, size.width * 0.63f, size.height * 0.30f)
+                    quadraticBezierTo(size.width * 0.72f, size.height * 0.34f, size.width * 0.76f, size.height * 0.46f)
+                }
+                drawPath(
+                    path = upperCrack,
+                    color = crackColor.copy(alpha = 0.18f),
+                    style = DrawStroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+
+                drawCircle(mossColor, radius = size.minDimension * 0.08f, center = Offset(size.width * 0.06f, size.height * 0.25f))
+                drawCircle(mossColor.copy(alpha = 0.16f), radius = size.minDimension * 0.06f, center = Offset(size.width * 0.90f, size.height * 0.20f))
+                drawCircle(mossColor.copy(alpha = 0.14f), radius = size.minDimension * 0.05f, center = Offset(size.width * 0.12f, size.height * 0.82f))
+
+                drawRect(
+                    brush = ComposeBrush.radialGradient(
+                        colors = listOf(chalkDust, Color.Transparent),
+                        center = Offset(size.width * 0.50f, size.height * 0.52f),
+                        radius = size.width * 0.38f
                     )
                 )
             }
@@ -190,6 +243,14 @@ actual fun CarvingScreen(
                     )
                 )
             }
+
+            CarvingFieldSiteHeader(
+                titleName = titleName,
+                emptySaveHintVisible = emptySaveHintVisible,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+            )
 
             // Layer 4: Finished strokes — realistic cliff carving
             if (finishedStrokes.isNotEmpty()) {
@@ -436,6 +497,7 @@ actual fun CarvingScreen(
                         repeat(newStrokes.size) {
                             haptic.perform(HapticType.HEAVY)
                         }
+                        emptySaveHintVisible = false
                         finishedStrokes = finishedStrokes + newStrokes
                     }
                 )
@@ -543,6 +605,50 @@ actual fun CarvingScreen(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+fun shouldBlockEmptyCarvingSave(finishedStrokeCount: Int, existingStrokeCount: Int): Boolean {
+    return finishedStrokeCount == 0 && existingStrokeCount == 0
+}
+
+@Composable
+fun CarvingFieldSiteHeader(
+    titleName: String,
+    emptySaveHintVisible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xD8F7F0E6),
+        shadowElevation = 5.dp,
+        modifier = modifier
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(
+                titleName,
+                color = Color(0xFF1F211E),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                "在这面山石上刻下今日足迹",
+                color = Color(0xFF6B5B45),
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+            if (emptySaveHintVisible) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "先刻下一笔，再落成碑刻",
+                    color = MapChinaColors.Error,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
     }
 }
 

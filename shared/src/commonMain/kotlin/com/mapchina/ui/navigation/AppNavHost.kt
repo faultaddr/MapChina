@@ -273,10 +273,15 @@ fun AppNavHost(
                     regionId = key.regionId,
                     attractionId = key.attractionId,
                     showAll = showAll,
-                    onCreateClick = {
-                        val rId = key.regionId ?: ""
-                        val rName = key.regionName ?: ""
-                        navigate(CarvingScreen(regionId = rId, regionName = rName, attractionId = key.attractionId))
+                    onCreateClick = { target ->
+                        navigate(
+                            CarvingScreen(
+                                regionId = target.regionId,
+                                regionName = target.regionName,
+                                attractionId = target.attractionId,
+                                attractionName = target.attractionName
+                            )
+                        )
                     },
                     onEditClick = { carving ->
                         navigate(CarvingScreen(
