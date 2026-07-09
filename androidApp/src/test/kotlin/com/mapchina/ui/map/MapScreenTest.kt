@@ -39,7 +39,7 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
-    @Test fun mapScreen_showsHomeDashboardAndNextStepDock() = runComposeUiTest {
+    @Test fun mapScreen_showsLightweightHudAndCommandBar() = runComposeUiTest {
         val fixture = createSuggestionFixture(offerSuggestion = false)
 
         setContent {
@@ -50,11 +50,16 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国足迹").assertIsDisplayed()
-        onNodeWithText("从第一处开始点亮").assertIsDisplayed()
-        onNodeWithText("下一步").assertIsDisplayed()
-        onNodeWithText("点省份标记到访").assertIsDisplayed()
-        onNodeWithText("随机出发").assertIsDisplayed()
+        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("省级地图").assertIsDisplayed()
+        onNodeWithText("0%").assertIsDisplayed()
+        onNodeWithText("地图操作").assertIsDisplayed()
+        onNodeWithText("出发").assertIsDisplayed()
+        onNodeWithText("照片").assertIsDisplayed()
+        onNodeWithText("分享").assertIsDisplayed()
+        onAllNodesWithText("中国足迹").assertCountEquals(0)
+        onAllNodesWithText("从第一处开始点亮").assertCountEquals(0)
+        onAllNodesWithText("下一步").assertCountEquals(0)
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
@@ -69,9 +74,9 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国足迹").assertIsDisplayed()
-        onNodeWithText("已点亮").assertIsDisplayed()
-        onNodeWithText("完成度").assertIsDisplayed()
+        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("省级地图").assertIsDisplayed()
+        onNodeWithText("0%").assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
         onNodeWithText("当前位置 · 可信度高").assertIsDisplayed()
