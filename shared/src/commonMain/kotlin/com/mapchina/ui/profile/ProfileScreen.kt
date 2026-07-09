@@ -136,12 +136,13 @@ fun ProfileScreen(
                     colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        SettingsGroupTitle("足迹记录设置")
+                        Spacer(modifier = Modifier.height(10.dp))
                         SettingsRow(Copy.PHOTO_MARKERS, photoMarkersVisible, { haptic.perform(HapticType.SELECTION); photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
                         Spacer(modifier = Modifier.height(12.dp))
                         SettingsRow(Copy.AUTO_FOOTPRINT, autoMarkFootprint, { haptic.perform(HapticType.SELECTION); autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 地图主题 - 分隔
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -150,9 +151,26 @@ fun ProfileScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("地图主题", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MapChinaColors.TextPrimary)
+                        SettingsGroupTitle("地图显示")
                         Spacer(modifier = Modifier.height(10.dp))
                         MapThemeSelector(settingsRepository = settingsRepository)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(0.5.dp)
+                                .background(MapChinaColors.BorderSubtle)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        SettingsGroupTitle("数据与同步")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "登录后可同步足迹与地图主题",
+                            color = MapChinaColors.TextSecondary,
+                            style = MapChinaTypography.Body
+                        )
                     }
                 }
             }
@@ -295,8 +313,8 @@ private fun StatsBar(stats: StatsUi) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             BigStat("省份", stats.visitedProvinces, stats.totalProvinces, MapChinaColors.Primary)
-            BigStat("景点", stats.visitedCities, stats.totalCities, MapChinaColors.AccentGold)
-            BigStat("城市", stats.visitedDistricts, stats.totalDistricts, MapChinaColors.FootprintShortVisit)
+            BigStat("城市", stats.visitedCities, stats.totalCities, MapChinaColors.AccentGold)
+            BigStat("区县", stats.visitedDistricts, stats.totalDistricts, MapChinaColors.FootprintShortVisit)
         }
     }
 }
@@ -330,6 +348,11 @@ private fun BigStat(label: String, visited: Int, total: Int, accentColor: Color)
             )
         }
     }
+}
+
+@Composable
+private fun SettingsGroupTitle(text: String) {
+    Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MapChinaColors.TextPrimary)
 }
 
 @Composable
