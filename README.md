@@ -143,10 +143,25 @@ MapChina/
 **后端服务：**
 
 ```bash
-./gradlew :server:run
+scripts/setup_local_server.sh
 ```
 
-在服务端的 `application.conf` 中配置 PostgreSQL 连接信息。
+脚本会使用本机 PostgreSQL 创建 `mapchina` 角色和数据库，启动 Ktor 服务，写入日志到 `scripts/output/local_server/`，并运行地图数据 seed。服务端本机地址为 `http://127.0.0.1:8080`，Android 模拟器访问同一个服务使用 `http://10.0.2.2:8080`。
+
+同步接口 smoke test：
+
+```bash
+scripts/smoke_sync.py
+```
+
+如需手动运行后端，可通过环境变量覆盖数据库连接：
+
+```bash
+DB_URL=jdbc:postgresql://127.0.0.1:5432/mapchina \
+DB_USER=mapchina \
+DB_PASSWORD=mapchina \
+./gradlew :server:run
+```
 
 ## 架构
 
