@@ -185,6 +185,73 @@ class SyncEngineTest {
     }
 
     @Test
+    fun pullChanges_journalDeleteTombstoneRemovesLocalChildren() {
+        database.journalQueries.insertJournal(
+            id = "journal-1",
+            user_id = "u1",
+            title = "旧游记",
+            description = "",
+            region_id = "510000",
+            attraction_id = null,
+            start_time = 1_000L,
+            end_time = null,
+            created_at = 1_000L,
+            updated_at = 1_000L
+        )
+        database.journalPhotoQueries.insertPhoto(
+            id = "photo-1",
+            journal_id = "journal-1",
+            local_path = "/local/photo.jpg",
+            latitude = null,
+            longitude = null,
+            taken_at = null,
+            sort_order = 0L
+        )
+        database.journalTrackPointQueries.insertTrackPoint(
+            id = "point-1",
+            journal_id = "journal-1",
+            latitude = 30.0,
+            longitude = 104.0,
+            altitude = 0.0,
+            speed = 0.0,
+            timestamp = 1_000L,
+            sort_order = 0L
+        )
+        fakeApiClient.delta = SyncDelta(
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.JOURNAL,
+                    entityId = "journal-1",
+                    operation = SyncOperation.DELETE,
+                    payload = """
+                        {
+                            "id":"journal-1",
+                            "userId":"u1",
+                            "title":"旧游记",
+                            "description":"",
+                            "regionId":"510000",
+                            "startTime":1000,
+                            "createdAt":1000,
+                            "updatedAt":2000
+                        }
+                    """.trimIndent(),
+                    updatedAt = 2_000L,
+                    deleted = true
+                )
+            ),
+            timestamp = 2_000L
+        )
+
+        kotlinx.coroutines.runBlocking {
+            syncEngine.pullChanges(0L)
+        }
+
+        assertNull(database.journalQueries.selectById("journal-1").executeAsOneOrNull())
+        assertEquals(0, database.journalPhotoQueries.selectByJournalId("journal-1").executeAsList().size)
+        assertEquals(0, database.journalTrackPointQueries.selectByJournalId("journal-1").executeAsList().size)
+    }
+
+    @Test
     fun pullChanges_onNetworkError_setsOfflineStatus() {
         fakeApiClient.shouldThrow = true
 

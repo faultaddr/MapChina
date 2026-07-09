@@ -194,6 +194,8 @@ class SyncEngine(
         val local = database.journalQueries.selectById(payload.id).executeAsOneOrNull()
         if (item.isDelete()) {
             if (local == null || item.updatedAt >= local.updated_at) {
+                database.journalPhotoQueries.deleteByJournalId(payload.id)
+                database.journalTrackPointQueries.deleteByJournalId(payload.id)
                 database.journalQueries.deleteById(payload.id)
             }
             return

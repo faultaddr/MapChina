@@ -39,14 +39,16 @@ import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
+import com.mapchina.sync.SyncChangeWriter
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val appModule = module {
     single { MapChinaDatabase(get()) }
+    single { SyncChangeWriter(get()) }
     single { RegionRepository(get()) }
     single { AttractionRepository(get()) }
-    single { FootprintRepository(get()) }
+    single { FootprintRepository(get(), get()) }
     single { FootprintService(get(), get(), get()) }
     single { FootprintSuggestionService(get(), get()) }
     single { AttractionService(get()) }
@@ -56,11 +58,11 @@ val appModule = module {
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }
     single { UserScoreRepository(get()) }
-    single { SettingsRepository(get()) }
+    single { SettingsRepository(get(), get()) }
     single { AchievementService(get(), get(), get(), get(), get(), get()) }
     single { AtlasService(get(), get()) }
 
-    single { JournalRepository(get()) }
+    single { JournalRepository(get(), get()) }
     single { JournalService(get(), get(), get()) }
     single { RegionMatcher(get()) }
 
@@ -99,7 +101,7 @@ val appModule = module {
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }
     single { JournalViewModel(get(), get(), get(), getOrNull<PhotoPicker>()) }
-    single { CarvingRepository(get()) }
+    single { CarvingRepository(get(), get()) }
     single { CarvingViewModel(get()) }
     single { CommunityViewModel(get()) }
     single {
