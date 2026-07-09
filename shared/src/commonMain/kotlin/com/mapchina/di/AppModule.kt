@@ -42,15 +42,17 @@ import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.sync.SyncChangeWriter
+import com.mapchina.sync.SyncCoordinator
 import com.mapchina.sync.SyncEngine
+import com.mapchina.sync.SyncUploadTrigger
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val appModule = module {
     single { MapChinaDatabase(get()) }
-    single { SyncChangeWriter(get()) }
+    single { SyncChangeWriter(get(), getOrNull<SyncUploadTrigger>()) }
     single { RegionRepository(get()) }
-    single { AttractionRepository(get()) }
+    single { AttractionRepository(get(), get()) }
     single { FootprintRepository(get(), get()) }
     single { FootprintService(get(), get(), get()) }
     single { FootprintSuggestionService(get(), get()) }
@@ -58,6 +60,8 @@ val appModule = module {
     single { AuthService() }
     single { MapChinaApiClient(defaultApiBaseUrl(), createMapChinaHttpClient()) }
     single { SyncEngine(get<MapChinaApiClient>(), get()) }
+    single { SyncCoordinator(get(), get(), get(), get()) }
+    single<SyncUploadTrigger> { get<SyncCoordinator>() }
 
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }

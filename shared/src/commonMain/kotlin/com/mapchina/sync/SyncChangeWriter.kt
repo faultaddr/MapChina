@@ -1,6 +1,7 @@
 package com.mapchina.sync
 
 import com.mapchina.data.local.MapChinaDatabase
+import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.Carving
 import com.mapchina.domain.model.Journal
 import com.mapchina.domain.model.JournalPhoto
@@ -9,7 +10,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
-class SyncChangeWriter(private val database: MapChinaDatabase) {
+class SyncChangeWriter(
+    private val database: MapChinaDatabase,
+    private val uploadTrigger: SyncUploadTrigger? = null
+) {
 
     fun enqueueUpsert(entityType: SyncEntityType, entityId: String, payload: String, updatedAt: Long) {
         database.syncQueueQueries.insertPending(
@@ -19,6 +23,7 @@ class SyncChangeWriter(private val database: MapChinaDatabase) {
             payload,
             updatedAt
         )
+        uploadTrigger?.requestUpload()
     }
 
     fun enqueueDelete(entityType: SyncEntityType, entityId: String, updatedAt: Long) {
@@ -33,6 +38,7 @@ class SyncChangeWriter(private val database: MapChinaDatabase) {
             payload,
             updatedAt
         )
+        uploadTrigger?.requestUpload()
     }
 
     fun enqueueFootprint(userId: String, regionId: String, level: String, timestamp: Long) {
@@ -87,6 +93,27 @@ class SyncChangeWriter(private val database: MapChinaDatabase) {
                     attractionId = carving.attractionId,
                     attractionName = carving.attractionName,
                     previewAspectRatio = carving.previewAspectRatio?.toStableDouble()
+                )
+            ),
+            updatedAt
+        )
+    }
+
+    fun enqueueCustomAttraction(attraction: Attraction, updatedAt: Long = Clock.System.now().toEpochMilliseconds()) {
+        enqueueUpsert(
+            SyncEntityType.CUSTOM_ATTRACTION,
+            attraction.id,
+            syncJson.encodeToString(
+                CustomAttractionSyncPayload(
+                    id = attraction.id,
+                    userId = attraction.userId.orEmpty(),
+                    name = attraction.name,
+                    regionId = attraction.regionId,
+                    level = attraction.level.name,
+                    latitude = attraction.latitude,
+                    longitude = attraction.longitude,
+                    description = attraction.description,
+                    imageUrl = attraction.imageUrl
                 )
             ),
             updatedAt

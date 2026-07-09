@@ -150,6 +150,44 @@ class SyncEngineTest {
     }
 
     @Test
+    fun pullChanges_mergesRemoteCustomAttraction() {
+        fakeApiClient.delta = SyncDelta(
+            items = listOf(
+                SyncQueueItem(
+                    entityType = SyncEntityType.CUSTOM_ATTRACTION,
+                    entityId = "custom-1",
+                    operation = SyncOperation.UPSERT,
+                    payload = """
+                        {
+                            "id":"custom-1",
+                            "userId":"u1",
+                            "name":"巷口老茶馆",
+                            "regionId":"510000",
+                            "level":"CUSTOM",
+                            "latitude":30.66,
+                            "longitude":104.06,
+                            "description":"自己补录的地方",
+                            "imageUrl":"/local/tea.jpg"
+                        }
+                    """.trimIndent(),
+                    updatedAt = 2_000L
+                )
+            ),
+            timestamp = 2_000L
+        )
+
+        kotlinx.coroutines.runBlocking {
+            syncEngine.pullChanges(0L)
+        }
+
+        val attraction = database.attractionQueries.selectById("custom-1").executeAsOne()
+        assertEquals("巷口老茶馆", attraction.name)
+        assertEquals("CUSTOM", attraction.level)
+        assertEquals(1L, attraction.is_custom)
+        assertEquals("u1", attraction.user_id)
+    }
+
+    @Test
     fun pullChanges_newerDeleteTombstoneRemovesLocalCarving() {
         database.carvingQueries.insertCarving(
             id = "carving-1",

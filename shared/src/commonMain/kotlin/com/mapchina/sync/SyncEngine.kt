@@ -26,9 +26,9 @@ class SyncEngine(
     private val _status = MutableStateFlow(SyncStatus.IDLE)
     val status: StateFlow<SyncStatus> = _status.asStateFlow()
 
-    suspend fun pushChanges() {
+    suspend fun pushChanges(): Boolean {
         val pending = database.syncQueueQueries.selectPending(50).executeAsList()
-        if (pending.isEmpty()) return
+        if (pending.isEmpty()) return true
 
         val validRows = pending.mapNotNull { item ->
             val syncItem = item.toSyncQueueItem()
@@ -40,7 +40,7 @@ class SyncEngine(
             }
         }
         val items = validRows.map { it.second }
-        if (items.isEmpty()) return
+        if (items.isEmpty()) return false
 
         val success = try {
             apiClient.pushChanges(items)
@@ -55,16 +55,19 @@ class SyncEngine(
                 handleRetry(item.id, item.retry_count)
             }
         }
+        return success
     }
 
-    suspend fun pullChanges(sinceTimestamp: Long) {
+    suspend fun pullChanges(sinceTimestamp: Long): Long? {
         _status.value = SyncStatus.SYNCING
-        try {
+        return try {
             val delta = apiClient.pullDelta(sinceTimestamp)
             mergeItems(delta.items)
             _status.value = SyncStatus.SYNCED
+            delta.timestamp
         } catch (_: Exception) {
             _status.value = SyncStatus.OFFLINE
+            null
         }
     }
 
@@ -81,6 +84,7 @@ class SyncEngine(
                 SyncEntityType.FOOTPRINT -> mergeFootprintItem(item)
                 SyncEntityType.ATTRACTION_VISIT -> mergeAttractionVisitItem(item)
                 SyncEntityType.CARVING -> mergeCarvingItem(item)
+                SyncEntityType.CUSTOM_ATTRACTION -> mergeCustomAttractionItem(item)
                 SyncEntityType.JOURNAL -> mergeJournalItem(item)
                 SyncEntityType.JOURNAL_PHOTO -> mergeJournalPhotoItem(item)
                 SyncEntityType.JOURNAL_TRACK_POINT -> mergeJournalTrackPointItem(item)
@@ -187,6 +191,27 @@ class SyncEngine(
                 preview_aspect_ratio = payload.previewAspectRatio
             )
         }
+    }
+
+    private fun mergeCustomAttractionItem(item: SyncQueueItem) {
+        if (item.isDelete()) {
+            database.attractionQueries.deleteById(item.entityId)
+            return
+        }
+
+        val payload = item.decodePayload<CustomAttractionSyncPayload>() ?: return
+        database.attractionQueries.upsertAttraction(
+            id = payload.id,
+            name = payload.name,
+            region_id = payload.regionId,
+            level = payload.level,
+            latitude = payload.latitude,
+            longitude = payload.longitude,
+            description = payload.description,
+            image_url = payload.imageUrl,
+            is_custom = 1L,
+            user_id = payload.userId
+        )
     }
 
     private fun mergeJournalItem(item: SyncQueueItem) {

@@ -175,7 +175,7 @@ class AttractionViewModel(
                 isCustom = true,
                 userId = if (userId.isNotBlank()) userId else "local"
             )
-            attractionRepository.insertAttraction(attraction)
+            attractionRepository.insertCustomAttraction(attraction)
             loadAllAttractions()
         }
     }

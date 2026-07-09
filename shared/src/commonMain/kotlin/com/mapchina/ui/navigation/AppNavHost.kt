@@ -48,6 +48,7 @@ import com.mapchina.ui.shanhe.ShanheScreen as ShanheScreenComposable
 import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AuthService
+import com.mapchina.sync.SyncCoordinator
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -122,6 +123,7 @@ fun AppNavHost(
             entry<LoginScreen> {
                 val authService: AuthService = koinInject()
                 val apiClient: com.mapchina.data.remote.MapChinaApiClient = koinInject()
+                val syncCoordinator: SyncCoordinator = koinInject()
                 val scope = rememberCoroutineScope()
                 var loginError by remember { mutableStateOf("") }
                 LoginScreenComposable(
@@ -143,6 +145,7 @@ fun AppNavHost(
                                     avatar = null,
                                     createdAt = Clock.System.now().toEpochMilliseconds()
                                 ), accessToken = resp.accessToken, refreshToken = resp.refreshToken)
+                                syncCoordinator.requestFullSync()
                                 onBack()
                             } catch (e: Exception) {
                                 loginError = e.message ?: "登录失败"

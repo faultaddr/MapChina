@@ -43,9 +43,10 @@ def main():
     token = login["accessToken"]
     user_id = login["userId"]
     now = int(time.time() * 1000)
-    entity_id = f"smoke-carving-{now}"
-    payload = {
-        "id": entity_id,
+    carving_id = f"smoke-carving-{now}"
+    custom_attraction_id = f"smoke-custom-attraction-{now}"
+    carving_payload = {
+        "id": carving_id,
         "userId": user_id,
         "regionId": "110000",
         "regionName": "北京市",
@@ -56,6 +57,17 @@ def main():
         "attractionName": None,
         "previewAspectRatio": None,
     }
+    custom_attraction_payload = {
+        "id": custom_attraction_id,
+        "userId": user_id,
+        "name": "Smoke Test Custom Attraction",
+        "regionId": "110000",
+        "level": "CUSTOM",
+        "latitude": 39.9,
+        "longitude": 116.4,
+        "description": "Created by local smoke test",
+        "imageUrl": None,
+    }
     push = request(
         "POST",
         "/sync/push",
@@ -63,9 +75,17 @@ def main():
             "items": [
                 {
                     "entityType": "CARVING",
-                    "entityId": entity_id,
+                    "entityId": carving_id,
                     "operation": "UPSERT",
-                    "payload": json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+                    "payload": json.dumps(carving_payload, ensure_ascii=False, separators=(",", ":")),
+                    "updatedAt": now,
+                    "deleted": False,
+                },
+                {
+                    "entityType": "CUSTOM_ATTRACTION",
+                    "entityId": custom_attraction_id,
+                    "operation": "UPSERT",
+                    "payload": json.dumps(custom_attraction_payload, ensure_ascii=False, separators=(",", ":")),
                     "updatedAt": now,
                     "deleted": False,
                 }
@@ -73,14 +93,16 @@ def main():
         },
         token=token,
     )
-    if push.get("accepted") != 1:
+    if push.get("accepted") != 2:
         raise AssertionError(f"Unexpected push response: {push}")
 
     query = urllib.parse.urlencode({"since": 0})
     delta = request("GET", f"/sync/pull?{query}", token=token)
     items = delta.get("items", [])
-    if not any(item.get("entityId") == entity_id for item in items):
-        raise AssertionError(f"Smoke item {entity_id} not found in delta: {delta}")
+    expected_ids = {carving_id, custom_attraction_id}
+    found_ids = {item.get("entityId") for item in items}
+    if not expected_ids.issubset(found_ids):
+        raise AssertionError(f"Smoke items {expected_ids - found_ids} not found in delta: {delta}")
 
     print("Smoke sync passed.")
 

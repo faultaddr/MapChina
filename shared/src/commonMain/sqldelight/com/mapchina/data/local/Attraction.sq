@@ -39,5 +39,12 @@ insertAttraction:
 INSERT OR IGNORE INTO attraction(id, name, region_id, level, latitude, longitude, description, image_url, is_custom, user_id)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+upsertAttraction:
+INSERT OR REPLACE INTO attraction(id, name, region_id, level, latitude, longitude, description, image_url, is_custom, user_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
 updateImageUrl:
 UPDATE attraction SET image_url = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM attraction WHERE id = ?;

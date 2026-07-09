@@ -31,6 +31,7 @@ V1 cloud sync covers user-owned mutable data:
 - footprints
 - attraction visits
 - carvings
+- custom attractions created by the user
 - journals
 - journal photo metadata
 - journal track points
@@ -161,4 +162,3 @@ Required before claiming completion:
 - local server deployment with PostgreSQL
 - real HTTP smoke test: health, login, push, pull
 - if app runtime behavior changes, Android install and emulator verification per `AGENTS.md`
-

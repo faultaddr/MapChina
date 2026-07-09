@@ -3,8 +3,12 @@ package com.mapchina.data.repository
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.AttractionLevel
+import com.mapchina.sync.SyncChangeWriter
 
-class AttractionRepository(private val database: MapChinaDatabase) {
+class AttractionRepository(
+    private val database: MapChinaDatabase,
+    private val syncChangeWriter: SyncChangeWriter? = null
+) {
 
     fun insertAttraction(attraction: Attraction) {
         database.attractionQueries.insertAttraction(
@@ -12,6 +16,18 @@ class AttractionRepository(private val database: MapChinaDatabase) {
             attraction.level.name, attraction.latitude, attraction.longitude,
             attraction.description, attraction.imageUrl,
             if (attraction.isCustom) 1L else 0L, attraction.userId
+        )
+    }
+
+    fun insertCustomAttraction(attraction: Attraction) {
+        database.attractionQueries.upsertAttraction(
+            attraction.id, attraction.name, attraction.regionId,
+            AttractionLevel.CUSTOM.name, attraction.latitude, attraction.longitude,
+            attraction.description, attraction.imageUrl,
+            1L, attraction.userId
+        )
+        syncChangeWriter?.enqueueCustomAttraction(
+            attraction.copy(level = AttractionLevel.CUSTOM, isCustom = true)
         )
     }
 

@@ -12,7 +12,7 @@
 
 - Preserve unrelated dirty worktree changes, including `docs/superpowers/plans/2026-06-14-haptic-feedback.md`.
 - Keep the app local-first: local writes must succeed even when no server exists.
-- Sync V1 covers `FOOTPRINT`, `ATTRACTION_VISIT`, `CARVING`, `JOURNAL`, `JOURNAL_PHOTO`, `JOURNAL_TRACK_POINT`, and `APP_SETTING`.
+- Sync V1 covers `FOOTPRINT`, `ATTRACTION_VISIT`, `CARVING`, `CUSTOM_ATTRACTION`, `JOURNAL`, `JOURNAL_PHOTO`, `JOURNAL_TRACK_POINT`, and `APP_SETTING`.
 - V1 syncs image paths and photo metadata only, not binary files.
 - JWT auth remains required for `/sync/*`.
 - Android runtime/UI changes require `./gradlew installDebug`, app launch, adb input, and screenshots per `AGENTS.md`.
@@ -142,4 +142,3 @@
 - [ ] Capture at least one screenshot showing the app still launches.
 - [ ] Verify local server still responds to `/health` after app install.
 - [ ] Commit implementation files only, preserving unrelated untracked files.
-

@@ -8,6 +8,7 @@ enum class SyncEntityType {
     FOOTPRINT,
     ATTRACTION_VISIT,
     CARVING,
+    CUSTOM_ATTRACTION,
     JOURNAL,
     JOURNAL_PHOTO,
     JOURNAL_TRACK_POINT,
@@ -84,6 +85,19 @@ data class CarvingSyncPayload(
     val attractionId: String? = null,
     val attractionName: String? = null,
     val previewAspectRatio: Double? = null
+)
+
+@Serializable
+data class CustomAttractionSyncPayload(
+    val id: String,
+    val userId: String,
+    val name: String,
+    val regionId: String,
+    val level: String = "CUSTOM",
+    val latitude: Double,
+    val longitude: Double,
+    val description: String? = null,
+    val imageUrl: String? = null
 )
 
 @Serializable
