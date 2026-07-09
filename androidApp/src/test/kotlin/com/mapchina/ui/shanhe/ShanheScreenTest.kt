@@ -26,9 +26,17 @@ class ShanheScreenTest {
         }
 
         onNodeWithText("山河").assertIsDisplayed()
+        onNodeWithText("山河初识").assertIsDisplayed()
+        onNodeWithText("0 山河值").assertIsDisplayed()
+        onNodeWithText("今日目标").assertIsDisplayed()
+        onNodeWithText("确认 1 条可能足迹，点亮下一块版图").assertIsDisplayed()
+        onNodeWithText("成长入口").assertIsDisplayed()
         onNodeWithText("勋章").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("图鉴"))
         onNodeWithText("图鉴").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("征版"))
         onNodeWithText("征版").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("碑刻"))
         onNodeWithText("碑刻").assertIsDisplayed()
         onNode(hasScrollAction()).performScrollToNode(hasText("统计"))
         onNodeWithText("统计").assertIsDisplayed()
