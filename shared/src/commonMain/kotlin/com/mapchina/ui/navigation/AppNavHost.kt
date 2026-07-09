@@ -142,7 +142,7 @@ fun AppNavHost(
                                     nickname = resp.nickname,
                                     avatar = null,
                                     createdAt = Clock.System.now().toEpochMilliseconds()
-                                ))
+                                ), accessToken = resp.accessToken, refreshToken = resp.refreshToken)
                                 onBack()
                             } catch (e: Exception) {
                                 loginError = e.message ?: "登录失败"

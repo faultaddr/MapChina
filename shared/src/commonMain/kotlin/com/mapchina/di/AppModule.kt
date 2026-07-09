@@ -29,6 +29,7 @@ import com.mapchina.ui.carving.CarvingViewModel
 import com.mapchina.ui.community.CommunityViewModel
 import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.data.remote.MapChinaApiClient
+import com.mapchina.data.remote.defaultApiBaseUrl
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
@@ -53,7 +54,7 @@ val appModule = module {
     single { FootprintSuggestionService(get(), get()) }
     single { AttractionService(get()) }
     single { AuthService() }
-    single { MapChinaApiClient("http://192.168.31.62:8080", io.ktor.client.HttpClient()) }
+    single { MapChinaApiClient(defaultApiBaseUrl(), io.ktor.client.HttpClient()) }
 
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }
@@ -96,7 +97,7 @@ val appModule = module {
         )
     }
     single { StatsViewModel(get(), get(), get(), get(), get()) }
-    single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
+    single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>(), get()) }
     single { AchievementViewModel(get(), get(), get()) }
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }

@@ -1,5 +1,6 @@
 package com.mapchina.ui.profile
 
+import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.data.repository.UserScoreRepository
 import com.mapchina.domain.model.UserLevelInfo
@@ -19,13 +20,15 @@ data class ProfileUi(
     val phone: String?,
     val avatar: String?,
     val levelInfo: UserLevelInfo? = null,
-    val badgeCount: Int = 0
+    val badgeCount: Int = 0,
+    val pendingSyncCount: Long = 0L
 )
 
 class ProfileViewModel(
     private val authService: AuthService,
     private val userScoreRepository: UserScoreRepository,
     val settingsRepository: SettingsRepository? = null,
+    private val database: MapChinaDatabase? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -45,7 +48,8 @@ class ProfileViewModel(
                     nickname = user?.nickname ?: "未登录",
                     phone = user?.phone,
                     avatar = user?.avatar,
-                    levelInfo = levelInfo
+                    levelInfo = levelInfo,
+                    pendingSyncCount = pendingSyncCount()
                 )
             }
         }
@@ -59,7 +63,8 @@ class ProfileViewModel(
             nickname = user?.nickname ?: "未登录",
             phone = user?.phone,
             avatar = user?.avatar,
-            levelInfo = levelInfo
+            levelInfo = levelInfo,
+            pendingSyncCount = pendingSyncCount()
         )
     }
 
@@ -70,4 +75,7 @@ class ProfileViewModel(
     fun onCleared() {
         vmScope.cancel()
     }
+
+    private fun pendingSyncCount(): Long =
+        database?.syncQueueQueries?.countPending()?.executeAsOne() ?: 0L
 }

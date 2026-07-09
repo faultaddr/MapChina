@@ -167,7 +167,11 @@ fun ProfileScreen(
                         SettingsGroupTitle("数据与同步")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "登录后可同步足迹与地图主题",
+                            if (profile.pendingSyncCount > 0) {
+                                "待同步 ${profile.pendingSyncCount} 项，登录后将自动上传"
+                            } else {
+                                "登录后自动同步足迹、景点、碑刻、游记和地图设置"
+                            },
                             color = MapChinaColors.TextSecondary,
                             style = MapChinaTypography.Body
                         )

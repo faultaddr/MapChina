@@ -27,12 +27,23 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `on_login_stores_process_tokens`() {
+        val service = AuthService()
+        val user = UserDto("user1", "13800001111", "旅行者1111", null, 0L)
+        service.onLogin(user, accessToken = "access-token", refreshToken = "refresh-token")
+        assertEquals("access-token", service.accessToken)
+        assertEquals("refresh-token", service.refreshToken)
+    }
+
+    @Test
     fun `on_logout_clears_current_user`() {
         val service = AuthService()
         service.onLogin(UserDto("user1", "13800001111", "旅行者1111", null, 0L))
         service.onLogout()
         assertFalse(service.isLoggedIn())
         assertNull(service.getCurrentUser())
+        assertNull(service.accessToken)
+        assertNull(service.refreshToken)
     }
 
     @Test

@@ -13,10 +13,11 @@ class ProfileViewModelTest {
 
     private lateinit var authService: AuthService
     private lateinit var userScoreRepo: UserScoreRepository
+    private lateinit var database: MapChinaDatabase
 
     @BeforeTest
     fun setup() {
-        val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
+        database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         authService = AuthService()
         userScoreRepo = UserScoreRepository(database)
     }
@@ -43,5 +44,13 @@ class ProfileViewModelTest {
         vm.logout()
         assertEquals("未登录", vm.profile.value.nickname)
         assertFalse(vm.isLoggedIn.value)
+    }
+
+    @Test
+    fun loadProfile_readsPendingSyncCount() {
+        database.syncQueueQueries.insertPending("FOOTPRINT", "u1:510000", "UPSERT", "{}", 1_000L)
+        val vm = ProfileViewModel(authService, userScoreRepo, database = database)
+        vm.loadProfile()
+        assertEquals(1L, vm.profile.value.pendingSyncCount)
     }
 }
