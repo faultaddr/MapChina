@@ -39,6 +39,25 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test fun mapScreen_showsHomeDashboardAndNextStepDock() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        onNodeWithText("中国足迹").assertIsDisplayed()
+        onNodeWithText("从第一处开始点亮").assertIsDisplayed()
+        onNodeWithText("下一步").assertIsDisplayed()
+        onNodeWithText("点省份标记到访").assertIsDisplayed()
+        onNodeWithText("随机出发").assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
     @Test fun mapScreen_showsPendingSuggestionAndConfirmsIt() = runComposeUiTest {
         val fixture = createSuggestionFixture()
 
@@ -50,7 +69,7 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onNodeWithText("已点亮").assertIsDisplayed()
         onNodeWithText("完成度").assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
@@ -84,7 +103,7 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun createSuggestionFixture(): SuggestionFixture {
+    private fun createSuggestionFixture(offerSuggestion: Boolean = true): SuggestionFixture {
         val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         MapChinaDatabase.Schema.create(driver)
         val database = MapChinaDatabase(driver)
@@ -97,13 +116,15 @@ class MapScreenTest {
         regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
         regionRepo.insertRegion(Region("330100", "杭州市", RegionLevel.CITY, "330000"))
         regionRepo.insertRegion(Region("330106", "西湖区", RegionLevel.DISTRICT, "330100"))
-        suggestionService.offerFromLocation(
-            RegionMatch(
-                province = regionRepo.getRegion("330000"),
-                city = regionRepo.getRegion("330100"),
-                district = regionRepo.getRegion("330106")
+        if (offerSuggestion) {
+            suggestionService.offerFromLocation(
+                RegionMatch(
+                    province = regionRepo.getRegion("330000"),
+                    city = regionRepo.getRegion("330100"),
+                    district = regionRepo.getRegion("330106")
+                )
             )
-        )
+        }
 
         val viewModel = MapViewModel(
             footprintService = footprintService,

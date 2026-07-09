@@ -83,6 +83,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Attractions
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,7 +233,7 @@ fun MapScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(210.dp)
+                .height(176.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -284,7 +287,8 @@ fun MapScreen(
         }
 
         // Top-right FAB: feature hub (hidden in share mode)
-        if (!shareMode) {
+        val showHomeDock = topFootprintSuggestion == null && !shareMode && bottomPanel !is BottomPanel.Region
+        if (!shareMode && !(showHomeDock && currentLevel == MapZoomLevel.NATIONAL)) {
             MapFab(
                 visitedCount = visitedCount,
                 totalCount = totalCount,
@@ -302,11 +306,24 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 252.dp, end = 14.dp)
+                    .padding(top = 218.dp, end = 14.dp)
             )
         }
 
         val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
+        if (showHomeDock) {
+            HomeNextStepDock(
+                visitedCount = visitedCount,
+                totalCount = totalCount,
+                photoMarkersVisible = photoMarkersVisible,
+                onDepart = { showDartTravel = true },
+                onTogglePhotos = { viewModel.togglePhotoMarkers() },
+                onShare = { viewModel.enterShareMode() },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 12.dp, end = 12.dp, bottom = bottomBarOffset + 10.dp)
+            )
+        }
         if (topFootprintSuggestion != null && !shareMode && bottomPanel !is BottomPanel.Region) {
             FootprintSuggestionCard(
                 suggestion = topFootprintSuggestion,
@@ -662,17 +679,25 @@ private fun HomeMapHeader(
     val haptic = LocalHapticFeedback.current
     val currentName = path.lastOrNull()?.name ?: "中国"
     val scopeLabel = if (path.size <= 1) "全国" else path.drop(1).joinToString(" / ") { it.name }
+    val title = if (currentName == "中国") "中国足迹" else "${currentName}足迹"
+    val progressFraction = if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f
+    val statusText = when {
+        totalCount == 0 -> "正在加载版图"
+        visitedCount == 0 -> "从第一处开始点亮"
+        coveragePercent >= 100 -> "这一层版图已点亮"
+        else -> "继续点亮下一块版图"
+    }
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MapChinaColors.SurfaceElevated.copy(alpha = 0.88f),
-        shadowElevation = 10.dp,
+        shape = RoundedCornerShape(20.dp),
+        color = MapChinaColors.SurfaceElevated.copy(alpha = 0.91f),
+        shadowElevation = 6.dp,
         tonalElevation = 2.dp,
         border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.72f)),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -681,27 +706,22 @@ private fun HomeMapHeader(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = currentName,
+                        text = title,
                         color = MapChinaColors.TextPrimary,
-                        fontSize = 23.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(3.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = scopeLabel,
+                            text = "$scopeLabel · ${currentLevel}级地图",
                             color = MapChinaColors.TextSecondary,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Text(
-                            text = " · ${currentLevel}级地图",
-                            color = MapChinaColors.TextTertiary,
-                            fontSize = 12.sp
                         )
                     }
                 }
@@ -727,7 +747,40 @@ private fun HomeMapHeader(
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(9.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = statusText,
+                    color = MapChinaColors.Primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "$coveragePercent%",
+                    color = MapChinaColors.AccentGold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(MapChinaColors.BorderSubtle.copy(alpha = 0.70f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progressFraction.coerceIn(0f, 1f))
+                        .height(6.dp)
+                        .background(MapChinaColors.PrimaryGradient, RoundedCornerShape(999.dp))
+                )
+            }
+
+            Spacer(Modifier.height(9.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -757,19 +810,99 @@ private fun HomeStatPill(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = color.copy(alpha = 0.10f),
+    Row(
         modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(color.copy(alpha = 0.10f))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(label, color = MapChinaColors.TextTertiary, fontSize = 10.sp, maxLines = 1)
-            Spacer(Modifier.height(2.dp))
-            Text(value, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(label, color = MapChinaColors.TextTertiary, fontSize = 10.sp, maxLines = 1)
+        Spacer(Modifier.width(6.dp))
+        Text(value, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun HomeNextStepDock(
+    visitedCount: Int,
+    totalCount: Int,
+    photoMarkersVisible: Boolean,
+    onDepart: () -> Unit,
+    onTogglePhotos: () -> Unit,
+    onShare: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val nextStepText = if (visitedCount == 0) "点省份标记到访" else "继续点亮未到达地区"
+    val progressText = if (totalCount > 0) "$visitedCount/$totalCount" else "加载中"
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MapChinaColors.SurfaceElevated.copy(alpha = 0.94f),
+        shadowElevation = 8.dp,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.70f)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("下一步", color = MapChinaColors.TextPrimary, style = com.mapchina.ui.theme.MapChinaTypography.Title)
+                    Text(nextStepText, color = MapChinaColors.TextSecondary, style = com.mapchina.ui.theme.MapChinaTypography.Body)
+                }
+                Text(
+                    progressText,
+                    color = MapChinaColors.Primary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+                HomeDockAction(
+                    label = "随机出发",
+                    icon = Icons.Default.Navigation,
+                    accent = MapChinaColors.Primary,
+                    onClick = onDepart,
+                    modifier = Modifier.weight(1f)
+                )
+                HomeDockAction(
+                    label = if (photoMarkersVisible) "隐藏照片" else "照片标记",
+                    icon = Icons.Default.PhotoCamera,
+                    accent = MapChinaColors.AccentBlue,
+                    onClick = onTogglePhotos,
+                    modifier = Modifier.weight(1f)
+                )
+                HomeDockAction(
+                    label = Copy.SHARE_MAP,
+                    icon = Icons.Default.Share,
+                    accent = MapChinaColors.AccentGold,
+                    onClick = onShare,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun HomeDockAction(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(accent.copy(alpha = 0.11f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(5.dp))
+        Text(label, color = accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
