@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
@@ -74,8 +75,21 @@ fun ChinaMapView(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val projection = controller.viewport.toProjection(size.width, size.height)
 
-            // L0: Background (ocean)
-            drawRect(renderState.oceanColor)
+            // L0: Background. The default theme uses a quiet wash instead of a flat field,
+            // which gives the national map depth without competing with the regions.
+            if (renderState.backgroundTheme == MapTheme.DEFAULT) {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFEAF7F8),
+                            renderState.oceanColor,
+                            Color(0xFFFAF8F1)
+                        )
+                    )
+                )
+            } else {
+                drawRect(renderState.oceanColor)
+            }
 
             // L0.5: Theme background texture
             if (backgroundBitmap != null) {
@@ -86,20 +100,25 @@ fun ChinaMapView(
                 )
             }
 
-            // L0.7: Neighbor country outlines (浅灰描边，提供地理参照)
-            val neighborStrokeWidth = if (zoom < 6f) 0.8.dp.toPx() else 0.5.dp.toPx()
-            for (outline in renderState.neighborOutlines) {
-                val path = Path()
-                for ((i, point) in outline.withIndex()) {
-                    val offset = projection.project(point.first, point.second)
-                    if (i == 0) path.moveTo(offset.x, offset.y)
-                    else path.lineTo(offset.x, offset.y)
+            // L0.7: Neighbor country outlines. Keep them as faint context only; on
+            // the default national view they add rough visual noise around China.
+            val drawNeighborOutlines = renderState.backgroundTheme != MapTheme.DEFAULT || zoom >= 6f
+            if (drawNeighborOutlines) {
+                val neighborStrokeWidth = if (zoom < 6f) 0.45.dp.toPx() else 0.35.dp.toPx()
+                val neighborAlpha = if (renderState.backgroundTheme == MapTheme.DEFAULT) 0.08f else 0.26f
+                for (outline in renderState.neighborOutlines) {
+                    val path = Path()
+                    for ((i, point) in outline.withIndex()) {
+                        val offset = projection.project(point.first, point.second)
+                        if (i == 0) path.moveTo(offset.x, offset.y)
+                        else path.lineTo(offset.x, offset.y)
+                    }
+                    drawPath(
+                        path,
+                        color = MapChinaColors.BorderMedium.copy(alpha = neighborAlpha),
+                        style = Stroke(width = neighborStrokeWidth)
+                    )
                 }
-                drawPath(
-                    path,
-                    color = MapChinaColors.BorderMedium.copy(alpha = 0.5f),
-                    style = Stroke(width = neighborStrokeWidth)
-                )
             }
 
             // L1/L2: Region overlays
@@ -114,7 +133,7 @@ fun ChinaMapView(
                 val data = renderState.overlays[regionId] ?: continue
                 val fillColor = data.style.toFillColor()
                 val strokeColor = data.style.toStrokeColor()
-                val strokeWidth = if (zoom < 6f) 1.5.dp.toPx() else 1.dp.toPx()
+                val strokeWidth = if (zoom < 6f) 1.15.dp.toPx() else 0.9.dp.toPx()
 
                 // When a theme background is active, draw an opaque ocean-color base
                 // under each overlay so the texture doesn't bleed through
@@ -200,7 +219,7 @@ fun ChinaMapView(
                     else -> 9.dp.toPx()
                 }
                 val style = TextStyle(
-                    color = MapChinaColors.TextPrimary.copy(alpha = if (zoom < 5f) 0.7f else 0.85f),
+                    color = MapChinaColors.TextPrimary.copy(alpha = if (zoom < 5f) 0.62f else 0.82f),
                     fontSize = with(density) { fontSizePx.toSp() },
                     textAlign = TextAlign.Center
                 )

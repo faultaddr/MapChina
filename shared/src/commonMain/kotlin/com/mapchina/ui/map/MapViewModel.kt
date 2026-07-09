@@ -959,7 +959,7 @@ class MapViewModel(
                 }
                 labels[region.regionId] = LabelData(
                     id = region.regionId,
-                    name = region.name,
+                    name = mapLabelName(region.name, _currentLevel.value),
                     lat = center.first,
                     lng = center.second,
                     minZoom = minZoom
@@ -973,6 +973,30 @@ class MapViewModel(
         }
         controller.setLabels(labels)
         lastSyncedRegionIds = regionIds
+    }
+
+    private fun mapLabelName(name: String, level: MapZoomLevel): String {
+        return when (level) {
+            MapZoomLevel.NATIONAL -> name.stripAdministrativeSuffix(
+                "特别行政区",
+                "壮族自治区",
+                "回族自治区",
+                "维吾尔自治区",
+                "自治区",
+                "省",
+                "市"
+            )
+            MapZoomLevel.PROVINCIAL -> name.stripAdministrativeSuffix("市")
+            MapZoomLevel.CITY,
+            MapZoomLevel.DISTRICT -> name
+        }
+    }
+
+    private fun String.stripAdministrativeSuffix(vararg suffixes: String): String {
+        for (suffix in suffixes) {
+            if (endsWith(suffix)) return removeSuffix(suffix)
+        }
+        return this
     }
 
     private fun syncMarkersToMap() {
@@ -1058,16 +1082,16 @@ class MapViewModel(
             val rate = childCoverageRate.coerceIn(0f, 1f)
             if (rate == 0f) {
                 return OverlayStyle(
-                    fillColor = 0xFF6DB8B0L,
-                    strokeColor = 0xFF5AADA4L,
+                    fillColor = 0xFFF7FCFAL,
+                    strokeColor = 0xFF8ACCC6L,
                     strokeWidth = 0.5f,
-                    alpha = 0.12f
+                    alpha = 0.88f
                 )
             }
-            val alpha = 0.15f + rate * 0.20f
+            val alpha = 0.42f + rate * 0.18f
             return OverlayStyle(
-                fillColor = 0xFF5AADA4L,
-                strokeColor = 0xFF4A9E94L,
+                fillColor = 0xFFAEDCD7L,
+                strokeColor = 0xFF69BDB5L,
                 strokeWidth = 0.6f + rate * 0.5f,
                 alpha = alpha
             )

@@ -12,6 +12,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
@@ -224,21 +226,52 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top breadcrumb (hidden in share mode)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(210.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.82f),
+                            Color.White.copy(alpha = 0.30f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(260.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.46f),
+                            Color.White.copy(alpha = 0.88f)
+                        )
+                    )
+                )
+        )
+
+        // Top dashboard (hidden in share mode)
         if (!shareMode) {
-            Box(
+            HomeMapHeader(
+                path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
+                currentLevel = levelLabel,
+                visitedCount = visitedCount,
+                totalCount = totalCount,
+                coveragePercent = coveragePercent,
+                onNavigateUp = { viewModel.navigateUp() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.TopStart)
+                    .align(Alignment.TopCenter)
                     .statusBarsPadding()
-                    .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-            ) {
-                BreadcrumbNav(
-                    path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
-                    onNavigateUp = { viewModel.navigateUp() },
-                    onNavigateTo = { if (it.isNotEmpty()) viewModel.navigateTo(it) }
-                )
-            }
+                    .padding(top = 10.dp, start = 14.dp, end = 14.dp)
+            )
         }
 
         // Scrim to dismiss FAB menu
@@ -269,7 +302,7 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 12.dp, end = 12.dp)
+                    .padding(top = 252.dp, end = 14.dp)
             )
         }
 
@@ -302,7 +335,7 @@ fun MapScreen(
             ) + fadeOut(tween(150)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = bottomBarOffset)
+                .padding(start = 12.dp, end = 12.dp, bottom = bottomBarOffset + 8.dp)
         ) {
             if (selectedRegion != null) {
                 RegionCard(
@@ -616,6 +649,130 @@ fun MapScreen(
     }
 }
 
+@Composable
+private fun HomeMapHeader(
+    path: List<BreadcrumbItem>,
+    currentLevel: String,
+    visitedCount: Int,
+    totalCount: Int,
+    coveragePercent: Int,
+    onNavigateUp: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = LocalHapticFeedback.current
+    val currentName = path.lastOrNull()?.name ?: "中国"
+    val scopeLabel = if (path.size <= 1) "全国" else path.drop(1).joinToString(" / ") { it.name }
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MapChinaColors.SurfaceElevated.copy(alpha = 0.88f),
+        shadowElevation = 10.dp,
+        tonalElevation = 2.dp,
+        border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.72f)),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentName,
+                        color = MapChinaColors.TextPrimary,
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = scopeLabel,
+                            color = MapChinaColors.TextSecondary,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Text(
+                            text = " · ${currentLevel}级地图",
+                            color = MapChinaColors.TextTertiary,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                if (path.size > 1) {
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = MapChinaColors.Primary.copy(alpha = 0.10f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable {
+                                haptic.perform(HapticType.MEDIUM)
+                                onNavigateUp()
+                            }
+                    ) {
+                        Text(
+                            text = "返回上级",
+                            color = MapChinaColors.Primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                HomeStatPill(
+                    label = "已点亮",
+                    value = "$visitedCount/$totalCount",
+                    color = MapChinaColors.Primary,
+                    modifier = Modifier.weight(1f)
+                )
+                HomeStatPill(
+                    label = "完成度",
+                    value = "$coveragePercent%",
+                    color = MapChinaColors.AccentGold,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeStatPill(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = color.copy(alpha = 0.10f),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(label, color = MapChinaColors.TextTertiary, fontSize = 10.sp, maxLines = 1)
+            Spacer(Modifier.height(2.dp))
+            Text(value, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AttractionsBottomSheet(
@@ -924,4 +1081,3 @@ private fun ShareConfirmBar(
         }
     }
 }
-

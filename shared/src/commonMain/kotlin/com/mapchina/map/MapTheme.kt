@@ -16,7 +16,7 @@ enum class MapTheme(
 ) {
     DEFAULT(
         displayName = "经典",
-        oceanColor = Color(0xFFE8F4F8),
+        oceanColor = Color(0xFFF1F7F6),
         backgroundRes = null
     ),
     INK_WASH(

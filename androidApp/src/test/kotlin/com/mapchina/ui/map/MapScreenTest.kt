@@ -50,6 +50,9 @@ class MapScreenTest {
             )
         }
 
+        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("已点亮").assertIsDisplayed()
+        onNodeWithText("完成度").assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
         onNodeWithText("当前位置 · 可信度高").assertIsDisplayed()
