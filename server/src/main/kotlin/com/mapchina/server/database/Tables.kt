@@ -55,6 +55,18 @@ object AttractionVisits : Table("attraction_visits") {
     override val primaryKey = PrimaryKey(userId, attractionId)
 }
 
+object SyncItems : Table("sync_items") {
+    val userId = varchar("user_id", 36).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val entityType = varchar("entity_type", 40)
+    val entityId = varchar("entity_id", 120)
+    val operation = varchar("operation", 20)
+    val payload = text("payload")
+    val updatedAt = long("updated_at")
+    val deleted = bool("deleted").default(false)
+
+    override val primaryKey = PrimaryKey(userId, entityType, entityId)
+}
+
 object RefreshTokenBlacklist : Table("refresh_token_blacklist") {
     val token = varchar("token", 500)
     val expiresAt = long("expires_at")
