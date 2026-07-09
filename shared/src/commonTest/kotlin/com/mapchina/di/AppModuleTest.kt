@@ -13,6 +13,7 @@ import com.mapchina.domain.service.AtlasService
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.sync.SyncEngine
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.achievement.AtlasViewModel
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
@@ -52,6 +53,7 @@ class AppModuleTest {
         assertNotNull(koin.get<FootprintService>())
         assertNotNull(koin.get<AttractionService>())
         assertNotNull(koin.get<AuthService>())
+        assertNotNull(koin.get<SyncEngine>())
         assertNotNull(koin.get<FootprintRepository>())
         assertNotNull(koin.get<RegionRepository>())
     }

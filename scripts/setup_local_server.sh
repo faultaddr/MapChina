@@ -11,6 +11,15 @@ DB_USER="${DB_USER:-mapchina}"
 DB_PASSWORD="${DB_PASSWORD:-mapchina}"
 PORT="${PORT:-8080}"
 DB_URL="${DB_URL:-jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME}"
+LAUNCH_LABEL="${LAUNCH_LABEL:-com.mapchina.localserver}"
+LAUNCH_DOMAIN="gui/$(id -u)"
+PLIST_FILE="$OUTPUT_DIR/$LAUNCH_LABEL.plist"
+JAVA_BIN="${JAVA_BIN:-$(command -v java || true)}"
+JAVA_HOME_FOR_SERVER="${JAVA_HOME:-}"
+if [ -z "$JAVA_HOME_FOR_SERVER" ] && [ -n "$JAVA_BIN" ]; then
+  JAVA_HOME_FOR_SERVER="$(cd "$(dirname "$JAVA_BIN")/.." && pwd)"
+fi
+SERVER_PATH="$(dirname "$JAVA_BIN"):/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -34,12 +43,97 @@ wait_for_health() {
   exit 1
 }
 
+xml_escape() {
+  printf '%s' "$1" | sed \
+    -e 's/&/\&amp;/g' \
+    -e 's/</\&lt;/g' \
+    -e 's/>/\&gt;/g' \
+    -e 's/"/\&quot;/g' \
+    -e "s/'/\&apos;/g"
+}
+
+write_launch_plist() {
+  local server_bin="$ROOT_DIR/server/build/install/server/bin/server"
+  cat > "$PLIST_FILE" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$(xml_escape "$LAUNCH_LABEL")</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$(xml_escape "$server_bin")</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>$(xml_escape "$ROOT_DIR")</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DB_URL</key>
+    <string>$(xml_escape "$DB_URL")</string>
+    <key>DB_USER</key>
+    <string>$(xml_escape "$DB_USER")</string>
+    <key>DB_PASSWORD</key>
+    <string>$(xml_escape "$DB_PASSWORD")</string>
+    <key>JWT_SECRET</key>
+    <string>$(xml_escape "${JWT_SECRET:-mapchina-local-dev-secret}")</string>
+    <key>PORT</key>
+    <string>$(xml_escape "$PORT")</string>
+    <key>JAVA_HOME</key>
+    <string>$(xml_escape "$JAVA_HOME_FOR_SERVER")</string>
+    <key>PATH</key>
+    <string>$(xml_escape "$SERVER_PATH")</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>$(xml_escape "$OUTPUT_DIR/server.log")</string>
+  <key>StandardErrorPath</key>
+  <string>$(xml_escape "$OUTPUT_DIR/server.log")</string>
+</dict>
+</plist>
+EOF
+}
+
+write_launch_pid() {
+  launchctl print "$LAUNCH_DOMAIN/$LAUNCH_LABEL" 2>/dev/null |
+    awk -F'= ' '/pid =/ { print $2; exit }' > "$OUTPUT_DIR/server.pid" || true
+}
+
+start_server() {
+  local server_bin="$ROOT_DIR/server/build/install/server/bin/server"
+  if command -v launchctl >/dev/null 2>&1 && [ "$(uname)" = "Darwin" ]; then
+    write_launch_plist
+    launchctl bootout "$LAUNCH_DOMAIN/$LAUNCH_LABEL" >/dev/null 2>&1 || true
+    : > "$OUTPUT_DIR/server.log"
+    launchctl bootstrap "$LAUNCH_DOMAIN" "$PLIST_FILE"
+    launchctl kickstart -k "$LAUNCH_DOMAIN/$LAUNCH_LABEL" >/dev/null 2>&1 || true
+    write_launch_pid
+  else
+    nohup env \
+      DB_URL="$DB_URL" \
+      DB_USER="$DB_USER" \
+      DB_PASSWORD="$DB_PASSWORD" \
+      JWT_SECRET="${JWT_SECRET:-mapchina-local-dev-secret}" \
+      PORT="$PORT" \
+      JAVA_HOME="$JAVA_HOME_FOR_SERVER" \
+      PATH="$SERVER_PATH" \
+      "$server_bin" >"$OUTPUT_DIR/server.log" 2>&1 < /dev/null &
+    server_pid="$!"
+    echo "$server_pid" > "$OUTPUT_DIR/server.pid"
+    disown "$server_pid" 2>/dev/null || true
+  fi
+}
+
 require_command pg_ctl
 require_command pg_isready
 require_command initdb
 require_command psql
 require_command createdb
 require_command curl
+require_command java
 require_command python3
 
 if ! pg_isready -h "$DB_HOST" -p "$DB_PORT" >/dev/null 2>&1; then
@@ -68,18 +162,14 @@ else
   echo "Starting Ktor server on port $PORT"
   (
     cd "$ROOT_DIR"
-    nohup env \
-      DB_URL="$DB_URL" \
-      DB_USER="$DB_USER" \
-      DB_PASSWORD="$DB_PASSWORD" \
-      JWT_SECRET="${JWT_SECRET:-mapchina-local-dev-secret}" \
-      PORT="$PORT" \
-      ./gradlew --no-daemon :server:run >"$OUTPUT_DIR/server.log" 2>&1 < /dev/null &
-    server_pid="$!"
-    echo "$server_pid" > "$OUTPUT_DIR/server.pid"
-    disown "$server_pid" 2>/dev/null || true
+    ./gradlew :server:installDist >"$OUTPUT_DIR/server-build.log" 2>&1
   )
+  start_server
   wait_for_health
+fi
+
+if command -v launchctl >/dev/null 2>&1 && [ "$(uname)" = "Darwin" ]; then
+  write_launch_pid
 fi
 
 echo "Seeding map data"

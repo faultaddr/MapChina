@@ -29,6 +29,7 @@ import com.mapchina.ui.carving.CarvingViewModel
 import com.mapchina.ui.community.CommunityViewModel
 import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.data.remote.MapChinaApiClient
+import com.mapchina.data.remote.createMapChinaHttpClient
 import com.mapchina.data.remote.defaultApiBaseUrl
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
@@ -41,6 +42,7 @@ import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.sync.SyncChangeWriter
+import com.mapchina.sync.SyncEngine
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -54,7 +56,8 @@ val appModule = module {
     single { FootprintSuggestionService(get(), get()) }
     single { AttractionService(get()) }
     single { AuthService() }
-    single { MapChinaApiClient(defaultApiBaseUrl(), io.ktor.client.HttpClient()) }
+    single { MapChinaApiClient(defaultApiBaseUrl(), createMapChinaHttpClient()) }
+    single { SyncEngine(get<MapChinaApiClient>(), get()) }
 
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }
