@@ -82,4 +82,52 @@ class SyncCoordinatorTest {
         assertEquals(1L, database.syncQueueQueries.countPending().executeAsOne())
         assertEquals(0, requestCount)
     }
+
+    @Test
+    fun syncAfterLocalChangeWithRetry_retriesFailedPushAndClearsQueue() = runTest {
+        val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
+        database.syncQueueQueries.insertPending(
+            "CARVING",
+            "carving-1",
+            "UPSERT",
+            """{"id":"carving-1","userId":"u1","regionId":"510000","regionName":"四川","imagePath":"local.png","strokeData":"[]","createdAt":1000}""",
+            1_000L
+        )
+        var pushAttempts = 0
+        val engine = MockEngine { request ->
+            when (request.url.encodedPath) {
+                "/sync/push" -> {
+                    pushAttempts += 1
+                    val accepted = if (pushAttempts == 1) 0 else 1
+                    respond(
+                        content = """{"accepted":$accepted,"serverTime":2000}""",
+                        headers = headersOf(HttpHeaders.ContentType, "application/json")
+                    )
+                }
+                else -> error("Unexpected request ${request.url}")
+            }
+        }
+        val apiClient = MapChinaApiClient("http://127.0.0.1:8080", createMapChinaHttpClient(engine))
+        val authService = AuthService()
+        authService.onLogin(
+            UserDto("u1", "13800000000", "云同步用户", null, 1_000L),
+            accessToken = "access-token",
+            refreshToken = "refresh-token"
+        )
+        val coordinator = SyncCoordinator(
+            authService = authService,
+            apiClient = apiClient,
+            syncEngine = SyncEngine(apiClient, database),
+            database = database,
+            uploadRetryDelayMillis = 1_000L,
+            maxUploadAttempts = 2
+        )
+
+        val synced = coordinator.syncAfterLocalChangeWithRetry()
+
+        assertTrue(synced)
+        assertEquals(2, pushAttempts)
+        assertEquals(0L, database.syncQueueQueries.countPending().executeAsOne())
+        coordinator.shutdown()
+    }
 }

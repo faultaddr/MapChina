@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,14 +22,16 @@ class SyncCoordinator(
     private val apiClient: MapChinaApiClient,
     private val syncEngine: SyncEngine,
     private val database: MapChinaDatabase,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val uploadRetryDelayMillis: Long = DEFAULT_UPLOAD_RETRY_DELAY_MS,
+    private val maxUploadAttempts: Int = DEFAULT_MAX_UPLOAD_ATTEMPTS
 ) : SyncUploadTrigger {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val syncMutex = Mutex()
 
     override fun requestUpload() {
         scope.launch {
-            syncAfterLocalChange()
+            syncAfterLocalChangeWithRetry()
         }
     }
 
@@ -42,6 +45,20 @@ class SyncCoordinator(
         val token = authService.accessToken?.takeIf { it.isNotBlank() } ?: return@withLock false
         apiClient.accessToken = token
         syncEngine.pushChanges()
+    }
+
+    internal suspend fun syncAfterLocalChangeWithRetry(): Boolean {
+        if (!hasAccessToken()) return false
+
+        val attempts = maxUploadAttempts.coerceAtLeast(1)
+        repeat(attempts) { attempt ->
+            if (syncAfterLocalChange()) return true
+            val hasAnotherAttempt = attempt < attempts - 1
+            if (hasAnotherAttempt && hasAccessToken()) {
+                delay(uploadRetryDelayMillis.coerceAtLeast(0L))
+            }
+        }
+        return false
     }
 
     suspend fun syncOnLogin(): Boolean = syncMutex.withLock {
@@ -66,7 +83,12 @@ class SyncCoordinator(
         scope.cancel()
     }
 
+    private fun hasAccessToken(): Boolean =
+        !authService.accessToken.isNullOrBlank()
+
     companion object {
         const val LAST_PULL_TIMESTAMP_KEY = "sync.last_pull_timestamp"
+        private const val DEFAULT_UPLOAD_RETRY_DELAY_MS = 15_000L
+        private const val DEFAULT_MAX_UPLOAD_ATTEMPTS = 3
     }
 }
