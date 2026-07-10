@@ -1,5 +1,8 @@
 package com.mapchina.ui.discover
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
@@ -34,8 +36,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +60,8 @@ import com.mapchina.ui.navigation.MapScreen
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaTypography
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DiscoverScreen(
@@ -80,72 +89,107 @@ fun DiscoverContent(
 ) {
     val bottomPadding = LocalScaffoldBottomPadding.current
     val primaryRecommendation = ui.recommendations.firstOrNull()
-    LazyColumn(
+    val scope = rememberCoroutineScope()
+    val transitionProgress = remember { Animatable(0f) }
+    var transitionTarget by remember { mutableStateOf<RecommendationTransitionTarget?>(null) }
+
+    val beginRecommendationTransition: (DiscoverRecommendation, Int, Rect) -> Unit = { recommendation, rank, bounds ->
+        if (transitionTarget == null) {
+            transitionTarget = RecommendationTransitionTarget(recommendation, rank, bounds)
+            scope.launch {
+                transitionProgress.snapTo(0f)
+                transitionProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
+                )
+                onRecommendationClick(recommendation.id)
+                delay(32L)
+                transitionTarget = null
+                transitionProgress.snapTo(0f)
+            }
+        }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MapChinaColors.Background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = bottomPadding + 24.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            ExperiencePageHeader(Copy.DISCOVER_TITLE, Copy.DISCOVER_SUBTITLE)
-        }
-        item {
-            DiscoverSpotlightCard(
-                recommendation = primaryRecommendation,
-                pendingCount = ui.pendingSuggestions.size,
-                recommendationCount = ui.recommendations.size,
-                onRecommendationClick = onRecommendationClick
-            )
-        }
-        item {
-            DiscoverSearchField(
-                value = ui.searchQuery,
-                onValueChange = onSearch,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            PendingSuggestionBanner(
-                pendingCount = ui.pendingSuggestions.size,
-                topSuggestion = ui.pendingSuggestions.firstOrNull(),
-                onClick = onPendingSuggestionsClick
-            )
-        }
-        item { ExperienceSectionHeader("推荐去点亮") }
-        if (ui.recommendations.isEmpty()) {
-            item { DiscoverEmptyLine("暂无推荐") }
-        } else {
-            itemsIndexed(ui.recommendations, key = { _, recommendation -> recommendation.id }) { index, recommendation ->
-                RecommendationRankCard(
-                    recommendation = recommendation,
-                    rank = index + 1,
-                    onClick = { onRecommendationClick(recommendation.id) }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = 16.dp,
+                end = 16.dp,
+                bottom = bottomPadding + 24.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ExperiencePageHeader(Copy.DISCOVER_TITLE, Copy.DISCOVER_SUBTITLE)
+            }
+            item {
+                DiscoverSpotlightCard(
+                    recommendation = primaryRecommendation,
+                    pendingCount = ui.pendingSuggestions.size,
+                    recommendationCount = ui.recommendations.size,
+                    onRecommendationClick = onRecommendationClick
                 )
             }
-        }
-        item { ExperienceSectionHeader("继续探索") }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                DiscoveryMiniFeature(
-                    title = "附近可点亮",
-                    subtitle = "定位开启后优先显示",
-                    accent = MapChinaColors.AccentBlue,
-                    modifier = Modifier.weight(1f)
-                )
-                DiscoveryMiniFeature(
-                    title = "主题路线",
-                    subtitle = "五岳 / 丝路 / 海岸线",
-                    accent = MapChinaColors.AccentGold,
-                    modifier = Modifier.weight(1f)
+            item {
+                DiscoverSearchField(
+                    value = ui.searchQuery,
+                    onValueChange = onSearch,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+            item {
+                PendingSuggestionBanner(
+                    pendingCount = ui.pendingSuggestions.size,
+                    topSuggestion = ui.pendingSuggestions.firstOrNull(),
+                    onClick = onPendingSuggestionsClick
+                )
+            }
+            item { ExperienceSectionHeader("推荐去点亮") }
+            if (ui.recommendations.isEmpty()) {
+                item { DiscoverEmptyLine("暂无推荐") }
+            } else {
+                itemsIndexed(ui.recommendations, key = { _, recommendation -> recommendation.id }) { index, recommendation ->
+                    RecommendationImageCard(
+                        recommendation = recommendation,
+                        rank = index + 1,
+                        onClick = { bounds ->
+                            beginRecommendationTransition(recommendation, index + 1, bounds)
+                        }
+                    )
+                }
+            }
+            item { ExperienceSectionHeader("继续探索") }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    DiscoveryMiniFeature(
+                        title = "附近可点亮",
+                        subtitle = "定位开启后优先显示",
+                        accent = MapChinaColors.AccentBlue,
+                        modifier = Modifier.weight(1f)
+                    )
+                    DiscoveryMiniFeature(
+                        title = "主题路线",
+                        subtitle = "五岳 / 丝路 / 海岸线",
+                        accent = MapChinaColors.AccentGold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        transitionTarget?.let { target ->
+            RecommendationTransitionOverlay(
+                target = target,
+                progress = transitionProgress.value
+            )
         }
     }
 }
@@ -372,87 +416,6 @@ private fun PendingSuggestionBanner(
                     .padding(horizontal = 4.dp, vertical = 4.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun RecommendationRankCard(
-    recommendation: DiscoverRecommendation,
-    rank: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MapChinaColors.SurfaceElevated,
-        border = BorderStroke(1.dp, MapChinaColors.BorderSubtle),
-        shadowElevation = 1.dp,
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                RankBadge(rank)
-                Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        recommendation.title,
-                        color = MapChinaColors.TextPrimary,
-                        style = MapChinaTypography.Title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        recommendation.subtitle.ifBlank { recommendation.reason },
-                        color = MapChinaColors.TextSecondary,
-                        style = MapChinaTypography.Body,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Surface(shape = RoundedCornerShape(999.dp), color = MapChinaColors.AccentBlue.copy(alpha = 0.10f)) {
-                    Text(
-                        recommendation.levelLabel,
-                        color = MapChinaColors.AccentBlue,
-                        style = MapChinaTypography.Caption,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                Spacer(Modifier.width(4.dp))
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MapChinaColors.TextTertiary, modifier = Modifier.size(18.dp))
-            }
-            Surface(shape = RoundedCornerShape(14.dp), color = MapChinaColors.PrimaryLight) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Explore, contentDescription = null, tint = MapChinaColors.Primary, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        recommendation.reason,
-                        color = MapChinaColors.Primary,
-                        style = MapChinaTypography.Caption,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RankBadge(rank: Int) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MapChinaColors.AccentGold.copy(alpha = 0.14f)) {
-        Text(
-            rank.toString().padStart(2, '0'),
-            color = MapChinaColors.AccentGold,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp)
-        )
     }
 }
 

@@ -2,8 +2,10 @@ package com.mapchina.ui.discover
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -51,7 +53,7 @@ class DiscoverScreenTest {
                     subtitle = "安徽省黄山市",
                     levelLabel = "5A",
                     reason = "可点亮 安徽省 / 黄山市",
-                    imageUrl = null
+                    imageUrl = "https://example.com/huangshan.jpg"
                 )
             )
         )
@@ -86,13 +88,53 @@ class DiscoverScreenTest {
         onNodeWithText("黄山风景区").assertIsDisplayed()
         onNodeWithText("安徽省黄山市").assertIsDisplayed()
         onNodeWithText("5A").assertIsDisplayed()
+        onNodeWithContentDescription("黄山风景区头图").assertIsDisplayed()
 
-        onNodeWithText("黄山风景区").performClick()
+        onNodeWithContentDescription("打开景点详情：黄山风景区").performClick()
+        mainClock.advanceTimeBy(500L)
         assertEquals("a1", clickedRecommendation)
 
         onNode(hasScrollAction()).performScrollToNode(hasText("附近可点亮"))
         onNodeWithText("附近可点亮").assertIsDisplayed()
         onNode(hasScrollAction()).performScrollToNode(hasText("主题路线"))
         onNodeWithText("主题路线").assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun recommendationClick_navigatesAfterImageExpansion() = runComposeUiTest {
+        val ui = DiscoverUi(
+            recommendations = listOf(
+                DiscoverRecommendation(
+                    id = "a1",
+                    title = "黄山风景区",
+                    subtitle = "安徽省黄山市",
+                    levelLabel = "5A",
+                    reason = "可点亮 安徽省 / 黄山市",
+                    imageUrl = "https://example.com/huangshan.jpg"
+                )
+            )
+        )
+        var clickedRecommendation: String? = null
+
+        setContent {
+            DiscoverContent(
+                ui = ui,
+                onSearch = {},
+                onRecommendationClick = { clickedRecommendation = it },
+                onPendingSuggestionsClick = {}
+            )
+        }
+        onNode(hasScrollAction()).performScrollToNode(hasContentDescription("打开景点详情：黄山风景区"))
+        mainClock.autoAdvance = false
+
+        onNodeWithContentDescription("打开景点详情：黄山风景区").performClick()
+        assertEquals(null, clickedRecommendation)
+
+        mainClock.advanceTimeBy(419L)
+        assertEquals(null, clickedRecommendation)
+
+        mainClock.advanceTimeBy(32L)
+        assertEquals("a1", clickedRecommendation)
     }
 }
