@@ -50,7 +50,8 @@ data class StatsUi(
     val visitedAttractionList: List<VisitedAttractionUi> = emptyList(),
     val levelDistribution: LevelDistribution = LevelDistribution(0, 0, 0, 0),
     val provinceVisits: List<ProvinceVisitUi> = emptyList(),
-    val visitLevelCounts: Map<FootprintLevel, Int> = emptyMap()
+    val visitLevelCounts: Map<FootprintLevel, Int> = emptyMap(),
+    val userId: String = ""
 ) {
     val provincePercent: Float get() = if (totalProvinces > 0) visitedProvinces.toFloat() / totalProvinces else 0f
     val cityPercent: Float get() = if (totalCities > 0) visitedCities.toFloat() / totalCities else 0f
@@ -113,6 +114,7 @@ class StatsViewModel(
         val provinceVisits = buildProvinceVisits(visitedList, allAttractions)
 
         return StatsUi(
+            userId = userId,
             visitedProvinces = coverage.visitedProvinces,
             totalProvinces = coverage.totalProvinces,
             visitedCities = coverage.visitedCities,

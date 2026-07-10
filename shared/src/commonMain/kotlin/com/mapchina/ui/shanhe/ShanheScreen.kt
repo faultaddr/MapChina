@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -43,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -204,21 +207,28 @@ private fun ShanheProgressHero(ui: ShanheUi) {
                     modifier = Modifier.size(26.dp)
                 )
             }
-            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Lv.${ui.levelNumber}",
-                    color = MapChinaColors.AccentGold,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(ui.levelTitle, color = Color.White, style = MapChinaTypography.Headline)
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "${ui.currentScore} 山河值",
-                    color = Color.White,
-                    style = MapChinaTypography.Title
-                )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val stackSummary = maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.5f
+                if (stackSummary) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        LevelTitle(ui)
+                        Text(
+                            "${ui.currentScore} 山河值",
+                            color = Color.White,
+                            style = MapChinaTypography.Title
+                        )
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
+                        LevelTitle(ui)
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "${ui.currentScore} 山河值",
+                            color = Color.White,
+                            style = MapChinaTypography.Title
+                        )
+                    }
+                }
             }
             LinearProgressIndicator(
                 progress = { ui.levelProgress.coerceIn(0f, 1f) },
@@ -235,6 +245,26 @@ private fun ShanheProgressHero(ui: ShanheUi) {
                 style = MapChinaTypography.Caption
             )
         }
+    }
+}
+
+@Composable
+private fun LevelTitle(ui: ShanheUi) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text(
+            "Lv.${ui.levelNumber}",
+            color = MapChinaColors.AccentGold,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            ui.levelTitle,
+            color = Color.White,
+            style = MapChinaTypography.Headline,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -299,7 +329,7 @@ private fun GrowthEntryTile(
         shape = DashboardShape,
         color = MapChinaColors.SurfaceElevated,
         border = BorderStroke(1.dp, MapChinaColors.BorderSubtle),
-        modifier = modifier.height(116.dp).clickable(onClick = onClick)
+        modifier = modifier.heightIn(min = 116.dp).clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier.padding(13.dp),

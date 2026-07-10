@@ -21,7 +21,8 @@ data class AchievementUi(
     val nextTarget: AchievementWithProgress? = null,
     val regionAchievements: List<AchievementWithProgress> = emptyList(),
     val scenicAchievements: List<AchievementWithProgress> = emptyList(),
-    val allAchievements: List<AchievementWithProgress> = emptyList()
+    val allAchievements: List<AchievementWithProgress> = emptyList(),
+    val userId: String = ""
 )
 
 data class AchievementWithProgress(
@@ -71,6 +72,7 @@ class AchievementViewModel(
             }
 
             _ui.value = AchievementUi(
+                userId = userId,
                 levelInfo = levelInfo,
                 unlockedCount = unlocked.size,
                 totalCount = allWithProgress.size,

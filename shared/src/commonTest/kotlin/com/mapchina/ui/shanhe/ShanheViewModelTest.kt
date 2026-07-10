@@ -72,6 +72,53 @@ class ShanheViewModelTest {
         assertEquals(listOf("初见巴蜀"), ui.recentUnlocks)
     }
 
+    @Test
+    fun buildShanheUiForUser_hidesStateOwnedByAnotherUser() {
+        val achievementUi = AchievementUi(
+            userId = "user-a",
+            levelInfo = UserLevelInfo(
+                userId = "user-a",
+                currentScore = 1600,
+                currentLevel = 5,
+                currentTitle = "九州旅人",
+                nextLevelScore = 3000,
+                nextTitle = "华境探索家"
+            ),
+            unlockedCount = 8,
+            totalCount = 12
+        )
+        val statsUi = StatsUi(
+            userId = "user-a",
+            visitedProvinces = 9,
+            totalProvinces = 34
+        )
+
+        val ui = buildShanheUiForUser(
+            currentUserId = "user-b",
+            achievement = achievementUi,
+            stats = statsUi
+        )
+
+        assertEquals(ShanheUi(), ui)
+    }
+
+    @Test
+    fun buildShanheUi_showsCompletionCopyWhenAllAchievementsAreUnlocked() {
+        val ui = buildShanheUi(
+            achievement = AchievementUi(
+                unlockedCount = 100,
+                totalCount = 100,
+                nextTarget = null
+            ),
+            stats = StatsUi(visitedProvinces = 34, totalProvinces = 34)
+        )
+
+        assertEquals("继续丈量山河", ui.targetTitle)
+        assertEquals("全部勋章已解锁，去发现下一块未点亮版图", ui.targetBody)
+        assertEquals("已完成", ui.targetProgressLabel)
+        assertEquals(1f, ui.targetProgress)
+    }
+
     private fun achievementProgress(
         id: String,
         name: String,

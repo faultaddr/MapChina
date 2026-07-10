@@ -1,5 +1,6 @@
 package com.mapchina.ui.shanhe
 
+import com.mapchina.domain.service.AuthService
 import com.mapchina.ui.achievement.AchievementUi
 import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.stats.StatsUi
@@ -39,6 +40,7 @@ data class ShanheUi(
 fun buildShanheUi(achievement: AchievementUi, stats: StatsUi): ShanheUi {
     val level = achievement.levelInfo
     val target = achievement.nextTarget
+    val allAchievementsUnlocked = achievement.totalCount > 0 && achievement.unlockedCount >= achievement.totalCount
     return ShanheUi(
         levelNumber = level?.currentLevel ?: 1,
         levelTitle = level?.currentTitle ?: "初行者",
@@ -46,10 +48,26 @@ fun buildShanheUi(achievement: AchievementUi, stats: StatsUi): ShanheUi {
         nextLevelTitle = level?.nextTitle ?: "识途者",
         remainingScore = ((level?.nextLevelScore ?: 100) - (level?.currentScore ?: 0)).coerceAtLeast(0),
         levelProgress = level?.progressToNext ?: 0f,
-        targetTitle = target?.definition?.name ?: "点亮第一块版图",
-        targetBody = target?.definition?.description ?: "从足迹页确认一个去过的地方",
-        targetProgressLabel = target?.let { "${it.progressValue} / ${it.progressTarget}" } ?: "0 / 1",
-        targetProgress = target?.progressPercent?.coerceIn(0f, 1f) ?: 0f,
+        targetTitle = when {
+            target != null -> target.definition.name
+            allAchievementsUnlocked -> "继续丈量山河"
+            else -> "点亮第一块版图"
+        },
+        targetBody = when {
+            target != null -> target.definition.description
+            allAchievementsUnlocked -> "全部勋章已解锁，去发现下一块未点亮版图"
+            else -> "从足迹页确认一个去过的地方"
+        },
+        targetProgressLabel = when {
+            target != null -> "${target.progressValue} / ${target.progressTarget}"
+            allAchievementsUnlocked -> "已完成"
+            else -> "0 / 1"
+        },
+        targetProgress = when {
+            target != null -> target.progressPercent.coerceIn(0f, 1f)
+            allAchievementsUnlocked -> 1f
+            else -> 0f
+        },
         unlockedCount = achievement.unlockedCount,
         totalAchievementCount = achievement.totalCount,
         visitedProvinces = stats.visitedProvinces,
@@ -60,16 +78,34 @@ fun buildShanheUi(achievement: AchievementUi, stats: StatsUi): ShanheUi {
     )
 }
 
+fun buildShanheUiForUser(
+    currentUserId: String,
+    achievement: AchievementUi,
+    stats: StatsUi
+): ShanheUi {
+    if (achievement.userId != currentUserId || stats.userId != currentUserId) {
+        return ShanheUi()
+    }
+    return buildShanheUi(achievement, stats)
+}
+
 class ShanheViewModel(
     private val achievementViewModel: AchievementViewModel? = null,
     private val statsViewModel: StatsViewModel? = null,
+    private val authService: AuthService? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val fallbackUi = MutableStateFlow(ShanheUi())
 
-    val ui: StateFlow<ShanheUi> = if (achievementViewModel != null && statsViewModel != null) {
-        combine(achievementViewModel.ui, statsViewModel.stats, ::buildShanheUi)
+    val ui: StateFlow<ShanheUi> = if (achievementViewModel != null && statsViewModel != null && authService != null) {
+        combine(authService.currentUserFlow, achievementViewModel.ui, statsViewModel.stats) { user, achievement, stats ->
+            buildShanheUiForUser(
+                currentUserId = user?.id.orEmpty(),
+                achievement = achievement,
+                stats = stats
+            )
+        }
             .stateIn(scope, SharingStarted.Eagerly, ShanheUi())
     } else {
         fallbackUi.asStateFlow()

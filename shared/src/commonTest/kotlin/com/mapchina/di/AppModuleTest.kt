@@ -20,6 +20,7 @@ import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.attraction.AttractionViewModel
 import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
+import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -82,5 +83,6 @@ class AppModuleTest {
         assertNotNull(koin.get<AchievementViewModel>())
         assertNotNull(koin.get<ProvinceConquestViewModel>())
         assertNotNull(koin.get<AtlasViewModel>())
+        assertNotNull(koin.get<ShanheViewModel>())
     }
 }
