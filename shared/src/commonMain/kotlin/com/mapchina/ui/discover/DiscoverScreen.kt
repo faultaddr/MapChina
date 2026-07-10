@@ -73,7 +73,8 @@ fun DiscoverScreen(
     DiscoverContent(
         ui = ui,
         onSearch = viewModel::search,
-        onRecommendationClick = { id -> onNavigate(AttractionDetailScreen(id)) },
+        onRecommendationClick = { id -> onNavigate(AttractionDetailScreen(id, fromDiscover = true)) },
+        onSpotlightClick = { id -> onNavigate(AttractionDetailScreen(id)) },
         onPendingSuggestionsClick = { onNavigate(MapScreen) },
         modifier = modifier
     )
@@ -84,6 +85,7 @@ fun DiscoverContent(
     ui: DiscoverUi,
     onSearch: (String) -> Unit,
     onRecommendationClick: (String) -> Unit,
+    onSpotlightClick: (String) -> Unit = onRecommendationClick,
     onPendingSuggestionsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -135,7 +137,7 @@ fun DiscoverContent(
                     recommendation = primaryRecommendation,
                     pendingCount = ui.pendingSuggestions.size,
                     recommendationCount = ui.recommendations.size,
-                    onRecommendationClick = onRecommendationClick
+                    onRecommendationClick = onSpotlightClick
                 )
             }
             item {

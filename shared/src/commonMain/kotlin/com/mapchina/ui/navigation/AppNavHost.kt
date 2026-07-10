@@ -200,6 +200,7 @@ fun AppNavHost(
                     attraction = attraction,
                     detail = detail,
                     journals = journals,
+                    animateHeroEntrance = !key.fromDiscover,
                     onMarkVisit = { level ->
                         attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
                         attraction = viewModel.getAttractionById(key.attractionId)

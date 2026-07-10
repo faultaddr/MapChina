@@ -190,20 +190,20 @@ private fun RecommendationImageLayer(
     Box(
         modifier = modifier.background(Color(0xFF173B35))
     ) {
+        Icon(
+            imageVector = Icons.Default.Landscape,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.54f),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(42.dp)
+        )
         if (recommendation.imageUrl.isNullOrBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .semantics { contentDescription = "${recommendation.title}头图" },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Landscape,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.54f),
-                    modifier = Modifier.size(42.dp)
-                )
-            }
+                    .semantics { contentDescription = "${recommendation.title}头图" }
+            )
         } else {
             AsyncImage(
                 model = recommendation.imageUrl,
