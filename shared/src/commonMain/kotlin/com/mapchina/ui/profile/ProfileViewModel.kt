@@ -2,9 +2,9 @@ package com.mapchina.ui.profile
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.repository.SettingsRepository
-import com.mapchina.data.repository.UserScoreRepository
-import com.mapchina.domain.model.UserLevelInfo
 import com.mapchina.domain.service.AuthService
+import com.mapchina.sync.SyncEngine
+import com.mapchina.sync.SyncStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -13,27 +13,28 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class ProfileUi(
     val nickname: String,
     val phone: String?,
     val avatar: String?,
-    val levelInfo: UserLevelInfo? = null,
-    val badgeCount: Int = 0,
-    val pendingSyncCount: Long = 0L
+    val pendingSyncCount: Long = 0L,
+    val syncStatus: SyncStatus = SyncStatus.IDLE
 )
 
 class ProfileViewModel(
     private val authService: AuthService,
-    private val userScoreRepository: UserScoreRepository,
     val settingsRepository: SettingsRepository? = null,
     private val database: MapChinaDatabase? = null,
+    syncEngine: SyncEngine? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val syncStatus = syncEngine?.status ?: MutableStateFlow(SyncStatus.IDLE)
 
-    private val _profile = MutableStateFlow(ProfileUi("", null, null))
+    private val _profile = MutableStateFlow(ProfileUi("未登录", null, null))
     val profile: StateFlow<ProfileUi> = _profile.asStateFlow()
 
     private val _isLoggedIn = MutableStateFlow(false)
@@ -41,16 +42,18 @@ class ProfileViewModel(
 
     init {
         vmScope.launch {
-            authService.currentUserFlow.collect { user ->
-                _isLoggedIn.value = user != null
-                val levelInfo = user?.id?.let { userScoreRepository.getScore(it) }
-                _profile.value = ProfileUi(
+            combine(authService.currentUserFlow, syncStatus) { user, status ->
+                val loggedIn = user != null
+                loggedIn to ProfileUi(
                     nickname = user?.nickname ?: "未登录",
                     phone = user?.phone,
                     avatar = user?.avatar,
-                    levelInfo = levelInfo,
-                    pendingSyncCount = pendingSyncCount()
+                    pendingSyncCount = pendingSyncCount(),
+                    syncStatus = status
                 )
+            }.collect { (loggedIn, profile) ->
+                _isLoggedIn.value = loggedIn
+                _profile.value = profile
             }
         }
     }
@@ -58,13 +61,12 @@ class ProfileViewModel(
     fun loadProfile() {
         val user = authService.getCurrentUser()
         _isLoggedIn.value = user != null
-        val levelInfo = user?.id?.let { userScoreRepository.getScore(it) }
         _profile.value = ProfileUi(
             nickname = user?.nickname ?: "未登录",
             phone = user?.phone,
             avatar = user?.avatar,
-            levelInfo = levelInfo,
-            pendingSyncCount = pendingSyncCount()
+            pendingSyncCount = pendingSyncCount(),
+            syncStatus = syncStatus.value
         )
     }
 

@@ -101,6 +101,11 @@ fun ProfileScreen(
             AccountAndSyncSection(
                 profile = profile,
                 isLoggedIn = isLoggedIn,
+                syncPresentation = profileSyncPresentation(
+                    isLoggedIn = isLoggedIn,
+                    pendingSyncCount = profile.pendingSyncCount,
+                    status = profile.syncStatus
+                ),
                 onAction = if (isLoggedIn) onSyncNow else onNavigateToLogin
             )
         }
@@ -136,6 +141,7 @@ private fun ProfileHeader() {
 private fun AccountAndSyncSection(
     profile: ProfileUi,
     isLoggedIn: Boolean,
+    syncPresentation: ProfileSyncPresentation,
     onAction: (() -> Unit)?
 ) {
     ProfileSection(title = "账号与同步") {
@@ -207,32 +213,29 @@ private fun AccountAndSyncSection(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isLoggedIn && profile.pendingSyncCount > 0) {
-                            "${profile.pendingSyncCount} 项待同步"
-                        } else if (isLoggedIn) {
-                            "云端同步已连接"
-                        } else {
-                            "本地保存"
-                        },
+                        text = syncPresentation.title,
                         color = MapChinaColors.TextPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        text = if (isLoggedIn) {
-                            "足迹与地图偏好将自动同步"
-                        } else {
-                            "登录后可在多台设备同步"
-                        },
+                        text = syncPresentation.subtitle,
                         color = MapChinaColors.TextSecondary,
                         fontSize = 12.sp
                     )
                 }
-                TextButton(onClick = { onAction?.invoke() }) {
+                TextButton(
+                    onClick = { onAction?.invoke() },
+                    enabled = syncPresentation.actionEnabled
+                ) {
                     Text(
-                        text = if (isLoggedIn) "立即同步" else "登录",
-                        color = MapChinaColors.Primary,
+                        text = syncPresentation.actionLabel,
+                        color = if (syncPresentation.actionEnabled) {
+                            MapChinaColors.Primary
+                        } else {
+                            MapChinaColors.TextTertiary
+                        },
                         fontWeight = FontWeight.SemiBold
                     )
                 }

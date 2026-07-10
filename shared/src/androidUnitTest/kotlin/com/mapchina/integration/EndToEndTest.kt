@@ -249,7 +249,7 @@ class EndToEndTest {
     @Test
     fun profilePath_loadAndLogout() {
         val authService = com.mapchina.domain.service.AuthService()
-        val vm = ProfileViewModel(authService, userScoreRepo)
+        val vm = ProfileViewModel(authService)
         vm.loadProfile()
         assertEquals("未登录", vm.profile.value.nickname)
 

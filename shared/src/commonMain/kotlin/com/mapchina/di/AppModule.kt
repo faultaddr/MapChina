@@ -104,7 +104,14 @@ val appModule = module {
         )
     }
     single { StatsViewModel(get(), get(), get(), get(), get()) }
-    single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>(), get()) }
+    single {
+        ProfileViewModel(
+            authService = get(),
+            settingsRepository = getOrNull<SettingsRepository>(),
+            database = get(),
+            syncEngine = getOrNull()
+        )
+    }
     single { AchievementViewModel(get(), get(), get()) }
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }
