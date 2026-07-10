@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
 class ShanheScreenTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun shanheScreenShowsGrowthEntrypoints() = runComposeUiTest {
+    fun shanheScreenShowsGrowthDashboard() = runComposeUiTest {
         setContent {
             ShanheScreen(
                 viewModel = ShanheViewModel(),
@@ -26,11 +26,12 @@ class ShanheScreenTest {
         }
 
         onNodeWithText("山河").assertIsDisplayed()
-        onNodeWithText("山河初识").assertIsDisplayed()
-        onNodeWithText("0 山河值").assertIsDisplayed()
-        onNodeWithText("今日目标").assertIsDisplayed()
-        onNodeWithText("确认 1 条可能足迹，点亮下一块版图").assertIsDisplayed()
-        onNodeWithText("成长入口").assertIsDisplayed()
+        onNodeWithText("成长进度").assertIsDisplayed()
+        onNodeWithText("Lv.1").assertIsDisplayed()
+        onNodeWithText("下一步").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("成长图谱"))
+        onNodeWithText("成长图谱").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("勋章"))
         onNodeWithText("勋章").assertIsDisplayed()
         onNode(hasScrollAction()).performScrollToNode(hasText("图鉴"))
         onNodeWithText("图鉴").assertIsDisplayed()
@@ -38,9 +39,9 @@ class ShanheScreenTest {
         onNodeWithText("征版").assertIsDisplayed()
         onNode(hasScrollAction()).performScrollToNode(hasText("碑刻"))
         onNodeWithText("碑刻").assertIsDisplayed()
-        onNode(hasScrollAction()).performScrollToNode(hasText("统计"))
-        onNodeWithText("统计").assertIsDisplayed()
-        onNode(hasScrollAction()).performScrollToNode(hasText("目标"))
-        onNodeWithText("目标").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("山河账本"))
+        onNodeWithText("山河账本").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("最近解锁"))
+        onNodeWithText("最近解锁").assertIsDisplayed()
     }
 }
