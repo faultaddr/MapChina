@@ -208,7 +208,7 @@ private fun ShanheProgressHero(ui: ShanheUi) {
                 )
             }
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val stackSummary = maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.5f
+                val stackSummary = maxWidth < 320.dp || LocalDensity.current.fontScale >= 1.5f
                 if (stackSummary) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         LevelTitle(ui)
