@@ -34,6 +34,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -68,6 +69,9 @@ fun ShanheScreen(
     onNavigate: (NavKey) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    LaunchedEffect(viewModel) {
+        viewModel.refresh()
+    }
     val ui by viewModel.ui.collectAsState()
     ShanheContent(ui = ui, onNavigate = onNavigate, modifier = modifier)
 }

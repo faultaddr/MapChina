@@ -121,7 +121,7 @@ val appModule = module {
             userId = get<AuthService>().getCurrentUser()?.id.orEmpty()
         )
     }
-    single { ShanheViewModel() }
+    single { ShanheViewModel(get(), get()) }
 }
 
 expect val platformModule: Module
