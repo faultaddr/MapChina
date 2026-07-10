@@ -60,6 +60,19 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun pendingQueueChanges_updateProfileWithoutReload() {
+        val vm = ProfileViewModel(
+            authService = authService,
+            database = database,
+            dispatcher = UnconfinedTestDispatcher()
+        )
+
+        database.syncQueueQueries.insertPending("APP_SETTING", "map_theme", "UPSERT", "{}", 1_000L)
+
+        assertEquals(1L, vm.profile.value.pendingSyncCount)
+    }
+
+    @Test
     fun syncEngineStatus_updatesProfile() = runTest {
         val syncEngine = SyncEngine(
             apiClient = object : RemoteSyncClient {

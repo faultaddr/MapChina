@@ -1,5 +1,6 @@
 package com.mapchina.ui.profile
 
+import app.cash.sqldelight.Query
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.domain.service.AuthService
@@ -33,6 +34,7 @@ class ProfileViewModel(
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val syncStatus = syncEngine?.status ?: MutableStateFlow(SyncStatus.IDLE)
+    private val pendingCountQuery = database?.syncQueueQueries?.countPending()
 
     private val _profile = MutableStateFlow(ProfileUi("未登录", null, null))
     val profile: StateFlow<ProfileUi> = _profile.asStateFlow()
@@ -40,7 +42,12 @@ class ProfileViewModel(
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    private val pendingCountListener = Query.Listener {
+        _profile.value = _profile.value.copy(pendingSyncCount = pendingSyncCount())
+    }
+
     init {
+        pendingCountQuery?.addListener(pendingCountListener)
         vmScope.launch {
             combine(authService.currentUserFlow, syncStatus) { user, status ->
                 val loggedIn = user != null
@@ -75,9 +82,10 @@ class ProfileViewModel(
     }
 
     fun onCleared() {
+        pendingCountQuery?.removeListener(pendingCountListener)
         vmScope.cancel()
     }
 
     private fun pendingSyncCount(): Long =
-        database?.syncQueueQueries?.countPending()?.executeAsOne() ?: 0L
+        pendingCountQuery?.executeAsOne() ?: 0L
 }
