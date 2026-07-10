@@ -24,7 +24,7 @@
 ### Task 1: Account And Data Screen Hierarchy
 
 **Files:**
-- Modify: `shared/src/androidUnitTest/kotlin/com/mapchina/ui/profile/ProfileScreenTest.kt`
+- Modify: `androidApp/src/test/kotlin/com/mapchina/ui/profile/ProfileScreenTest.kt`
 - Modify: `shared/src/commonMain/kotlin/com/mapchina/ui/profile/ProfileScreen.kt`
 
 **Interfaces:**
@@ -151,7 +151,7 @@ Expected: PASS with the new hierarchy and zero occurrences of the province/city/
 - [ ] **Step 5: Commit the screen hierarchy**
 
 ```bash
-git add shared/src/androidUnitTest/kotlin/com/mapchina/ui/profile/ProfileScreenTest.kt shared/src/commonMain/kotlin/com/mapchina/ui/profile/ProfileScreen.kt
+git add androidApp/src/test/kotlin/com/mapchina/ui/profile/ProfileScreenTest.kt shared/src/commonMain/kotlin/com/mapchina/ui/profile/ProfileScreen.kt
 git commit -m "feat(ui): rebuild profile control center"
 ```
 

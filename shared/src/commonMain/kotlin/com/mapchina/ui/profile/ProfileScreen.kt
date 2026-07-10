@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -28,18 +29,17 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.WorkspacePremium
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -59,40 +58,29 @@ import com.mapchina.data.repository.SettingsRepository
 import com.mapchina.map.MapTheme
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
-import com.mapchina.ui.achievement.AchievementViewModel
-import com.mapchina.ui.stats.StatsUi
-import com.mapchina.ui.stats.StatsViewModel
+import com.mapchina.ui.LocalScaffoldBottomPadding
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
-import com.mapchina.ui.theme.MapChinaRadius
 import com.mapchina.ui.theme.MapChinaTypography
+
+private val ProfileSurfaceShape = RoundedCornerShape(8.dp)
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel? = null,
-    achievementViewModel: AchievementViewModel? = null,
-    statsViewModel: StatsViewModel? = null,
     onNavigateToLogin: (() -> Unit)? = null,
-    onNavigateToJournals: (() -> Unit)? = null,
-    onNavigateToBadgeWall: (() -> Unit)? = null,
-    onNavigateToProvinceConquest: (() -> Unit)? = null,
-    onNavigateToAtlas: (() -> Unit)? = null,
-    onNavigateToCarvings: (() -> Unit)? = null,
-    onNavigateToStats: (() -> Unit)? = null,
-    onLoginSuccess: (() -> Unit)? = null,
+    onSyncNow: (() -> Unit)? = null,
     settingsRepository: SettingsRepository? = null,
     modifier: Modifier = Modifier
 ) {
-    val haptic = LocalHapticFeedback.current
-    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel?.loadProfile() }
-    val profile by (viewModel?.profile?.collectAsState() ?: remember { mutableStateOf(ProfileUi("未登录", null, null)) })
-    val isLoggedIn by (viewModel?.isLoggedIn?.collectAsState() ?: remember { mutableStateOf(false) })
-    val stats by (statsViewModel?.stats?.collectAsState() ?: remember { mutableStateOf(StatsUi()) })
+    val profile by (viewModel?.profile?.collectAsState()
+        ?: remember { mutableStateOf(ProfileUi("未登录", null, null)) })
+    val isLoggedIn by (viewModel?.isLoggedIn?.collectAsState()
+        ?: remember { mutableStateOf(false) })
+    val bottomPadding = LocalScaffoldBottomPadding.current
 
-    androidx.compose.runtime.LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            statsViewModel?.refreshStats()
-        }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel?.loadProfile()
     }
 
     LazyColumn(
@@ -100,277 +88,237 @@ fun ProfileScreen(
             .fillMaxSize()
             .background(MapChinaColors.Background)
             .statusBarsPadding(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 20.dp,
+            end = 16.dp,
+            bottom = bottomPadding + 24.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        // User info card - 白底+碧玉点缀
+        item { ProfileHeader() }
         item {
-            UserInfoCard(
+            AccountAndSyncSection(
                 profile = profile,
                 isLoggedIn = isLoggedIn,
-                onNavigateToLogin = onNavigateToLogin
+                onAction = if (isLoggedIn) onSyncNow else onNavigateToLogin
             )
         }
-
-        // 统计数据 - 大字醒目
+        item { FootprintSettingsSection(settingsRepository) }
+        item { MapAppearanceSection(settingsRepository) }
         item {
-            StatsBar(stats = stats)
-        }
-
-        // Settings - 独立分组
-        item {
-            var photoMarkersVisible by remember { mutableStateOf(settingsRepository?.getString("photo_markers_visible") != "false") }
-            var autoMarkFootprint by remember { mutableStateOf(settingsRepository?.getString("auto_mark_footprint") != "false") }
-
-            Column {
-                Text(
-                    "账号与设置",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MapChinaColors.TextTertiary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MapChinaRadius.Large,
-                    colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        SettingsGroupTitle("足迹记录设置")
-                        Spacer(modifier = Modifier.height(10.dp))
-                        SettingsRow(Copy.PHOTO_MARKERS, photoMarkersVisible, { haptic.perform(HapticType.SELECTION); photoMarkersVisible = it; settingsRepository?.setString("photo_markers_visible", if (it) "true" else "false") })
-                        Spacer(modifier = Modifier.height(12.dp))
-                        SettingsRow(Copy.AUTO_FOOTPRINT, autoMarkFootprint, { haptic.perform(HapticType.SELECTION); autoMarkFootprint = it; settingsRepository?.setString("auto_mark_footprint", if (it) "true" else "false") })
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(0.5.dp)
-                                .background(MapChinaColors.BorderSubtle)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        SettingsGroupTitle("地图显示")
-                        Spacer(modifier = Modifier.height(10.dp))
-                        MapThemeSelector(settingsRepository = settingsRepository)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(0.5.dp)
-                                .background(MapChinaColors.BorderSubtle)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        SettingsGroupTitle("数据与同步")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            if (profile.pendingSyncCount > 0) {
-                                "待同步 ${profile.pendingSyncCount} 项，登录后将自动上传"
-                            } else {
-                                "登录后自动同步足迹、景点、碑刻、游记和地图设置"
-                            },
-                            color = MapChinaColors.TextSecondary,
-                            style = MapChinaTypography.Body
-                        )
-                    }
-                }
-            }
-        }
-
-        // Logout + version
-        item {
-            if (isLoggedIn) {
-                Text(
-                    "退出登录",
-                    color = MapChinaColors.Error,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { haptic.perform(HapticType.WARNING); viewModel?.logout() }
-                        .padding(vertical = 8.dp)
-                )
-            }
-            Text(
-                "MapChina v1.0.1",
-                color = MapChinaColors.TextTertiary.copy(alpha = 0.5f),
-                style = MapChinaTypography.Overline,
-                modifier = Modifier.fillMaxWidth()
+            AboutSection(
+                isLoggedIn = isLoggedIn,
+                onLogout = { viewModel?.logout() }
             )
         }
     }
 }
 
 @Composable
-private fun UserInfoCard(
+private fun ProfileHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "我的",
+            color = MapChinaColors.TextPrimary,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "账号、同步与地图偏好",
+            color = MapChinaColors.TextSecondary,
+            style = MapChinaTypography.Body
+        )
+    }
+}
+
+@Composable
+private fun AccountAndSyncSection(
     profile: ProfileUi,
     isLoggedIn: Boolean,
-    onNavigateToLogin: (() -> Unit)?
+    onAction: (() -> Unit)?
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MapChinaRadius.Large,
-        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 头像 - 碧玉渐变圆圈
-            Box(
+    ProfileSection(title = "账号与同步") {
+        Column {
+            Row(
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(Brush.horizontalGradient(listOf(MapChinaColors.Primary, MapChinaColors.PrimaryVariant))),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val initial = profile.nickname.take(1)
-                Text(
-                    initial,
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    profile.nickname,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MapChinaColors.TextPrimary
-                )
-                if (isLoggedIn && profile.levelInfo != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // 等级标签
-                        Surface(
-                            shape = MapChinaRadius.Small,
-                            color = MapChinaColors.Primary.copy(alpha = 0.1f)
-                        ) {
-                            Text(
-                                "Lv${profile.levelInfo!!.currentLevel}",
-                                color = MapChinaColors.Primary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MapChinaColors.Primary.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoggedIn) {
                         Text(
-                            profile.levelInfo!!.currentTitle,
-                            color = MapChinaColors.TextSecondary,
-                            fontSize = 13.sp
+                            text = profile.nickname.take(1),
+                            color = MapChinaColors.Primary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "${profile.levelInfo!!.currentScore} ${Copy.LEVEL_SCORE_UNIT}",
-                            color = MapChinaColors.AccentGold,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MapChinaColors.Primary,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                } else {
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "登录后解锁完整功能",
-                        color = MapChinaColors.TextTertiary,
+                        text = profile.nickname,
+                        color = MapChinaColors.TextPrimary,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = if (isLoggedIn) {
+                            profile.phone ?: "账户已连接"
+                        } else {
+                            "当前记录保存在这台设备"
+                        },
+                        color = MapChinaColors.TextSecondary,
                         fontSize = 13.sp
                     )
                 }
             }
 
-            if (!isLoggedIn) {
-                Button(
-                    onClick = { onNavigateToLogin?.invoke() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
-                ) { Text("登录", fontSize = 13.sp, color = Color.White) }
+            HorizontalDivider(color = MapChinaColors.BorderSubtle)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.NearMe,
+                    contentDescription = null,
+                    tint = MapChinaColors.AccentGold,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isLoggedIn && profile.pendingSyncCount > 0) {
+                            "${profile.pendingSyncCount} 项待同步"
+                        } else if (isLoggedIn) {
+                            "云端同步已连接"
+                        } else {
+                            "本地保存"
+                        },
+                        color = MapChinaColors.TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = if (isLoggedIn) {
+                            "足迹与地图偏好将自动同步"
+                        } else {
+                            "登录后可在多台设备同步"
+                        },
+                        color = MapChinaColors.TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
+                TextButton(onClick = { onAction?.invoke() }) {
+                    Text(
+                        text = if (isLoggedIn) "立即同步" else "登录",
+                        color = MapChinaColors.Primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun Surface(shape: RoundedCornerShape, color: Color, content: @Composable () -> Unit) {
-    androidx.compose.material3.Surface(shape = shape, color = color, content = content)
-}
-
-@Composable
-private fun StatsBar(stats: StatsUi) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MapChinaRadius.Large,
-        colors = CardDefaults.cardColors(containerColor = MapChinaColors.SurfaceElevated),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            BigStat("省份", stats.visitedProvinces, stats.totalProvinces, MapChinaColors.Primary)
-            BigStat("城市", stats.visitedCities, stats.totalCities, MapChinaColors.AccentGold)
-            BigStat("区县", stats.visitedDistricts, stats.totalDistricts, MapChinaColors.FootprintShortVisit)
-        }
+private fun FootprintSettingsSection(settingsRepository: SettingsRepository?) {
+    val haptic = LocalHapticFeedback.current
+    var photoMarkersVisible by remember {
+        mutableStateOf(settingsRepository?.getString("photo_markers_visible") != "false")
     }
-}
+    var autoMarkFootprint by remember {
+        mutableStateOf(settingsRepository?.getString("auto_mark_footprint") != "false")
+    }
 
-@Composable
-private fun BigStat(label: String, visited: Int, total: Int, accentColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                "$visited",
-                color = accentColor,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+    ProfileSection(title = "足迹记录") {
+        Column {
+            PreferenceSwitchRow(
+                icon = Icons.Default.PhotoLibrary,
+                title = Copy.PHOTO_MARKERS,
+                subtitle = "仅在本机读取照片中的位置信息",
+                checked = photoMarkersVisible,
+                onCheckedChange = { enabled ->
+                    haptic.perform(HapticType.SELECTION)
+                    photoMarkersVisible = enabled
+                    settingsRepository?.setString("photo_markers_visible", enabled.toString())
+                }
             )
-            Text(
-                "/$total",
-                color = MapChinaColors.TextTertiary,
-                fontSize = 13.sp
+            HorizontalDivider(
+                color = MapChinaColors.BorderSubtle,
+                modifier = Modifier.padding(start = 52.dp)
             )
-        }
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(label, color = MapChinaColors.TextTertiary, fontSize = 12.sp)
-        if (total > 0) {
-            Spacer(modifier = Modifier.height(4.dp))
-            val percent = visited.toFloat() / total
-            LinearProgressIndicator(
-                progress = { percent },
-                modifier = Modifier.width(56.dp).height(3.dp).clip(MapChinaRadius.Small),
-                color = accentColor,
-                trackColor = MapChinaColors.BorderSubtle
+            PreferenceSwitchRow(
+                icon = Icons.Default.DirectionsWalk,
+                title = Copy.AUTO_FOOTPRINT,
+                subtitle = "只生成建议，由你确认后点亮",
+                checked = autoMarkFootprint,
+                onCheckedChange = { enabled ->
+                    haptic.perform(HapticType.SELECTION)
+                    autoMarkFootprint = enabled
+                    settingsRepository?.setString("auto_mark_footprint", enabled.toString())
+                }
             )
         }
     }
 }
 
 @Composable
-private fun SettingsGroupTitle(text: String) {
-    Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MapChinaColors.TextPrimary)
-}
-
-@Composable
-private fun SettingsRow(
+private fun PreferenceSwitchRow(
+    icon: ImageVector,
     title: String,
+    subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MapChinaColors.TextPrimary)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MapChinaColors.Primary,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = MapChinaColors.TextPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = subtitle,
+                color = MapChinaColors.TextSecondary,
+                fontSize = 12.sp
+            )
+        }
+        Spacer(Modifier.width(12.dp))
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -379,6 +327,151 @@ private fun SettingsRow(
                 checkedThumbColor = Color.White
             )
         )
+    }
+}
+
+@Composable
+private fun MapAppearanceSection(settingsRepository: SettingsRepository?) {
+    ProfileSection(title = "地图外观") {
+        MapThemeSelector(settingsRepository = settingsRepository)
+    }
+}
+
+@Composable
+private fun AboutSection(
+    isLoggedIn: Boolean,
+    onLogout: () -> Unit
+) {
+    ProfileSection(title = "关于") {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Map,
+                contentDescription = null,
+                tint = MapChinaColors.Primary,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "MapChina",
+                    color = MapChinaColors.TextPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "版本 1.0.1",
+                    color = MapChinaColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+            if (isLoggedIn) {
+                val haptic = LocalHapticFeedback.current
+                TextButton(onClick = {
+                    haptic.perform(HapticType.WARNING)
+                    onLogout()
+                }) {
+                    Text("退出登录", color = MapChinaColors.Error)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            color = MapChinaColors.TextTertiary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ProfileSurfaceShape,
+            color = MapChinaColors.SurfaceElevated,
+            shadowElevation = 1.dp,
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun MapThemeSelector(settingsRepository: SettingsRepository?) {
+    val haptic = LocalHapticFeedback.current
+    var selectedTheme by remember {
+        mutableStateOf(MapTheme.fromName(settingsRepository?.getString("map_theme")))
+    }
+
+    Column(
+        modifier = Modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        MapTheme.entries.chunked(3).forEach { themes ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                themes.forEach { theme ->
+                    val isSelected = theme == selectedTheme
+                    val borderColor = if (isSelected) MapChinaColors.Primary else MapChinaColors.BorderSubtle
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 76.dp)
+                            .clip(ProfileSurfaceShape)
+                            .background(MapChinaColors.Background)
+                            .border(1.dp, borderColor, ProfileSurfaceShape)
+                            .clickable {
+                                haptic.perform(HapticType.SELECTION)
+                                selectedTheme = theme
+                                settingsRepository?.setString("map_theme", theme.name)
+                            }
+                            .padding(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(theme.oceanColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (theme == MapTheme.STARRY_NIGHT) {
+                                    Icons.Default.Star
+                                } else {
+                                    Icons.Default.Landscape
+                                },
+                                contentDescription = null,
+                                tint = if (theme == MapTheme.STARRY_NIGHT) {
+                                    Color.White.copy(alpha = 0.82f)
+                                } else {
+                                    MapChinaColors.Primary.copy(alpha = 0.72f)
+                                },
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Text(
+                            text = theme.displayName,
+                            color = if (isSelected) MapChinaColors.Primary else MapChinaColors.TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -398,75 +491,23 @@ fun LevelBadgeIcon(level: Int, modifier: Modifier = Modifier, useLightIcon: Bool
         "WorkspacePremium" -> Icons.Default.WorkspacePremium
         else -> Icons.Default.Person
     }
-    val bgColor = when {
+    val backgroundColor = when {
         level >= 8 -> MapChinaColors.AccentGold.copy(alpha = 0.12f)
         level >= 5 -> MapChinaColors.Primary.copy(alpha = 0.12f)
         else -> MapChinaColors.Primary.copy(alpha = 0.08f)
     }
-    val tint = when {
-        level >= 8 -> MapChinaColors.AccentGold
-        else -> MapChinaColors.Primary
-    }
-    val iconTint = if (useLightIcon) Color.White else tint
+    val tint = if (level >= 8) MapChinaColors.AccentGold else MapChinaColors.Primary
     Box(
         modifier = modifier
             .clip(CircleShape)
-            .background(if (useLightIcon) Color.White.copy(alpha = 0.2f) else bgColor),
+            .background(if (useLightIcon) Color.White.copy(alpha = 0.2f) else backgroundColor),
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            icon,
+            imageVector = icon,
             contentDescription = levelDef?.title ?: "等级",
-            tint = iconTint,
+            tint = if (useLightIcon) Color.White else tint,
             modifier = Modifier.size(if (level >= 8) 36.dp else 32.dp)
         )
-    }
-}
-
-@Composable
-private fun MapThemeSelector(settingsRepository: SettingsRepository?) {
-    val haptic = LocalHapticFeedback.current
-    var selectedTheme by remember {
-        mutableStateOf(MapTheme.fromName(settingsRepository?.getString("map_theme")))
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        MapTheme.entries.forEach { theme ->
-            val isSelected = theme == selectedTheme
-            val borderCol = if (isSelected) MapChinaColors.Primary else Color.Transparent
-            val borderW = if (isSelected) 2.dp else 0.dp
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MapChinaColors.Background)
-                    .border(borderW, borderCol, RoundedCornerShape(8.dp))
-                    .clickable {
-                        haptic.perform(HapticType.SELECTION)
-                        selectedTheme = theme
-                        settingsRepository?.setString("map_theme", theme.name)
-                    }
-                    .padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(theme.oceanColor)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    theme.displayName,
-                    fontSize = 11.sp,
-                    color = if (isSelected) MapChinaColors.Primary else MapChinaColors.TextTertiary,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                )
-            }
-        }
     }
 }

@@ -33,16 +33,23 @@ class ProfileScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
-    @Test fun profileScreen_keepsSettingsAndRemovesGrowthEntries() = runComposeUiTest {
+    @Test fun profileScreen_isAccountAndDataControlCenter() = runComposeUiTest {
         setContent { ProfileScreen() }
-        onNodeWithText("账号与设置").assertIsDisplayed()
-        onNode(hasScrollAction()).performScrollToNode(hasText("足迹记录设置"))
-        onNodeWithText("足迹记录设置").assertIsDisplayed()
-        onNode(hasScrollAction()).performScrollToNode(hasText("地图显示"))
-        onNodeWithText("地图显示").assertIsDisplayed()
-        onNode(hasScrollAction()).performScrollToNode(hasText("数据与同步"))
-        onNodeWithText("数据与同步").assertIsDisplayed()
-        onAllNodesWithText("勋章").assertCountEquals(0)
-        onAllNodesWithText("图鉴").assertCountEquals(0)
+        onNodeWithText("我的").assertIsDisplayed()
+        onNodeWithText("账号与同步").assertIsDisplayed()
+        onNodeWithText("本地保存").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("足迹记录"))
+        onNodeWithText("足迹记录").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("仅在本机读取照片中的位置信息"))
+        onNodeWithText("仅在本机读取照片中的位置信息").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("只生成建议，由你确认后点亮"))
+        onNodeWithText("只生成建议，由你确认后点亮").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("地图外观"))
+        onNodeWithText("地图外观").assertIsDisplayed()
+        onNode(hasScrollAction()).performScrollToNode(hasText("关于"))
+        onNodeWithText("关于").assertIsDisplayed()
+        onAllNodesWithText("省份").assertCountEquals(0)
+        onAllNodesWithText("城市").assertCountEquals(0)
+        onAllNodesWithText("区县").assertCountEquals(0)
     }
 }

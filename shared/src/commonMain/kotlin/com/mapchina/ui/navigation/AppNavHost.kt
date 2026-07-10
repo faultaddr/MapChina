@@ -91,19 +91,11 @@ fun AppNavHost(
             }
             entry<ProfileScreen> {
                 val profileVm: com.mapchina.ui.profile.ProfileViewModel = koinInject()
-                val achievementVm: AchievementViewModel = koinInject()
-                val statsVm: StatsViewModel = koinInject()
+                val syncCoordinator: com.mapchina.sync.SyncCoordinator = koinInject()
                 ProfileScreenComposable(
                     viewModel = profileVm,
-                    achievementViewModel = achievementVm,
-                    statsViewModel = statsVm,
                     onNavigateToLogin = { navigate(LoginScreen) },
-                    onNavigateToJournals = { navigate(JournalListScreen) },
-                    onNavigateToBadgeWall = { navigate(BadgeWallScreen) },
-                    onNavigateToProvinceConquest = { navigate(ProvinceConquestScreen) },
-                    onNavigateToAtlas = { navigate(AtlasScreen) },
-                    onNavigateToCarvings = { navigate(CarvingListScreen(showAll = "true")) },
-                    onNavigateToStats = { navigate(StatsScreen) },
+                    onSyncNow = syncCoordinator::requestFullSync,
                     settingsRepository = profileVm.settingsRepository
                 )
             }
