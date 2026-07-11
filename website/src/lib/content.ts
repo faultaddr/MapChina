@@ -10,18 +10,33 @@ import { getEditorialAttractions, getEditorialStories } from './curated-content'
 export function normalizeAttraction(item: Attraction, locale: SiteLocale): AttractionViewModel | null {
   if (!item.id?.trim() || !item.name?.trim()) return null;
   const hasCoordinates = Number.isFinite(item.latitude) && Number.isFinite(item.longitude);
+  const description = normalizeChineseMunicipality(item.description?.trim() || '');
   return {
     id: item.id,
     slug: item.id,
     source: 'live',
     name: item.name.trim(),
-    region: item.regionId?.trim() || (locale === 'zh' ? '中国' : 'China'),
+    region: formatAttractionRegion(item.regionId, description, locale),
     level: item.level?.trim() || null,
-    description: item.description?.trim() || (locale === 'zh' ? '在地图上继续探索这片山河。' : 'Continue exploring this place on the map.'),
+    description: description || (locale === 'zh' ? '在地图上继续探索这片山河。' : 'Continue exploring this place on the map.'),
     image: null,
     visitCount: Number.isFinite(item.visitCount) && item.visitCount >= 0 ? item.visitCount : null,
     coordinates: hasCoordinates ? { latitude: item.latitude, longitude: item.longitude } : null,
   };
+}
+
+function formatAttractionRegion(regionId: string | null | undefined, description: string, locale: SiteLocale): string {
+  const region = normalizeChineseMunicipality(regionId?.trim() || '');
+  if (region && !/^\d+$/.test(region)) return region;
+
+  const municipality = description.match(/^((?:北京市|上海市|天津市|重庆市)[\u4e00-\u9fff]{1,8}(?:区|县))/)?.[1];
+  if (municipality) return municipality;
+
+  return locale === 'zh' ? '实时位置' : 'Live location';
+}
+
+function normalizeChineseMunicipality(value: string): string {
+  return value.replace(/^(北京市|上海市|天津市|重庆市)\1/, '$1');
 }
 
 export function normalizeStory(item: CommunityPost, locale: SiteLocale): StoryViewModel | null {

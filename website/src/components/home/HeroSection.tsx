@@ -5,32 +5,12 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSyncExternalStore } from 'react';
 import type { SiteLocale } from '@/types';
 import { buildBetaMailto, localizeHref } from '@/lib/site-config';
+import { getHeroCopy } from '@/lib/home-content';
 
 const ChinaMapScene = dynamic(() => import('../three/ChinaMapScene'), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse rounded-full bg-primary/10" />,
 });
-
-const copy = {
-  zh: {
-    eyebrow: 'YOUR DIGITAL SHANHE · 你的数字山河',
-    title: '点亮足迹，\n看见自己的山河',
-    subtitle: '探索下一站，记录每一次抵达，与旅行者分享中国之美。',
-    beta: '参与内测',
-    explore: '开始探索',
-    chips: ['真实足迹', '山河成长', '双端计划'],
-    mapLabel: '由足迹点亮的中国地图轮廓',
-  },
-  en: {
-    eyebrow: 'YOUR DIGITAL SHANHE',
-    title: 'Light up each footprint.\nSee your own landscape.',
-    subtitle: 'Explore China, record every arrival, and share the places that shape your journey.',
-    beta: 'Join the beta',
-    explore: 'Start exploring',
-    chips: ['Real footprints', 'Personal progress', 'iOS + Android planned'],
-    mapLabel: 'An outline of China illuminated by travel footprints',
-  },
-} satisfies Record<SiteLocale, { eyebrow: string; title: string; subtitle: string; beta: string; explore: string; chips: string[]; mapLabel: string }>;
 
 function subscribeDesktop(callback: () => void) {
   const query = window.matchMedia('(min-width: 768px)');
@@ -47,7 +27,7 @@ function getServerSnapshot() {
 }
 
 export default function HeroSection({ locale }: { locale: SiteLocale }) {
-  const text = copy[locale];
+  const text = getHeroCopy(locale);
   const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getServerSnapshot);
   const reduceMotion = useReducedMotion();
 

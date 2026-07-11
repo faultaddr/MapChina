@@ -5,6 +5,7 @@ import {
   composeStories,
   findEditorialAttraction,
   findEditorialStory,
+  normalizeAttraction,
   resolveAttractionDetail,
   resolveStoryDetail,
 } from '../content';
@@ -35,6 +36,19 @@ const validStory: CommunityPost = {
 };
 
 describe('composeAttractions', () => {
+  it('turns numeric region ids into readable live location copy', () => {
+    const result = normalizeAttraction({
+      ...validAttraction,
+      regionId: '110101',
+      description: '北京市北京市东城区 中华路4号',
+    }, 'zh');
+
+    expect(result).toMatchObject({
+      region: '北京市东城区',
+      description: '北京市东城区 中华路4号',
+    });
+  });
+
   it('keeps live items first, drops broken records, and fills shortages', () => {
     const live = [validAttraction, { ...validAttraction, id: '', name: '' }];
 

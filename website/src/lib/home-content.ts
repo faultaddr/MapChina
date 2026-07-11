@@ -10,6 +10,37 @@ export type ProductPath = {
   description: string;
 };
 
+export type HeroCopy = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  beta: string;
+  explore: string;
+  chips: string[];
+  mapLabel: string;
+};
+
+const heroCopy: Record<SiteLocale, HeroCopy> = {
+  zh: {
+    eyebrow: 'YOUR DIGITAL SHANHE · 你的数字山河',
+    title: '点亮足迹，\n看见我的山河',
+    subtitle: '探索下一站，记录每一次抵达，与旅行者分享中国之美。',
+    beta: '参与内测',
+    explore: '开始探索',
+    chips: ['真实足迹', '山河成长', '双端计划'],
+    mapLabel: '由足迹点亮的中国地图轮廓',
+  },
+  en: {
+    eyebrow: 'YOUR DIGITAL SHANHE',
+    title: 'Light up each footprint.\nSee your own landscape.',
+    subtitle: 'Explore China, record every arrival, and share the places that shape your journey.',
+    beta: 'Join the beta',
+    explore: 'Start exploring',
+    chips: ['Real footprints', 'Personal progress', 'iOS + Android planned'],
+    mapLabel: 'An outline of China illuminated by travel footprints',
+  },
+};
+
 const productPaths: Record<SiteLocale, ProductPath[]> = {
   zh: [
     { key: 'footprint', index: '01', title: '足迹', kicker: '确认每一次抵达', description: '从省市到景点，用深游、小驻、途经记录真实到访，让地图逐步亮起来。' },
@@ -36,4 +67,8 @@ export const themePreviews = [
 
 export function getProductPaths(locale: SiteLocale): ProductPath[] {
   return productPaths[locale];
+}
+
+export function getHeroCopy(locale: SiteLocale): HeroCopy {
+  return heroCopy[locale];
 }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getProductPaths, themePreviews } from '../home-content';
+import { getHeroCopy, getProductPaths, themePreviews } from '../home-content';
 
 describe('home content', () => {
+  it('keeps the Chinese hero title to two compact display lines', () => {
+    expect(getHeroCopy('zh').title).toBe('点亮足迹，\n看见我的山河');
+    expect(getHeroCopy('zh').title.split('\n')).toHaveLength(2);
+  });
+
   it('uses the four current product paths in both locales', () => {
     expect(getProductPaths('zh').map((item) => item.key)).toEqual(['footprint', 'discover', 'shanhe', 'profile']);
     expect(getProductPaths('en')).toHaveLength(4);
