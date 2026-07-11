@@ -95,6 +95,31 @@ fun attractionDetailImageUrls(
     addAll(detailImageUrls.filter { it.isNotBlank() })
 }.distinct()
 
+internal data class AttractionDetailEntrancePolicy(
+    val heroAlpha: Float,
+    val contentAlpha: Float,
+    val backAlpha: Float,
+    val shouldAnimate: Boolean
+)
+
+internal fun attractionDetailEntrancePolicy(
+    animateHeroEntrance: Boolean
+): AttractionDetailEntrancePolicy = if (animateHeroEntrance) {
+    AttractionDetailEntrancePolicy(
+        heroAlpha = 0f,
+        contentAlpha = 0f,
+        backAlpha = 0f,
+        shouldAnimate = true
+    )
+} else {
+    AttractionDetailEntrancePolicy(
+        heroAlpha = 1f,
+        contentAlpha = 1f,
+        backAlpha = 1f,
+        shouldAnimate = false
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionDetailScreen(
@@ -129,22 +154,24 @@ fun AttractionDetailScreen(
     var showFullscreen by remember { mutableStateOf(false) }
     var fullscreenStartPage by remember { mutableStateOf(0) }
 
+    val entrancePolicy = attractionDetailEntrancePolicy(animateHeroEntrance)
+
     // Hero zoom-in animation
     val heroScale = remember(animateHeroEntrance) { Animatable(if (animateHeroEntrance) 0.82f else 1f) }
-    val heroAlpha = remember(animateHeroEntrance) { Animatable(if (animateHeroEntrance) 0f else 1f) }
+    val heroAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.heroAlpha) }
     val heroOffsetY = remember(animateHeroEntrance) { Animatable(if (animateHeroEntrance) 30f else 0f) }
-    val contentAlpha = remember { Animatable(0f) }
-    val backAlpha = remember { Animatable(0f) }
+    val contentAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.contentAlpha) }
+    val backAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.backAlpha) }
 
     LaunchedEffect(animateHeroEntrance) {
-        kotlinx.coroutines.coroutineScope {
-            if (animateHeroEntrance) {
+        if (entrancePolicy.shouldAnimate) {
+            kotlinx.coroutines.coroutineScope {
                 launch { heroAlpha.animateTo(1f, tween(350)) }
                 launch { heroScale.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow)) }
                 launch { heroOffsetY.animateTo(0f, spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)) }
+                launch { backAlpha.animateTo(1f, tween(250, delayMillis = 100)) }
+                launch { contentAlpha.animateTo(1f, tween(400, delayMillis = 180)) }
             }
-            launch { backAlpha.animateTo(1f, tween(250, delayMillis = 100)) }
-            launch { contentAlpha.animateTo(1f, tween(400, delayMillis = 180)) }
         }
     }
 

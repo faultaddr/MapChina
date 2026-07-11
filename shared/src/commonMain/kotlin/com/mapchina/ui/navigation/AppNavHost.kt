@@ -2,6 +2,9 @@ package com.mapchina.ui.navigation
 
 import kotlin.time.Clock
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -51,6 +54,9 @@ import com.mapchina.domain.service.AuthService
 import com.mapchina.sync.SyncCoordinator
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+internal fun usesSeamlessDiscoverHandoff(key: NavKey): Boolean =
+    key is AttractionDetailScreen && key.fromDiscover
 
 @Composable
 fun AppNavHost(
@@ -188,7 +194,17 @@ fun AppNavHost(
                     atlasId = key.atlasId
                 )
             }
-            entry<AttractionDetailScreen> { key ->
+            entry<AttractionDetailScreen>(
+                metadata = { key ->
+                    if (usesSeamlessDiscoverHandoff(key)) {
+                        NavDisplay.transitionSpec {
+                            EnterTransition.None togetherWith ExitTransition.None
+                        }
+                    } else {
+                        emptyMap()
+                    }
+                }
+            ) { key ->
                 val viewModel: AttractionViewModel = koinInject()
                 var attraction by remember(key.attractionId) { mutableStateOf(viewModel.getAttractionById(key.attractionId)) }
                 val detail = remember(key.attractionId) { viewModel.getAttractionDetail(key.attractionId) }
