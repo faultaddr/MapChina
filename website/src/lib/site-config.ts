@@ -17,3 +17,9 @@ export function buildBetaMailto(locale: SiteLocale): string {
   const copy = betaCopy[locale];
   return `mailto:${BETA_EMAIL}?subject=${encodeURIComponent(copy.subject)}&body=${encodeURIComponent(copy.body)}`;
 }
+
+export function localizeHref(locale: SiteLocale, href: string): string {
+  if (/^(?:[a-z]+:|#)/i.test(href)) return href;
+  const path = href === '/' ? '' : href.startsWith('/') ? href : `/${href}`;
+  return `/${locale}${path}`;
+}

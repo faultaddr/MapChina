@@ -3,7 +3,11 @@
     "attractions": "景点",
     "community": "社区",
     "about": "关于",
-    "download": "下载"
+    "download": "下载",
+    "beta": "参与内测",
+    "main_label": "主导航",
+    "open_menu": "打开菜单",
+    "close_menu": "关闭菜单"
   },
   "hero": {
     "slogan": "用地图点亮你的中国足迹",
@@ -38,6 +42,12 @@
     "google_play": "Google Play"
   },
   "footer": {
-    "copyright": "© 2026 MapChina"
+    "tagline": "用地图点亮足迹，把走过的地方沉淀成自己的山河。",
+    "explore": "探索",
+    "attractions": "景点",
+    "community": "社区",
+    "about": "关于",
+    "beta": "参与内测",
+    "copyright": "© 2026 MapChina · 为每一次抵达留下一处坐标"
   }
 }

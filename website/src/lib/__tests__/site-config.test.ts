@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BETA_EMAIL, buildBetaMailto } from '../site-config';
+import { BETA_EMAIL, buildBetaMailto, localizeHref } from '../site-config';
 
 describe('buildBetaMailto', () => {
   it('builds the Chinese beta request', () => {
@@ -17,5 +17,17 @@ describe('buildBetaMailto', () => {
 
     expect(url.searchParams.get('subject')).toBe('MapChina beta access request');
     expect(url.searchParams.get('body')).toContain('I would like to join the MapChina beta');
+  });
+});
+
+describe('localizeHref', () => {
+  it('keeps internal navigation inside the active locale', () => {
+    expect(localizeHref('zh', '/attractions')).toBe('/zh/attractions');
+    expect(localizeHref('en', '/')).toBe('/en');
+  });
+
+  it('does not rewrite external or email URLs', () => {
+    expect(localizeHref('zh', 'mailto:test@example.com')).toBe('mailto:test@example.com');
+    expect(localizeHref('en', 'https://example.com')).toBe('https://example.com');
   });
 });

@@ -3,7 +3,11 @@
     "attractions": "Attractions",
     "community": "Community",
     "about": "About",
-    "download": "Download"
+    "download": "Download",
+    "beta": "Join the beta",
+    "main_label": "Main navigation",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu"
   },
   "hero": {
     "slogan": "Light Up Your China Footprint",
@@ -38,6 +42,12 @@
     "google_play": "Google Play"
   },
   "footer": {
-    "copyright": "© 2026 MapChina"
+    "tagline": "Light up your footprint and turn every place you have been into your own digital landscape.",
+    "explore": "Explore",
+    "attractions": "Attractions",
+    "community": "Community",
+    "about": "About",
+    "beta": "Join the beta",
+    "copyright": "© 2026 MapChina · A coordinate for every arrival"
   }
 }
