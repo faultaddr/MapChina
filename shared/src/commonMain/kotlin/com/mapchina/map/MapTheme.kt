@@ -16,8 +16,8 @@ enum class MapTheme(
 ) {
     DEFAULT(
         displayName = "经典",
-        oceanColor = Color(0xFFF1F7F6),
-        backgroundRes = null
+        oceanColor = Color(0xFFF2F5F3),
+        backgroundRes = Res.drawable.bg_rice_paper
     ),
     INK_WASH(
         displayName = "水墨",
@@ -65,13 +65,13 @@ data class MapVisualStyle(
 val MapTheme.visualStyle: MapVisualStyle
     get() = when (this) {
         MapTheme.DEFAULT -> MapVisualStyle(
-            canvasTopColor = Color(0xFFEAF4F3),
-            canvasBottomColor = Color(0xFFF6F8F6),
-            regionSurfaceColor = Color(0xFFF7FBFA),
-            labelColor = Color(0xFF314743),
-            chromeColor = Color(0xFFFFFFFF),
-            chromeContentColor = Color(0xFF111827),
-            textureAlpha = 0f
+            canvasTopColor = Color(0xFFF0F4F2),
+            canvasBottomColor = Color(0xFFF7F8F5),
+            regionSurfaceColor = Color(0xFFFAFCF9),
+            labelColor = Color(0xFF394844),
+            chromeColor = Color(0xFFF9FBF8),
+            chromeContentColor = Color(0xFF17201E),
+            textureAlpha = 0.07f
         )
         MapTheme.INK_WASH -> MapVisualStyle(
             canvasTopColor = Color(0xFFF1EFE8),

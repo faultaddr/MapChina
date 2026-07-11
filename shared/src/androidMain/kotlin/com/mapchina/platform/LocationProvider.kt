@@ -8,7 +8,18 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import java.util.concurrent.atomic.AtomicReference
+
+private const val MAX_LAST_KNOWN_AGE_NANOS = 120_000_000_000L
+
+internal fun isFreshLastKnownLocation(
+    locationElapsedRealtimeNanos: Long,
+    nowElapsedRealtimeNanos: Long
+): Boolean {
+    val age = nowElapsedRealtimeNanos - locationElapsedRealtimeNanos
+    return locationElapsedRealtimeNanos > 0L && age in 0..MAX_LAST_KNOWN_AGE_NANOS
+}
 
 actual class LocationProvider {
     var context: Context? = null
@@ -61,6 +72,7 @@ actual class LocationProvider {
             try {
                 val loc = lm.getLastKnownLocation(provider) ?: continue
                 if (loc.latitude == 0.0 && loc.longitude == 0.0) continue
+                if (!isFreshLastKnownLocation(loc.elapsedRealtimeNanos, SystemClock.elapsedRealtimeNanos())) continue
                 if (best == null || loc.accuracy < best.accuracy) {
                     best = loc
                 }
@@ -98,8 +110,6 @@ actual class LocationProvider {
                         }
                     }
                 }
-                // Successfully submitted request for this provider
-                return
             } catch (_: Exception) {
                 // Provider unavailable; try the next one
             }

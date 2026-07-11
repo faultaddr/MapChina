@@ -82,13 +82,36 @@ class MapScreenTest {
         }
 
         onAllNodesWithText("添加第一处足迹").assertCountEquals(0)
+        onNodeWithContentDescription("当前定位").assertIsDisplayed()
         onNodeWithContentDescription("地图工具").assertIsDisplayed().performClick()
         onNodeWithText("随机出发").assertIsDisplayed()
         onNodeWithText("照片回溯 · 实验").assertIsDisplayed()
         onNodeWithText("分享").assertIsDisplayed()
-        onNodeWithText("当前定位").assertIsDisplayed()
+        onAllNodesWithText("当前定位").assertCountEquals(0)
         onAllNodesWithText("中国足迹").assertCountEquals(0)
         onAllNodesWithText("下一步").assertCountEquals(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test fun mapScreen_existingFootprint_hidesDockWhenRegionPanelOpens() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false, existingFootprint = true)
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        onNodeWithContentDescription("当前定位").assertIsDisplayed()
+        onNodeWithContentDescription("地图工具").assertIsDisplayed()
+
+        fixture.viewModel.selectRegion("330000")
+        fixture.viewModel.showRegionPanel("330000")
+
+        onAllNodesWithContentDescription("当前定位").assertCountEquals(0)
+        onAllNodesWithContentDescription("地图工具").assertCountEquals(0)
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)

@@ -15,6 +15,8 @@ import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -298,6 +300,38 @@ class MapViewModelTest {
     }
 
     @Test
+    fun activateCurrentLocation_waitsForFirstAsyncLocationResult() = runTest {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+        regionRepo.updateBoundariesInTransaction(
+            listOf(
+                "110000" to "[[116.0,39.0],[117.0,39.0],[117.0,40.0],[116.0,40.0],[116.0,39.0]]",
+                "110100" to "[[116.2,39.7],[116.8,39.7],[116.8,40.0],[116.2,40.0],[116.2,39.7]]",
+                "110101" to "[[116.4,39.9],[116.5,39.9],[116.5,40.0],[116.4,40.0],[116.4,39.9]]"
+            )
+        )
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            regionMatcher = RegionMatcher(regionRepo),
+            userId = "testUser",
+            dispatcher = StandardTestDispatcher(testScheduler),
+            currentLocationProvider = SequencedCurrentLocationProvider(
+                listOf(null, 39.95 to 116.45)
+            )
+        )
+
+        gpsViewModel.activateCurrentLocation()
+        advanceUntilIdle()
+
+        assertEquals("110101", gpsViewModel.selectedRegion.value?.regionId)
+        assertEquals(BottomPanel.Region("110101"), gpsViewModel.bottomPanel.value)
+    }
+
+    @Test
     fun togglePhotoMarkers_showsPhaseMessage() {
         viewModel.togglePhotoMarkers()
 
@@ -311,4 +345,15 @@ private class FakeCurrentLocationProvider(
     override fun isAvailable(): Boolean = location != null
 
     override fun getCurrentLocation(): Pair<Double, Double>? = location
+}
+
+private class SequencedCurrentLocationProvider(
+    locations: List<Pair<Double, Double>?>
+) : CurrentLocationProvider {
+    private val remaining = locations.toMutableList()
+
+    override fun isAvailable(): Boolean = true
+
+    override fun getCurrentLocation(): Pair<Double, Double>? =
+        if (remaining.isEmpty()) null else remaining.removeAt(0)
 }

@@ -110,14 +110,15 @@ fun AppNavHost(
                 val vm: AchievementViewModel = koinInject()
                 BadgeWallScreen(
                     viewModel = vm,
-                    onBadgeClick = { id -> navigate(BadgeDetailScreen(id)) }
+                    onBadgeClick = { id -> navigate(BadgeDetailScreen(id)) },
+                    onBack = onBack
                 )
             }
             entry<BadgeDetailScreen> { key ->
                 val vm: AchievementViewModel = koinInject()
                 val ui by vm.ui.collectAsState()
                 val item = ui.allAchievements.find { it.definition.id == key.achievementId }
-                BadgeDetailScreen(item = item)
+                BadgeDetailScreen(item = item, onBack = onBack)
             }
             entry<LoginScreen> {
                 val authService: AuthService = koinInject()

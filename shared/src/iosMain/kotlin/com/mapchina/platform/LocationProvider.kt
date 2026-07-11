@@ -8,7 +8,10 @@ import platform.CoreLocation.CLLocationManager
 import platform.CoreLocation.CLLocationManagerDelegateProtocol
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse
+import platform.CoreLocation.kCLAuthorizationStatusDenied
+import platform.CoreLocation.kCLAuthorizationStatusRestricted
 import platform.CoreLocation.kCLLocationAccuracyHundredMeters
+import platform.Foundation.NSError
 import platform.darwin.NSObject
 
 @OptIn(ExperimentalForeignApi::class)
@@ -25,6 +28,10 @@ actual class LocationProvider {
                     cachedLocation = Pair(latitude, longitude)
                 }
             }
+        }
+
+        override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
+            cachedLocation = null
         }
 
         override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
@@ -51,6 +58,7 @@ actual class LocationProvider {
     }
 
     actual fun isAvailable(): Boolean {
-        return CLLocationManager.locationServicesEnabled()
+        return manager.authorizationStatus != kCLAuthorizationStatusDenied &&
+                manager.authorizationStatus != kCLAuthorizationStatusRestricted
     }
 }

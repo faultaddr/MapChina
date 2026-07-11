@@ -29,7 +29,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private const val LOCATION_WARMUP_DELAY_MS = 900L
 
 data class AttractionUi(
     val id: String,
@@ -391,6 +394,10 @@ class MapViewModel(
         }
         vmScope.launch {
             val location = provider.getCurrentLocation()
+                ?: run {
+                    delay(LOCATION_WARMUP_DELAY_MS)
+                    provider.getCurrentLocation()
+                }
             if (location == null) {
                 showAutoMarkMessage("暂时无法获取当前位置")
                 return@launch

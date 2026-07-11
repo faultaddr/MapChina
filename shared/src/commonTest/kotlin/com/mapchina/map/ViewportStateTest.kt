@@ -60,4 +60,17 @@ class ViewportStateTest {
         assertEquals(39.9, vp.centerLat)
         assertEquals(10f, vp.zoomLevel)
     }
+
+    @Test
+    fun chinaFit_usesMainlandDisplayRangeWithoutChangingFullBounds() {
+        val vp = ViewportState()
+        vp.canvasWidth = 1280f
+        vp.canvasHeight = 2600f
+
+        val (_, centerLat, zoom) = vp.computeChinaFitTarget()
+
+        assertEquals(34.5, centerLat, 0.01)
+        assertTrue(zoom >= ViewportState.BASE_ZOOM)
+        assertEquals(14.0, ViewportState.CHINA_MIN_LAT)
+    }
 }

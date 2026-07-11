@@ -51,7 +51,7 @@ fun chinaFit_usesMainlandDisplayRangeWithoutChangingFullBounds() {
 
 - [ ] **Step 2: Run the common test and verify red**
 
-Run: `./gradlew :shared:jvmTest --tests com.mapchina.map.ViewportStateTest.chinaFit_usesMainlandDisplayRangeWithoutChangingFullBounds --quiet`
+Run: `./gradlew :shared:testDebugUnitTest --tests com.mapchina.map.ViewportStateTest.chinaFit_usesMainlandDisplayRangeWithoutChangingFullBounds --quiet`
 
 Expected: FAIL because the current center latitude is `28.5`.
 
@@ -72,7 +72,7 @@ fun computeChinaFitTarget(padding: Float = 1.02f): Triple<Double, Double, Float>
 
 - [ ] **Step 4: Run viewport and full shared tests**
 
-Run: `./gradlew :shared:jvmTest --tests com.mapchina.map.ViewportStateTest --quiet`
+Run: `./gradlew :shared:testDebugUnitTest --tests com.mapchina.map.ViewportStateTest --quiet`
 
 Expected: PASS.
 
@@ -113,7 +113,7 @@ class MapThemeTest {
 
 - [ ] **Step 2: Run the theme test and verify red**
 
-Run: `./gradlew :shared:jvmTest --tests com.mapchina.map.MapThemeTest --quiet`
+Run: `./gradlew :shared:testDebugUnitTest --tests com.mapchina.map.MapThemeTest --quiet`
 
 Expected: FAIL because `DEFAULT.backgroundRes` is null and texture alpha is zero.
 
@@ -373,7 +373,7 @@ Surface(
     color = surfaceColor,
     shadowElevation = 4.dp,
     border = BorderStroke(1.dp, textColor.copy(alpha = 0.08f)),
-    modifier = Modifier.widthIn(min = 168.dp, max = 196.dp)
+    modifier = Modifier.widthIn(min = 180.dp, max = 240.dp)
 ) {
     Column {
         menuItems.forEachIndexed { index, item ->

@@ -32,10 +32,10 @@ class ViewportState(
         const val CHINA_MIN_LAT = 14.0
         const val CHINA_MAX_LAT = 57.0
 
-        const val CHINA_FIT_MIN_LNG = 73.0
-        const val CHINA_FIT_MAX_LNG = 136.0
-        const val CHINA_FIT_MIN_LAT = 3.0
-        const val CHINA_FIT_MAX_LAT = 54.0
+        const val CHINA_DISPLAY_MIN_LNG = 73.0
+        const val CHINA_DISPLAY_MAX_LNG = 136.0
+        const val CHINA_DISPLAY_MIN_LAT = 15.0
+        const val CHINA_DISPLAY_MAX_LAT = 54.0
     }
 
     var camera by mutableStateOf(initialCamera)
@@ -105,13 +105,13 @@ class ViewportState(
     fun computeChinaFitTarget(padding: Float = 1.02f): Triple<Double, Double, Float> {
         val w = canvasWidth
         val h = canvasHeight
-        val targetLng = (CHINA_FIT_MIN_LNG + CHINA_FIT_MAX_LNG) / 2.0
-        val targetLat = (CHINA_FIT_MIN_LAT + CHINA_FIT_MAX_LAT) / 2.0
+        val targetLng = (CHINA_DISPLAY_MIN_LNG + CHINA_DISPLAY_MAX_LNG) / 2.0
+        val targetLat = (CHINA_DISPLAY_MIN_LAT + CHINA_DISPLAY_MAX_LAT) / 2.0
         if (w <= 0f || h <= 0f) return Triple(targetLng, targetLat, 3.5f)
 
-        val lngSpan = CHINA_FIT_MAX_LNG - CHINA_FIT_MIN_LNG
-        val mercMin = ln(tan(PI / 4 + CHINA_FIT_MIN_LAT * PI / 360))
-        val mercMax = ln(tan(PI / 4 + CHINA_FIT_MAX_LAT * PI / 360))
+        val lngSpan = CHINA_DISPLAY_MAX_LNG - CHINA_DISPLAY_MIN_LNG
+        val mercMin = ln(tan(PI / 4 + CHINA_DISPLAY_MIN_LAT * PI / 360))
+        val mercMax = ln(tan(PI / 4 + CHINA_DISPLAY_MAX_LAT * PI / 360))
         val mercSpan = mercMax - mercMin
 
         val scaleFromLng = (w * padding) / lngSpan.toFloat()

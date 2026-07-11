@@ -280,7 +280,7 @@ fun MapScreen(
 
         // Top dashboard (hidden in share mode)
         if (!shareMode) {
-            HomeMapHud(
+            HomeMapTitle(
                 path = listOf(BreadcrumbItem("", "中国")) + currentPath.map { BreadcrumbItem(it.id, it.name) },
                 currentLevel = levelLabel,
                 visitedCount = visitedCount,
@@ -291,7 +291,7 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .statusBarsPadding()
-                    .padding(top = 10.dp, start = 14.dp, end = 14.dp)
+                    .padding(top = 14.dp, start = 18.dp, end = 18.dp)
             )
         }
 
@@ -345,7 +345,8 @@ fun MapScreen(
                 mapTheme = currentMapTheme,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = bottomBarOffset + 18.dp)
+                    .zIndex(1f)
+                    .padding(end = 16.dp, bottom = bottomBarOffset + 16.dp)
             )
         }
 
@@ -370,7 +371,7 @@ fun MapScreen(
             exit = slideOutVertically(targetOffsetY = { it / 3 }) + fadeOut(tween(160)),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .zIndex(2f)
+                .zIndex(3f)
                 .padding(start = 16.dp, end = 16.dp, bottom = bottomBarOffset + 14.dp)
         ) {
             firstFootprintCelebration?.let { celebration ->
@@ -697,96 +698,6 @@ fun MapScreen(
                 showAttractionsSheet = false
             }
         )
-    }
-}
-
-@Composable
-private fun HomeMapHud(
-    path: List<BreadcrumbItem>,
-    currentLevel: String,
-    visitedCount: Int,
-    totalCount: Int,
-    coveragePercent: Int,
-    onNavigateUp: () -> Unit,
-    mapTheme: MapTheme,
-    modifier: Modifier = Modifier
-) {
-    val haptic = LocalHapticFeedback.current
-    val currentName = path.lastOrNull()?.name ?: "中国"
-    val progressText = if (totalCount > 0) "$visitedCount/$totalCount" else "加载中"
-    val levelText = "${currentLevel}级地图"
-    val visualStyle = mapTheme.visualStyle
-    val accent = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.Primary
-    val secondary = visualStyle.chromeContentColor.copy(alpha = 0.64f)
-
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = visualStyle.chromeColor.copy(alpha = 0.88f),
-        shadowElevation = 3.dp,
-        border = BorderStroke(0.8.dp, visualStyle.chromeContentColor.copy(alpha = 0.08f)),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (path.size > 1) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回上级",
-                        tint = accent,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                haptic.perform(HapticType.MEDIUM)
-                                onNavigateUp()
-                            }
-                            .padding(5.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                }
-                Text(
-                    text = currentName,
-                    color = visualStyle.chromeContentColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "$progressText 已点亮",
-                    color = accent,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "$levelText · $coveragePercent%",
-                    color = secondary,
-                    fontSize = 11.sp,
-                    maxLines = 1
-                )
-                Spacer(Modifier.width(10.dp))
-                Box(
-                    modifier = Modifier
-                        .width(52.dp)
-                        .height(3.dp)
-                        .background(visualStyle.chromeContentColor.copy(alpha = 0.10f), CircleShape)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth((coveragePercent / 100f).coerceIn(0f, 1f))
-                            .height(3.dp)
-                            .background(MapChinaColors.AccentGold, CircleShape)
-                    )
-                }
-            }
-        }
     }
 }
 
