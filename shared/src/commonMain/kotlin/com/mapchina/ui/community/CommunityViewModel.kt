@@ -46,14 +46,8 @@ class CommunityViewModel(
         vmScope.launch {
             val posts = withTimeoutOrNull(2500) {
                 apiClient.getCommunityFeed(page = page)
-            } ?: emptyList()
-            val merged = if (refresh) posts else _feedUi.value.posts + posts
-            _feedUi.value = CommunityFeedUi(
-                posts = merged,
-                isLoading = false,
-                page = page + 1,
-                hasMore = posts.size >= 20
-            )
+            }
+            _feedUi.value = communityFeedAfterLoad(_feedUi.value, page, refresh, posts)
         }
     }
 
@@ -122,4 +116,20 @@ class CommunityViewModel(
     fun clearDetail() {
         _detailUi.value = PostDetailUi()
     }
+}
+
+internal fun communityFeedAfterLoad(
+    current: CommunityFeedUi,
+    requestedPage: Int,
+    refresh: Boolean,
+    posts: List<CommunityPostDto>?,
+): CommunityFeedUi {
+    if (posts == null) return current.copy(isLoading = false)
+    val merged = if (refresh) posts else current.posts + posts
+    return CommunityFeedUi(
+        posts = merged,
+        isLoading = false,
+        page = requestedPage + 1,
+        hasMore = posts.size >= 20,
+    )
 }

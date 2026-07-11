@@ -21,6 +21,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 
 @kotlinx.serialization.Serializable
 data class LoginResponse(
@@ -124,6 +125,8 @@ class MapChinaApiClient(
                 header("size", size.toString())
             }.body()
             response
+        } catch (error: CancellationException) {
+            throw error
         } catch (_: Exception) {
             emptyList()
         }

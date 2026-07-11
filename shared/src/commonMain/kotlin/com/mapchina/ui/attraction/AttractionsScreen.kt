@@ -75,9 +75,25 @@ enum class AttractionFilter(val label: String) {
     ALL("全部"),
     A5("5A"),
     A4("4A"),
+    A5_UNVISITED("未访 5A"),
+    A4_UNVISITED("未访 4A"),
     CUSTOM("自定义"),
     VISITED("已到访"),
     UNVISITED("未到访")
+}
+
+internal fun filterAttractions(
+    attractions: List<AttractionUi>,
+    filter: AttractionFilter,
+): List<AttractionUi> = when (filter) {
+    AttractionFilter.ALL -> attractions
+    AttractionFilter.A5 -> attractions.filter { it.level == "A5" }
+    AttractionFilter.A4 -> attractions.filter { it.level == "A4" }
+    AttractionFilter.A5_UNVISITED -> attractions.filter { it.level == "A5" && it.visitLevel == null }
+    AttractionFilter.A4_UNVISITED -> attractions.filter { it.level == "A4" && it.visitLevel == null }
+    AttractionFilter.CUSTOM -> attractions.filter { it.isCustom }
+    AttractionFilter.VISITED -> attractions.filter { it.visitLevel != null }
+    AttractionFilter.UNVISITED -> attractions.filter { it.visitLevel == null }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -100,14 +116,7 @@ fun AttractionsScreen(
     val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED, AttractionFilter.UNVISITED, AttractionFilter.CUSTOM)
 
     val filteredAttractions = remember(attractions, selectedFilter) {
-        when (selectedFilter) {
-            AttractionFilter.ALL -> attractions
-            AttractionFilter.A5 -> attractions.filter { it.level == "A5" }
-            AttractionFilter.A4 -> attractions.filter { it.level == "A4" }
-            AttractionFilter.CUSTOM -> attractions.filter { it.isCustom }
-            AttractionFilter.VISITED -> attractions.filter { it.visitLevel != null }
-            AttractionFilter.UNVISITED -> attractions.filter { it.visitLevel == null }
-        }
+        filterAttractions(attractions, selectedFilter)
     }
 
     val visitedCount = attractions.count { it.visitLevel != null }
@@ -359,14 +368,14 @@ private fun DiscoveryStrip(
             value = a5UnvisitedCount,
             accent = MapChinaColors.AccentGold,
             modifier = Modifier.weight(1f),
-            onClick = { onFilterClick(AttractionFilter.A5) }
+            onClick = { onFilterClick(AttractionFilter.A5_UNVISITED) }
         )
         DiscoveryPill(
             label = "未访 4A",
             value = a4UnvisitedCount,
             accent = MapChinaColors.AccentBlue,
             modifier = Modifier.weight(1f),
-            onClick = { onFilterClick(AttractionFilter.A4) }
+            onClick = { onFilterClick(AttractionFilter.A4_UNVISITED) }
         )
         DiscoveryPill(
             label = if (customCount > 0) "我的补充" else "已探索",
