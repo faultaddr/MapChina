@@ -204,7 +204,7 @@
 
 ```bash
 npm run build
-npm run start -- --hostname 127.0.0.1 --port 3100
+HOSTNAME=127.0.0.1 PORT=3100 npm start
 ```
 
 选择 3100 是为了避开当前机器上另一个占用 3000 端口的项目。最终交付时服务必须仍在运行，且 `http://127.0.0.1:3100/zh` 与 `/en` 可访问。

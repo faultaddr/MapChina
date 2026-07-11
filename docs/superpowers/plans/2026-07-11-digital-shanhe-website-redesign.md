@@ -742,7 +742,7 @@ Expected: all commands exit 0 and `.next/BUILD_ID` exists.
 
 - [ ] **Step 3: Start the production server**
 
-Run: `cd website && npm run start -- --hostname 127.0.0.1 --port 3100`
+Run: `cd website && HOSTNAME=127.0.0.1 PORT=3100 npm start`
 
 Expected: Next.js production server remains running and reports ready.
 
