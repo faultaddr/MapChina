@@ -74,6 +74,22 @@ export function findEditorialStory(slug: string, locale: SiteLocale): StoryViewM
   return getEditorialStories(locale).find((item) => item.slug === slug) ?? null;
 }
 
+export function resolveAttractionDetail(
+  slug: string,
+  live: Attraction | null | undefined,
+  locale: SiteLocale,
+): AttractionViewModel | null {
+  return findEditorialAttraction(slug, locale) ?? (live ? normalizeAttraction(live, locale) : null);
+}
+
+export function resolveStoryDetail(
+  slug: string,
+  live: CommunityPost | null | undefined,
+  locale: SiteLocale,
+): StoryViewModel | null {
+  return findEditorialStory(slug, locale) ?? (live ? normalizeStory(live, locale) : null);
+}
+
 function fillUnique<T extends { id: string }>(live: T[], editorial: T[], minimum: number): T[] {
   const result: T[] = [];
   const ids = new Set<string>();

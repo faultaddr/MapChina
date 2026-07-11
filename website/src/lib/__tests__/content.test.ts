@@ -5,6 +5,8 @@ import {
   composeStories,
   findEditorialAttraction,
   findEditorialStory,
+  resolveAttractionDetail,
+  resolveStoryDetail,
 } from '../content';
 
 const validAttraction: Attraction = {
@@ -65,5 +67,31 @@ describe('composeStories', () => {
   it('finds localized editorial story details', () => {
     expect(findEditorialStory('west-lake-rain', 'en')?.title).toBe('West Lake After the Rain');
     expect(findEditorialStory('missing-story', 'zh')).toBeNull();
+  });
+});
+
+describe('detail resolution', () => {
+  it('resolves editorial attraction slugs before remote data', () => {
+    expect(resolveAttractionDetail('beijing-central-axis', null, 'en')).toMatchObject({
+      source: 'editorial',
+      name: 'Beijing Central Axis',
+    });
+    expect(resolveAttractionDetail('live-1', validAttraction, 'zh')).toMatchObject({
+      source: 'live',
+      name: '故宫',
+    });
+    expect(resolveAttractionDetail('missing', null, 'zh')).toBeNull();
+  });
+
+  it('resolves editorial and live story details', () => {
+    expect(resolveStoryDetail('west-lake-rain', null, 'zh')).toMatchObject({
+      source: 'editorial',
+      title: '雨后的西湖，适合慢一点',
+    });
+    expect(resolveStoryDetail('story-1', validStory, 'en')).toMatchObject({
+      source: 'live',
+      title: '北京的一天',
+    });
+    expect(resolveStoryDetail('missing', null, 'en')).toBeNull();
   });
 });
