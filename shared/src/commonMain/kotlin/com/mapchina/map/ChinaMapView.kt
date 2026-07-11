@@ -44,6 +44,7 @@ fun ChinaMapView(
     val renderState by controller.renderState.collectAsState()
     val pathCache = remember { GeoPathCache() }
     val textMeasurer = rememberTextMeasurer()
+    val visualStyle = renderState.backgroundTheme.visualStyle
 
     val backgroundBitmap: ImageBitmap? = renderState.backgroundTheme.backgroundRes?.let {
         imageResource(it)
@@ -75,37 +76,31 @@ fun ChinaMapView(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val projection = controller.viewport.toProjection(size.width, size.height)
 
-            // L0: Background. The default theme uses a quiet wash instead of a flat field,
-            // which gives the national map depth without competing with the regions.
-            if (renderState.backgroundTheme == MapTheme.DEFAULT) {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFEAF7F8),
-                            renderState.oceanColor,
-                            Color(0xFFFAF8F1)
-                        )
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        visualStyle.canvasTopColor,
+                        renderState.oceanColor,
+                        visualStyle.canvasBottomColor
                     )
                 )
-            } else {
-                drawRect(renderState.oceanColor)
-            }
+            )
 
             // L0.5: Theme background texture
             if (backgroundBitmap != null) {
                 drawImage(
                     image = backgroundBitmap,
                     dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
-                    alpha = 0.35f
+                    alpha = visualStyle.textureAlpha
                 )
             }
 
-            // L0.7: Neighbor country outlines. Keep them as faint context only; on
-            // the default national view they add rough visual noise around China.
-            val drawNeighborOutlines = renderState.backgroundTheme != MapTheme.DEFAULT || zoom >= 6f
+            // Neighbor outlines only become useful after drill-down. At the national
+            // level they compete with China's silhouette, especially on paper themes.
+            val drawNeighborOutlines = zoom >= 6f
             if (drawNeighborOutlines) {
                 val neighborStrokeWidth = if (zoom < 6f) 0.45.dp.toPx() else 0.35.dp.toPx()
-                val neighborAlpha = if (renderState.backgroundTheme == MapTheme.DEFAULT) 0.08f else 0.26f
+                val neighborAlpha = if (visualStyle.isDark) 0.18f else 0.12f
                 for (outline in renderState.neighborOutlines) {
                     val path = Path()
                     for ((i, point) in outline.withIndex()) {
@@ -115,7 +110,7 @@ fun ChinaMapView(
                     }
                     drawPath(
                         path,
-                        color = MapChinaColors.BorderMedium.copy(alpha = neighborAlpha),
+                        color = visualStyle.labelColor.copy(alpha = neighborAlpha),
                         style = Stroke(width = neighborStrokeWidth)
                     )
                 }
@@ -131,16 +126,23 @@ fun ChinaMapView(
 
             for ((regionId, overlayPaths) in pathCache.paths) {
                 val data = renderState.overlays[regionId] ?: continue
-                val fillColor = data.style.toFillColor()
-                val strokeColor = data.style.toStrokeColor()
-                val strokeWidth = if (zoom < 6f) 1.15.dp.toPx() else 0.9.dp.toPx()
+                val fillColor = if (visualStyle.isDark && !data.isVisited) {
+                    visualStyle.regionSurfaceColor.copy(alpha = 0.96f)
+                } else {
+                    data.style.toFillColor()
+                }
+                val strokeColor = if (visualStyle.isDark && !data.isVisited) {
+                    visualStyle.labelColor.copy(alpha = 0.28f)
+                } else {
+                    data.style.toStrokeColor()
+                }
+                val strokeWidth = if (zoom < 6f) 0.9.dp.toPx() else 0.75.dp.toPx()
 
-                // When a theme background is active, draw an opaque ocean-color base
-                // under each overlay so the texture doesn't bleed through
-                if (backgroundBitmap != null) {
-                    for (path in overlayPaths) {
-                        drawPath(path, color = renderState.oceanColor)
-                    }
+                for (path in overlayPaths) {
+                    drawPath(
+                        path,
+                        color = visualStyle.regionSurfaceColor.copy(alpha = if (visualStyle.isDark) 0.88f else 0.94f)
+                    )
                 }
 
                 for (path in overlayPaths) {
@@ -207,8 +209,8 @@ fun ChinaMapView(
             drawSouthChinaSeaOnMap(
                 projection = projection,
                 zoomLevel = zoom,
-                strokeColor = MapChinaColors.TextTertiary,
-                islandColor = MapChinaColors.AccentBlue
+                strokeColor = visualStyle.labelColor.copy(alpha = 0.58f),
+                islandColor = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.PrimaryVariant
             )
 
             // L7: Region labels with collision avoidance
@@ -219,7 +221,7 @@ fun ChinaMapView(
                     else -> 9.dp.toPx()
                 }
                 val style = TextStyle(
-                    color = MapChinaColors.TextPrimary.copy(alpha = if (zoom < 5f) 0.62f else 0.82f),
+                    color = visualStyle.labelColor.copy(alpha = if (zoom < 5f) 0.72f else 0.88f),
                     fontSize = with(density) { fontSizePx.toSp() },
                     textAlign = TextAlign.Center
                 )

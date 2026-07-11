@@ -50,3 +50,73 @@ enum class MapTheme(
             entries.find { it.name == name } ?: DEFAULT
     }
 }
+
+data class MapVisualStyle(
+    val canvasTopColor: Color,
+    val canvasBottomColor: Color,
+    val regionSurfaceColor: Color,
+    val labelColor: Color,
+    val chromeColor: Color,
+    val chromeContentColor: Color,
+    val textureAlpha: Float,
+    val isDark: Boolean = false
+)
+
+val MapTheme.visualStyle: MapVisualStyle
+    get() = when (this) {
+        MapTheme.DEFAULT -> MapVisualStyle(
+            canvasTopColor = Color(0xFFEAF4F3),
+            canvasBottomColor = Color(0xFFF6F8F6),
+            regionSurfaceColor = Color(0xFFF7FBFA),
+            labelColor = Color(0xFF314743),
+            chromeColor = Color(0xFFFFFFFF),
+            chromeContentColor = Color(0xFF111827),
+            textureAlpha = 0f
+        )
+        MapTheme.INK_WASH -> MapVisualStyle(
+            canvasTopColor = Color(0xFFF1EFE8),
+            canvasBottomColor = Color(0xFFE9EEEA),
+            regionSurfaceColor = Color(0xFFF3F1EA),
+            labelColor = Color(0xFF34443F),
+            chromeColor = Color(0xFFF8F6F0),
+            chromeContentColor = Color(0xFF1F2D29),
+            textureAlpha = 0.24f
+        )
+        MapTheme.VINTAGE_MAP -> MapVisualStyle(
+            canvasTopColor = Color(0xFFECE2CC),
+            canvasBottomColor = Color(0xFFF4ECD9),
+            regionSurfaceColor = Color(0xFFF0E6D1),
+            labelColor = Color(0xFF51402F),
+            chromeColor = Color(0xFFF8F0DD),
+            chromeContentColor = Color(0xFF392C22),
+            textureAlpha = 0.28f
+        )
+        MapTheme.RICE_PAPER -> MapVisualStyle(
+            canvasTopColor = Color(0xFFF8F5ED),
+            canvasBottomColor = Color(0xFFF0F3EF),
+            regionSurfaceColor = Color(0xFFF8F7F1),
+            labelColor = Color(0xFF3F504B),
+            chromeColor = Color(0xFFFCFAF5),
+            chromeContentColor = Color(0xFF17201E),
+            textureAlpha = 0.18f
+        )
+        MapTheme.STARRY_NIGHT -> MapVisualStyle(
+            canvasTopColor = Color(0xFF0F1428),
+            canvasBottomColor = Color(0xFF111B2C),
+            regionSurfaceColor = Color(0xFF18243A),
+            labelColor = Color(0xFFF4F7F9),
+            chromeColor = Color(0xFF172033),
+            chromeContentColor = Color(0xFFF4F7F9),
+            textureAlpha = 0.48f,
+            isDark = true
+        )
+        MapTheme.MOUNTAIN_MIST -> MapVisualStyle(
+            canvasTopColor = Color(0xFFE5EBEC),
+            canvasBottomColor = Color(0xFFF2F5F3),
+            regionSurfaceColor = Color(0xFFF0F4F2),
+            labelColor = Color(0xFF364945),
+            chromeColor = Color(0xFFF7FAF8),
+            chromeContentColor = Color(0xFF182522),
+            textureAlpha = 0.22f
+        )
+    }

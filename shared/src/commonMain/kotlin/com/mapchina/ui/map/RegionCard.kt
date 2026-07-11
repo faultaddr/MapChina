@@ -100,9 +100,9 @@ fun RegionCard(
     }
 
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(8.dp),
         color = MapChinaColors.SurfaceElevated.copy(alpha = 0.94f),
-        shadowElevation = 16.dp,
+        shadowElevation = 10.dp,
         tonalElevation = 2.dp,
         border = MapChinaCard.border,
         modifier = modifier.fillMaxWidth()

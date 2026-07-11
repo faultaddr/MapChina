@@ -1,20 +1,23 @@
 package com.mapchina.ui.map
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
@@ -26,18 +29,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapTheme
+import com.mapchina.map.visualStyle
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.platform.HapticType
@@ -52,10 +56,7 @@ private data class MenuItem(
 
 @Composable
 fun MapFab(
-    visitedCount: Int,
-    totalCount: Int,
     coveragePercent: Int,
-    currentLevel: String,
     photoMarkersVisible: Boolean,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
@@ -67,12 +68,12 @@ fun MapFab(
     mapTheme: MapTheme = MapTheme.DEFAULT,
     modifier: Modifier = Modifier
 ) {
-    val isDarkTheme = mapTheme == MapTheme.STARRY_NIGHT
-    val fabPrimaryColor = if (isDarkTheme) Color(0xFF64FFDA) else MapChinaColors.Primary
-    val fabPrimaryVariant = if (isDarkTheme) Color(0xFF00BFA5) else MapChinaColors.PrimaryVariant
-    val fabSurfaceColor = if (isDarkTheme) Color(0xFF1A2332) else MapChinaColors.SurfaceElevated
-    val fabTextColor = if (isDarkTheme) Color(0xFFE0E0E0) else MapChinaColors.TextPrimary
-    val fabTextTertiary = if (isDarkTheme) Color(0xFF90A4AE) else MapChinaColors.TextTertiary
+    val visualStyle = mapTheme.visualStyle
+    val fabPrimaryColor = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.Primary
+    val fabPrimaryVariant = if (visualStyle.isDark) Color(0xFF00BFA5) else MapChinaColors.PrimaryVariant
+    val fabSurfaceColor = visualStyle.chromeColor.copy(alpha = 0.94f)
+    val fabTextColor = visualStyle.chromeContentColor
+    val fabTextTertiary = visualStyle.chromeContentColor.copy(alpha = 0.62f)
     val haptic = LocalHapticFeedback.current
     val menuItems = buildList {
         if (onNavigateToNational != null) {
@@ -113,58 +114,66 @@ fun MapFab(
     }
 
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        Surface(
-            shape = CircleShape,
-            color = if (visitedCount == 0) fabPrimaryColor else fabSurfaceColor.copy(alpha = 0.92f),
-            shadowElevation = 9.dp,
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            haptic.perform(HapticType.HEAVY)
-                            onExpandedChange(false)
-                            onNavigateToNational?.invoke()
-                        },
-                        onTap = {
-                            haptic.perform(HapticType.MEDIUM)
-                            onExpandedChange(!isExpanded)
-                        }
-                    )
-                }
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 4 }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 4 })
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (visitedCount == 0) Color.White.copy(alpha = 0.18f) else fabPrimaryColor.copy(alpha = 0.10f),
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (visitedCount == 0) Icons.Default.Navigation else Icons.Default.Explore,
-                            contentDescription = if (visitedCount == 0) Copy.FAB_DEPART else "$coveragePercent%",
-                            tint = if (visitedCount == 0) Color.White else fabPrimaryColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                menuItems.forEachIndexed { index, item ->
+                    if (index > 0) Spacer(Modifier.height(6.dp))
+                    MapToolMenuItem(
+                        item = item,
+                        surfaceColor = fabSurfaceColor,
+                        textColor = fabTextColor
+                    )
                 }
             }
         }
-
-        // Menu items below the FAB
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = scaleIn(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)),
-            exit = scaleOut(tween(120))
+        Spacer(Modifier.height(10.dp))
+        Box(
+            modifier = Modifier.size(62.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 12.dp)
+            Canvas(Modifier.fillMaxSize()) {
+                val strokeWidth = 2.dp.toPx()
+                drawCircle(
+                    color = fabSurfaceColor.copy(alpha = 0.78f),
+                    radius = size.minDimension / 2f - strokeWidth,
+                    style = Stroke(strokeWidth)
+                )
+                if (coveragePercent > 0) {
+                    drawArc(
+                        color = MapChinaColors.AccentGold,
+                        startAngle = -90f,
+                        sweepAngle = 360f * (coveragePercent / 100f).coerceIn(0f, 1f),
+                        useCenter = false,
+                        style = Stroke(strokeWidth)
+                    )
+                }
+            }
+            Surface(
+                shape = CircleShape,
+                color = fabPrimaryColor,
+                shadowElevation = 8.dp,
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(CircleShape)
+                    .semantics { contentDescription = "地图工具" }
+                    .clickable {
+                        haptic.perform(HapticType.MEDIUM)
+                        onExpandedChange(!isExpanded)
+                    }
             ) {
-                menuItems.forEachIndexed { index, item ->
-                    if (index > 0) Spacer(Modifier.height(10.dp))
-                    MenuItemButton(item, surfaceColor = fabSurfaceColor, textColor = fabTextTertiary)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Explore,
+                        contentDescription = null,
+                        tint = if (visualStyle.isDark) Color(0xFF0F1428) else Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
@@ -172,19 +181,34 @@ fun MapFab(
 }
 
 @Composable
-private fun MenuItemButton(item: MenuItem, surfaceColor: Color, textColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = CircleShape,
-            color = surfaceColor,
-            shadowElevation = 6.dp,
-            modifier = Modifier.size(44.dp).clip(CircleShape).clickable(onClick = item.onClick)
+private fun MapToolMenuItem(item: MenuItem, surfaceColor: Color, textColor: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = surfaceColor,
+        shadowElevation = 4.dp,
+        modifier = Modifier
+            .height(42.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = item.onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(item.icon, contentDescription = item.label, tint = item.tint, modifier = Modifier.size(22.dp))
-            }
+            Icon(
+                item.icon,
+                contentDescription = null,
+                tint = item.tint,
+                modifier = Modifier.size(19.dp)
+            )
+            Spacer(Modifier.width(9.dp))
+            Text(
+                item.label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+                maxLines = 1
+            )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = textColor, textAlign = TextAlign.Center)
     }
 }

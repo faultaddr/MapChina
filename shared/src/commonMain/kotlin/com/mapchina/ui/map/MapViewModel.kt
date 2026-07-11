@@ -937,7 +937,7 @@ class MapViewModel(
                 val coverage = coverageMap[id] ?: 0f
                 val fp = footprints[id]
                 val style = footprintOverlayStyle(fp, coverage)
-                controller.updateOverlayStyle(id, style, fp != null)
+                controller.updateOverlayStyle(id, style, fp != null || coverage > 0f)
             }
         }
 
@@ -947,7 +947,12 @@ class MapViewModel(
             val boundary = boundaries?.get(region.regionId)
                 ?: regionRepository.getRegionBoundary(region.regionId)
             if (boundary != null) {
-                controller.addOverlay(region.regionId, boundary, style, region.footprintLevel != null)
+                controller.addOverlay(
+                    region.regionId,
+                    boundary,
+                    style,
+                    region.footprintLevel != null || region.childCoverageRate > 0f
+                )
             }
             // Add label if we have center coords
             val center = regionRepository.getRegionCenter(region.regionId)

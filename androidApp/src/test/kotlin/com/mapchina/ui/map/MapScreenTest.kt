@@ -7,7 +7,9 @@ import org.robolectric.annotation.Config
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
@@ -39,8 +41,9 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
-    @Test fun mapScreen_showsLightweightHudAndCommandBar() = runComposeUiTest {
+    @Test fun mapScreen_showsLightweightHudAndSingleMapToolEntry() = runComposeUiTest {
         val fixture = createSuggestionFixture(offerSuggestion = false)
+        fixture.viewModel.dismissOnboarding()
 
         setContent {
             MapScreen(
@@ -51,12 +54,16 @@ class MapScreenTest {
         }
 
         onNodeWithText("中国").assertIsDisplayed()
-        onNodeWithText("省级地图").assertIsDisplayed()
-        onNodeWithText("0%").assertIsDisplayed()
-        onNodeWithText("地图操作").assertIsDisplayed()
-        onNodeWithText("出发").assertIsDisplayed()
-        onNodeWithText("照片").assertIsDisplayed()
+        onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
+        onNodeWithText("已点亮", substring = true).assertIsDisplayed()
+        onAllNodesWithText("地图操作").assertCountEquals(0)
+        onAllNodesWithText("随机出发").assertCountEquals(0)
+        onAllNodesWithText("照片标记").assertCountEquals(0)
+        onNodeWithContentDescription("地图工具").assertIsDisplayed().performClick()
+        onNodeWithText("随机出发").assertIsDisplayed()
+        onNodeWithText("照片标记").assertIsDisplayed()
         onNodeWithText("分享").assertIsDisplayed()
+        onNodeWithText("当前定位").assertIsDisplayed()
         onAllNodesWithText("中国足迹").assertCountEquals(0)
         onAllNodesWithText("从第一处开始点亮").assertCountEquals(0)
         onAllNodesWithText("下一步").assertCountEquals(0)
@@ -75,12 +82,12 @@ class MapScreenTest {
         }
 
         onNodeWithText("中国").assertIsDisplayed()
-        onNodeWithText("省级地图").assertIsDisplayed()
-        onNodeWithText("0%").assertIsDisplayed()
+        onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
         onNodeWithText("当前位置 · 可信度高").assertIsDisplayed()
         onNodeWithText("确认后会同时将上级地区标记为途经").assertIsDisplayed()
+        onAllNodesWithContentDescription("地图工具").assertCountEquals(0)
 
         onNodeWithText("小驻").performClick()
 

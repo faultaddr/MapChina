@@ -36,9 +36,9 @@ fun FootprintSuggestionCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(8.dp),
         color = MapChinaColors.SurfaceElevated.copy(alpha = 0.96f),
-        shadowElevation = 12.dp,
+        shadowElevation = 8.dp,
         tonalElevation = 2.dp,
         border = MapChinaCard.border,
         modifier = modifier.fillMaxWidth()
