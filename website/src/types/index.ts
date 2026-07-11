@@ -36,3 +36,35 @@ export interface CommunityPost {
   commentCount: number;
   createdAt: number;
 }
+
+export type SiteLocale = 'zh' | 'en';
+
+export type ContentSource = 'live' | 'editorial';
+
+export interface AttractionViewModel {
+  id: string;
+  slug: string;
+  source: ContentSource;
+  name: string;
+  region: string;
+  level: string | null;
+  description: string;
+  image: string | null;
+  visitCount: number | null;
+  coordinates: { latitude: number; longitude: number } | null;
+}
+
+export interface StoryViewModel {
+  id: string;
+  slug: string;
+  source: ContentSource;
+  author: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImage: string | null;
+  region: string | null;
+  likeCount: number | null;
+  commentCount: number | null;
+  createdAt: number | null;
+}
