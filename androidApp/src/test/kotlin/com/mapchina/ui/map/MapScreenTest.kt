@@ -41,9 +41,8 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
-    @Test fun mapScreen_showsLightweightHudAndSingleMapToolEntry() = runComposeUiTest {
+    @Test fun mapScreen_zeroFootprints_showsInMapActivationEntry() = runComposeUiTest {
         val fixture = createSuggestionFixture(offerSuggestion = false)
-        fixture.viewModel.dismissOnboarding()
 
         setContent {
             MapScreen(
@@ -57,16 +56,66 @@ class MapScreenTest {
         onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("已点亮", substring = true).assertIsDisplayed()
         onAllNodesWithText("地图操作").assertCountEquals(0)
+        onNodeWithText("添加第一处足迹").assertIsDisplayed()
+        onNodeWithContentDescription("添加第一处足迹").assertIsDisplayed().performClick()
+        onNodeWithText("在地图上选择").assertIsDisplayed()
+        onNodeWithText("搜索景点").assertIsDisplayed()
+        onNodeWithText("使用当前位置").assertIsDisplayed()
         onAllNodesWithText("随机出发").assertCountEquals(0)
         onAllNodesWithText("照片标记").assertCountEquals(0)
+        onAllNodesWithText("分享").assertCountEquals(0)
+
+        onNodeWithText("在地图上选择").performClick()
+        onNodeWithText("轻点地图选择").assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test fun mapScreen_existingFootprint_keepsRegularMapTools() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false, existingFootprint = true)
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        onAllNodesWithText("添加第一处足迹").assertCountEquals(0)
         onNodeWithContentDescription("地图工具").assertIsDisplayed().performClick()
         onNodeWithText("随机出发").assertIsDisplayed()
-        onNodeWithText("照片标记").assertIsDisplayed()
+        onNodeWithText("照片回溯 · 实验").assertIsDisplayed()
         onNodeWithText("分享").assertIsDisplayed()
         onNodeWithText("当前定位").assertIsDisplayed()
         onAllNodesWithText("中国足迹").assertCountEquals(0)
-        onAllNodesWithText("从第一处开始点亮").assertCountEquals(0)
         onAllNodesWithText("下一步").assertCountEquals(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test fun mapScreen_firstFootprint_showsThenDismissesCelebration() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+        mainClock.autoAdvance = false
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+        waitForIdle()
+
+        fixture.viewModel.markFootprint("330000", FootprintLevel.SHORT_VISIT)
+        mainClock.advanceTimeBy(400)
+
+        onNodeWithText("第一处已点亮").assertIsDisplayed()
+        onNodeWithText("浙江省 · 小驻").assertIsDisplayed()
+        onAllNodesWithText("添加第一处足迹").assertCountEquals(0)
+        onAllNodesWithText("这次停留有多深？").assertCountEquals(0)
+
+        mainClock.advanceTimeBy(2400)
+        onAllNodesWithText("第一处已点亮").assertCountEquals(0)
+        onNodeWithContentDescription("地图工具").assertIsDisplayed()
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
@@ -115,7 +164,10 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun createSuggestionFixture(offerSuggestion: Boolean = true): SuggestionFixture {
+    private fun createSuggestionFixture(
+        offerSuggestion: Boolean = true,
+        existingFootprint: Boolean = false
+    ): SuggestionFixture {
         val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         MapChinaDatabase.Schema.create(driver)
         val database = MapChinaDatabase(driver)
@@ -128,6 +180,9 @@ class MapScreenTest {
         regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
         regionRepo.insertRegion(Region("330100", "杭州市", RegionLevel.CITY, "330000"))
         regionRepo.insertRegion(Region("330106", "西湖区", RegionLevel.DISTRICT, "330100"))
+        if (existingFootprint) {
+            footprintRepo.markFootprint("u1", "330000", FootprintLevel.PASS_BY)
+        }
         if (offerSuggestion) {
             suggestionService.offerFromLocation(
                 RegionMatch(

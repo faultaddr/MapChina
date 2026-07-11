@@ -88,11 +88,12 @@ fun AppNavHost(
                 val vm: ShanheViewModel = koinInject()
                 ShanheScreenComposable(viewModel = vm, onNavigate = navigate)
             }
-            entry<AttractionsScreen> {
+            entry<AttractionsScreen> { key ->
                 AttractionsScreenComposable(
                     onNavigate = navigate,
                     onBack = onBack,
-                    viewModel = koinInject()
+                    viewModel = koinInject(),
+                    autoFocusSearch = key.autoFocusSearch
                 )
             }
             entry<ProfileScreen> {

@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object MapScreen : Screen()
 @Serializable data object DiscoverScreen : Screen()
 @Serializable data object ShanheScreen : Screen()
-@Serializable data object AttractionsScreen : Screen()
+@Serializable data class AttractionsScreen(val autoFocusSearch: Boolean = false) : Screen()
 @Serializable data object BadgeWallScreen : Screen()
 @Serializable data class BadgeDetailScreen(val achievementId: String) : Screen()
 @Serializable data object ProvinceConquestScreen : Screen()

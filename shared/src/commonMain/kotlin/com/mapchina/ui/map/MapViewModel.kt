@@ -64,6 +64,12 @@ data class CityDot(
     val lng: Double
 )
 
+data class FirstFootprintCelebration(
+    val regionId: String,
+    val regionName: String,
+    val level: FootprintLevel
+)
+
 interface CurrentLocationProvider {
     fun getCurrentLocation(): Pair<Double, Double>?
     fun isAvailable(): Boolean
@@ -150,9 +156,6 @@ class MapViewModel(
     private val _selectedRegionAttractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val selectedRegionAttractions: StateFlow<List<AttractionUi>> = _selectedRegionAttractions.asStateFlow()
 
-    private val _showOnboarding = MutableStateFlow(false)
-    val showOnboarding: StateFlow<Boolean> = _showOnboarding.asStateFlow()
-
     private val _photoClusters = MutableStateFlow<List<PhotoCluster>>(emptyList())
     val photoClusters: StateFlow<List<PhotoCluster>> = _photoClusters.asStateFlow()
 
@@ -174,6 +177,14 @@ class MapViewModel(
     private val _shareMode = MutableStateFlow(false)
     val shareMode: StateFlow<Boolean> = _shareMode.asStateFlow()
 
+    private val _firstFootprintActivation = MutableStateFlow(!hasAnyFootprint())
+    val firstFootprintActivation: StateFlow<Boolean> = _firstFootprintActivation.asStateFlow()
+
+    private val _firstFootprintCelebration = MutableStateFlow<FirstFootprintCelebration?>(null)
+    val firstFootprintCelebration: StateFlow<FirstFootprintCelebration?> =
+        _firstFootprintCelebration.asStateFlow()
+    private val firstFootprintPersistenceInFlight = MutableStateFlow(false)
+
     private var footprintCache: Map<String, FootprintLevel>? = null
 
     private var childrenIndex: Map<String, List<String>> = emptyMap()
@@ -187,6 +198,26 @@ class MapViewModel(
         footprintCache = null
         attractionVisitsCache = null
         attractionCountCache.clear()
+    }
+
+    private fun hasAnyFootprint(): Boolean =
+        footprintRepository.getFootprintsByUser(userId).isNotEmpty() ||
+            footprintRepository.getAttractionVisitsByUser(userId).isNotEmpty()
+
+    private fun refreshFirstFootprintActivation() {
+        if (firstFootprintPersistenceInFlight.value) return
+        _firstFootprintActivation.value = !hasAnyFootprint()
+    }
+
+    private fun completeFirstFootprintIfNeeded(regionId: String, level: FootprintLevel) {
+        if (!_firstFootprintActivation.value) return
+        val regionName = regionRepository.getRegion(regionId)?.name ?: return
+        _firstFootprintActivation.value = false
+        _firstFootprintCelebration.value = FirstFootprintCelebration(
+            regionId = regionId,
+            regionName = regionName,
+            level = level
+        )
     }
 
     private var _mapController: MapController? = null
@@ -225,18 +256,7 @@ class MapViewModel(
     private val attractionCountCache = mutableMapOf<String, Int>()
     private var attractionVisitsCache: Map<String, FootprintLevel>? = null
 
-    companion object {
-        private const val KEY_ONBOARDING_COUNT = "onboarding_shown_count"
-        private const val MAX_ONBOARDING_SHOWS = 2
-    }
-
     init {
-        val shownCount = settingsRepository?.getInt(KEY_ONBOARDING_COUNT) ?: 0
-        _showOnboarding.value = shownCount < MAX_ONBOARDING_SHOWS
-        if (_showOnboarding.value) {
-            settingsRepository?.setInt(KEY_ONBOARDING_COUNT, shownCount + 1)
-        }
-
         vmScope.launch {
             loadTopLevelRegions()
             rebuildChildrenIndex()
@@ -247,6 +267,7 @@ class MapViewModel(
 
     fun reloadData() {
         invalidateCaches()
+        refreshFirstFootprintActivation()
         _programmaticCamera = true
         vmScope.launch {
             if (_currentPath.value.isEmpty()) {
@@ -361,6 +382,51 @@ class MapViewModel(
         }
     }
 
+    fun activateCurrentLocation() {
+        val provider = currentLocationProvider
+        val matcher = regionMatcher
+        if (provider == null || matcher == null || !provider.isAvailable()) {
+            showAutoMarkMessage("暂时无法获取当前位置")
+            return
+        }
+        vmScope.launch {
+            val location = provider.getCurrentLocation()
+            if (location == null) {
+                showAutoMarkMessage("暂时无法获取当前位置")
+                return@launch
+            }
+            val match = matcher.match(location.first, location.second)
+            val target = match.district ?: match.city ?: match.province
+            if (target == null) {
+                showAutoMarkMessage("当前位置暂未匹配到地区")
+                return@launch
+            }
+
+            val parentId = target.parentId
+            if (parentId != null) {
+                navigateTo(parentId)
+            } else {
+                navigateToNational()
+            }
+            savedCameraLat = location.first
+            savedCameraLng = location.second
+            savedCameraZoom = when (target.level) {
+                RegionLevel.PROVINCE -> 5.5f
+                RegionLevel.CITY -> 8f
+                RegionLevel.DISTRICT -> 10f
+            }
+            setProgrammaticCamera()
+            mapController?.setCamera(
+                location.first,
+                location.second,
+                savedCameraZoom,
+                true
+            )
+            selectRegion(target.id)
+            showRegionPanel(target.id)
+        }
+    }
+
     fun navigateUp() {
         val path = _currentPath.value
         if (path.size > 1) {
@@ -452,6 +518,10 @@ class MapViewModel(
         _achievementUnlock.value = null
     }
 
+    fun dismissFirstFootprintCelebration() {
+        _firstFootprintCelebration.value = null
+    }
+
     fun getAchievementName(id: String): String =
         achievementRepository?.getDefinitionById(id)?.name ?: id
 
@@ -466,10 +536,6 @@ class MapViewModel(
 
     fun dismissDrillDownHint() {
         _drillDownHint.value = null
-    }
-
-    fun dismissOnboarding() {
-        _showOnboarding.value = false
     }
 
     fun canDrillIntoRegion(regionId: String): Boolean {
@@ -568,6 +634,7 @@ class MapViewModel(
     fun confirmSuggestion(suggestionId: String, level: FootprintLevel) {
         vmScope.launch {
             val result = footprintSuggestionService?.confirm(userId, suggestionId, level) ?: return@launch
+            result.footprint?.let { completeFirstFootprintIfNeeded(it.regionId, level) }
             invalidateCaches()
             refreshRegions()
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
@@ -663,12 +730,42 @@ class MapViewModel(
     }
 
     fun markFootprint(regionId: String, level: FootprintLevel) {
+        val isFirstFootprint = _firstFootprintActivation.value
+        val previousRegions = _regions.value
+        val previousSelectedRegion = _selectedRegion.value
+        if (isFirstFootprint) {
+            firstFootprintPersistenceInFlight.value = true
+            _regions.value = _regions.value.map { region ->
+                if (region.regionId == regionId) region.copy(footprintLevel = level) else region
+            }
+            _selectedRegion.value = _selectedRegion.value?.let { region ->
+                if (region.regionId == regionId) region.copy(footprintLevel = level) else region
+            }
+            completeFirstFootprintIfNeeded(regionId, level)
+            updateOverlayColor(regionId, level)
+        }
+
         vmScope.launch {
-            val result = footprintService.markFootprint(userId, regionId, level)
+            val result = runCatching {
+                footprintService.markFootprint(userId, regionId, level)
+            }.getOrNull()
+            val persisted = footprintRepository.getFootprint(userId, regionId) != null
+            val succeeded = result?.isSuccess == true || persisted
+
+            if (succeeded) {
+                if (!isFirstFootprint) completeFirstFootprintIfNeeded(regionId, level)
+            } else if (isFirstFootprint) {
+                _firstFootprintCelebration.value = null
+                _regions.value = previousRegions
+                _selectedRegion.value = previousSelectedRegion
+                showAutoMarkMessage("标记失败，请重试")
+            }
+            if (isFirstFootprint) firstFootprintPersistenceInFlight.value = false
+            refreshFirstFootprintActivation()
             invalidateCaches()
             refreshRegions()
-            updateOverlayColor(regionId, level)
-            if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
+            if (succeeded) updateOverlayColor(regionId, level)
+            if (result?.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
                 _achievementUnlock.value = result.achievementResult
             }
         }
@@ -678,6 +775,7 @@ class MapViewModel(
         vmScope.launch {
             footprintService.removeFootprint(userId, regionId)
             invalidateCaches()
+            refreshFirstFootprintActivation()
             refreshRegions()
         }
     }
@@ -685,6 +783,7 @@ class MapViewModel(
     fun markAttractionVisit(attractionId: String, regionId: String, level: FootprintLevel) {
         vmScope.launch {
             val result = footprintService.markAttractionVisit(userId, attractionId, regionId, level)
+            if (result.isSuccess) completeFirstFootprintIfNeeded(regionId, level)
             invalidateCaches()
             refreshAttractions()
             refreshRegions()
@@ -698,6 +797,7 @@ class MapViewModel(
         vmScope.launch {
             footprintService.removeAttractionVisit(userId, attractionId)
             invalidateCaches()
+            refreshFirstFootprintActivation()
             refreshAttractions()
             refreshRegions()
         }

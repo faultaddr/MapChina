@@ -14,11 +14,14 @@ import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class MapViewModelTest {
 
@@ -63,6 +66,69 @@ class MapViewModelTest {
     @Test
     fun initialPath_isEmpty() {
         assertEquals(0, viewModel.currentPath.value.size)
+    }
+
+    @Test
+    fun emptyRepository_startsFirstFootprintActivation() {
+        assertTrue(viewModel.firstFootprintActivation.value)
+    }
+
+    @Test
+    fun firstMark_emitsCelebrationAndEndsActivation() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+
+        viewModel.markFootprint("510000", FootprintLevel.DEEP)
+
+        assertFalse(viewModel.firstFootprintActivation.value)
+        assertEquals("510000", viewModel.firstFootprintCelebration.value?.regionId)
+        assertEquals("四川省", viewModel.firstFootprintCelebration.value?.regionName)
+        assertEquals(FootprintLevel.DEEP, viewModel.firstFootprintCelebration.value?.level)
+
+        viewModel.dismissFirstFootprintCelebration()
+        assertNull(viewModel.firstFootprintCelebration.value)
+    }
+
+    @Test
+    fun firstMark_updatesVisibleStateBeforeBackgroundPersistenceFinishes() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        val dispatcher = StandardTestDispatcher()
+        val deferredViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            userId = "deferredUser",
+            dispatcher = dispatcher
+        )
+        deferredViewModel.selectRegion("510000")
+
+        deferredViewModel.markFootprint("510000", FootprintLevel.DEEP)
+
+        assertFalse(deferredViewModel.firstFootprintActivation.value)
+        assertEquals("四川省", deferredViewModel.firstFootprintCelebration.value?.regionName)
+        assertEquals(FootprintLevel.DEEP, deferredViewModel.selectedRegion.value?.footprintLevel)
+        assertNull(footprintRepo.getFootprint("deferredUser", "510000"))
+
+        deferredViewModel.reloadData()
+        assertFalse(deferredViewModel.firstFootprintActivation.value)
+
+        dispatcher.scheduler.runCurrent()
+        assertFalse(deferredViewModel.firstFootprintActivation.value)
+        assertEquals(
+            FootprintLevel.DEEP,
+            footprintRepo.getFootprint("deferredUser", "510000")?.level
+        )
+    }
+
+    @Test
+    fun reloadData_detectsFootprintWrittenByAnotherScreen() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        footprintRepo.markFootprint("testUser", "510000", FootprintLevel.PASS_BY)
+
+        viewModel.reloadData()
+
+        assertFalse(viewModel.firstFootprintActivation.value)
+        assertNull(viewModel.firstFootprintCelebration.value)
     }
 
     @Test
@@ -200,6 +266,35 @@ class MapViewModelTest {
         assertEquals("110101", gpsViewModel.footprintSuggestions.value.first().regionId)
         assertEquals("发现可能足迹：北京市 / 北京市 / 东城区", gpsViewModel.autoMarkMessage.value)
         assertEquals(null, footprintRepo.getFootprint("testUser", "110101"))
+    }
+
+    @Test
+    fun activateCurrentLocation_selectsMostSpecificMatchedRegion() {
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+        regionRepo.updateBoundariesInTransaction(
+            listOf(
+                "110000" to "[[116.0,39.0],[117.0,39.0],[117.0,40.0],[116.0,40.0],[116.0,39.0]]",
+                "110100" to "[[116.2,39.7],[116.8,39.7],[116.8,40.0],[116.2,40.0],[116.2,39.7]]",
+                "110101" to "[[116.4,39.9],[116.5,39.9],[116.5,40.0],[116.4,40.0],[116.4,39.9]]"
+            )
+        )
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            regionMatcher = RegionMatcher(regionRepo),
+            userId = "testUser",
+            dispatcher = UnconfinedTestDispatcher(),
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+        )
+
+        gpsViewModel.activateCurrentLocation()
+
+        assertEquals("110101", gpsViewModel.selectedRegion.value?.regionId)
+        assertEquals(BottomPanel.Region("110101"), gpsViewModel.bottomPanel.value)
     }
 
     @Test

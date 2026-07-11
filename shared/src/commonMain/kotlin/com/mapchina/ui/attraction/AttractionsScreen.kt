@@ -45,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -86,6 +89,7 @@ fun AttractionsScreen(
     onNavigate: (NavKey) -> Unit,
     onBack: () -> Unit,
     viewModel: AttractionViewModel? = null,
+    autoFocusSearch: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val attractions by (viewModel?.attractions?.collectAsState() ?: remember {
@@ -96,6 +100,11 @@ fun AttractionsScreen(
     val searchQuery by (viewModel?.searchQuery?.collectAsState() ?: remember { mutableStateOf("") })
     var selectedFilter by remember { mutableStateOf(AttractionFilter.ALL) }
     var showMoreFilters by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(autoFocusSearch) {
+        if (autoFocusSearch) searchFocusRequester.requestFocus()
+    }
 
     val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED, AttractionFilter.UNVISITED, AttractionFilter.CUSTOM)
 
@@ -223,6 +232,7 @@ fun AttractionsScreen(
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .focusRequester(searchFocusRequester)
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MapChinaColors.TextPrimary,

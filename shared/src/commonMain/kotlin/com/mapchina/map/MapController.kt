@@ -1,5 +1,8 @@
 package com.mapchina.map
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +31,7 @@ class MapController {
 
     internal val animationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private var _pulseAlpha = 0f
+    private var _pulseAlpha by mutableFloatStateOf(0f)
     val pulseAlpha: Float get() = _pulseAlpha
 
     private var regionTapListener: ((String) -> Unit)? = null
@@ -97,6 +100,21 @@ class MapController {
         _renderState.update { it.copy(pulseTarget = regionId) }
         pulseJob?.cancel()
         pulseJob = animationScope.launch { animatePulse { _pulseAlpha = it } }
+    }
+
+    fun celebrateOverlay(regionId: String) {
+        pulseJob?.cancel()
+        _renderState.update { it.copy(pulseTarget = regionId) }
+        pulseJob = animationScope.launch {
+            try {
+                animateCelebrationPulse { _pulseAlpha = it }
+            } finally {
+                _pulseAlpha = 0f
+                _renderState.update { state ->
+                    if (state.pulseTarget == regionId) state.copy(pulseTarget = null) else state
+                }
+            }
+        }
     }
 
     fun restorePulsedOverlay() {

@@ -6,6 +6,7 @@ import org.robolectric.annotation.Config
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import org.junit.Test
@@ -20,5 +21,18 @@ class AttractionsScreenTest {
         onNodeWithText("全部").assertIsDisplayed()
         onNodeWithText("5A").assertIsDisplayed()
         onNodeWithText("4A").assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test fun attractionsScreen_activationEntry_focusesSearch() = runComposeUiTest {
+        setContent {
+            AttractionsScreen(
+                onNavigate = {},
+                onBack = {},
+                autoFocusSearch = true
+            )
+        }
+
+        onNodeWithText("搜索景点...").assertIsFocused()
     }
 }

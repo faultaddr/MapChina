@@ -50,6 +50,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -72,6 +73,7 @@ import com.mapchina.ui.navigation.CarvingListScreen
 import com.mapchina.platform.DevicePhoto
 import com.mapchina.ui.common.EmptyState
 import com.mapchina.ui.navigation.AttractionDetailScreen
+import com.mapchina.ui.navigation.AttractionsScreen
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaCard
@@ -110,6 +112,7 @@ fun MapScreen(
     // Refresh map theme when returning to MapScreen
     LaunchedEffect(Unit) {
         viewModel.refreshMapTheme()
+        viewModel.reloadData()
     }
 
     val haptic = LocalHapticFeedback.current
@@ -124,8 +127,9 @@ fun MapScreen(
     val attractions by viewModel.attractions.collectAsState()
     val selectedRegionAttractions by viewModel.selectedRegionAttractions.collectAsState()
     val achievementResult by viewModel.achievementUnlock.collectAsState()
+    val firstFootprintActivation by viewModel.firstFootprintActivation.collectAsState()
+    val firstFootprintCelebration by viewModel.firstFootprintCelebration.collectAsState()
 
-    val showOnboarding by viewModel.showOnboarding.collectAsState()
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
     val autoMarkMessage by viewModel.autoMarkMessage.collectAsState()
@@ -151,6 +155,7 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
     var fabExpanded by remember { mutableStateOf(false) }
+    var mapSelectionActive by remember { mutableStateOf(false) }
 
     val bottomPanel by viewModel.bottomPanel.collectAsState()
     val previewAttraction by viewModel.previewAttraction.collectAsState()
@@ -178,6 +183,7 @@ fun MapScreen(
         mapController.pulseOverlay(regionId)
         viewModel.selectRegion(regionId)
         viewModel.showRegionPanel(regionId)
+        mapSelectionActive = false
     }
 
     // Double tap on region → drill into region
@@ -197,10 +203,22 @@ fun MapScreen(
     }
 
     // Close region card → restore overlay
-    LaunchedEffect(bottomPanel) {
-        if (bottomPanel !is BottomPanel.Region) {
+    LaunchedEffect(bottomPanel, firstFootprintCelebration) {
+        if (bottomPanel !is BottomPanel.Region && firstFootprintCelebration == null) {
             mapController.restorePulsedOverlay()
         }
+    }
+
+    LaunchedEffect(firstFootprintCelebration) {
+        val celebration = firstFootprintCelebration ?: return@LaunchedEffect
+        mapSelectionActive = false
+        fabExpanded = false
+        viewModel.clearBottomPanel()
+        viewModel.clearSelection()
+        mapController.celebrateOverlay(celebration.regionId)
+        haptic.perform(HapticType.SUCCESS)
+        delay(2200)
+        viewModel.dismissFirstFootprintCelebration()
     }
     mapController.setOnMarkerTapListener { markerId ->
         val cluster = photoClusters.find { it.id == markerId }
@@ -287,11 +305,11 @@ fun MapScreen(
         }
 
         val showMapTools = !shareMode &&
-            !showOnboarding &&
             !showDartTravel &&
             autoMarkMessage == null &&
             photoPreviewCluster == null &&
             topFootprintSuggestion == null &&
+            firstFootprintCelebration == null &&
             bottomPanel is BottomPanel.None
         LaunchedEffect(showMapTools) {
             if (!showMapTools) fabExpanded = false
@@ -313,6 +331,17 @@ fun MapScreen(
                     null
                 },
                 onMyLocation = { viewModel.moveToCurrentLocation() },
+                firstFootprintActivation = firstFootprintActivation,
+                mapSelectionActive = mapSelectionActive,
+                onChooseMap = { mapSelectionActive = true },
+                onSearchAttraction = {
+                    mapSelectionActive = false
+                    onNavigate(AttractionsScreen(autoFocusSearch = true))
+                },
+                onUseCurrentLocation = {
+                    mapSelectionActive = false
+                    viewModel.activateCurrentLocation()
+                },
                 mapTheme = currentMapTheme,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -335,9 +364,23 @@ fun MapScreen(
             )
         }
 
+        AnimatedVisibility(
+            visible = firstFootprintCelebration != null && !shareMode,
+            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(tween(180)),
+            exit = slideOutVertically(targetOffsetY = { it / 3 }) + fadeOut(tween(160)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(2f)
+                .padding(start = 16.dp, end = 16.dp, bottom = bottomBarOffset + 14.dp)
+        ) {
+            firstFootprintCelebration?.let { celebration ->
+                FirstFootprintSuccessBar(celebration = celebration)
+            }
+        }
+
         // Bottom RegionCard (hidden in share mode)
         AnimatedVisibility(
-            visible = showRegionPanel && !shareMode,
+            visible = showRegionPanel && firstFootprintCelebration == null && !shareMode,
             enter = slideInVertically(
                 initialOffsetY = { it },
                 animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow)
@@ -355,6 +398,7 @@ fun MapScreen(
                     region = selectedRegion!!,
                     attractionCount = viewModel.getAttractionCountForRegion(selectedRegion!!.regionId),
                     canDrillDown = canDrillDown,
+                    firstFootprintActivation = firstFootprintActivation,
                     onMarkFootprint = { regionId, level ->
                         viewModel.markFootprint(regionId, level)
                     },
@@ -602,12 +646,6 @@ fun MapScreen(
             onDismiss = { photoPreviewCluster = null }
         )
     }
-
-    // Onboarding overlay
-    OnboardingOverlay(
-        visible = showOnboarding,
-        onDismiss = { viewModel.dismissOnboarding() }
-    )
 
     // Dart travel overlay
     var dartTravelKey by remember { mutableStateOf(0) }

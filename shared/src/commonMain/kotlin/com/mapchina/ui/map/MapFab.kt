@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Icon
@@ -65,6 +67,11 @@ fun MapFab(
     onDepart: (() -> Unit)? = null,
     onNavigateToNational: (() -> Unit)? = null,
     onMyLocation: (() -> Unit)? = null,
+    firstFootprintActivation: Boolean = false,
+    mapSelectionActive: Boolean = false,
+    onChooseMap: (() -> Unit)? = null,
+    onSearchAttraction: (() -> Unit)? = null,
+    onUseCurrentLocation: (() -> Unit)? = null,
     mapTheme: MapTheme = MapTheme.DEFAULT,
     modifier: Modifier = Modifier
 ) {
@@ -75,7 +82,31 @@ fun MapFab(
     val fabTextColor = visualStyle.chromeContentColor
     val fabTextTertiary = visualStyle.chromeContentColor.copy(alpha = 0.62f)
     val haptic = LocalHapticFeedback.current
-    val menuItems = buildList {
+    val menuItems = if (firstFootprintActivation) {
+        buildList {
+            onChooseMap?.let { chooseMap ->
+                add(MenuItem("在地图上选择", Icons.Default.Explore, fabPrimaryColor) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    chooseMap()
+                })
+            }
+            onSearchAttraction?.let { searchAttraction ->
+                add(MenuItem("搜索景点", Icons.Default.Search, MapChinaColors.AccentGold) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    searchAttraction()
+                })
+            }
+            onUseCurrentLocation?.let { useCurrentLocation ->
+                add(MenuItem("使用当前位置", Icons.Default.MyLocation, MapChinaColors.AccentBlue) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    useCurrentLocation()
+                })
+            }
+        }
+    } else buildList {
         if (onNavigateToNational != null) {
             add(MenuItem("回到全国", Icons.Default.Explore, fabPrimaryColor) {
                 haptic.perform(HapticType.LIGHT)
@@ -91,7 +122,7 @@ fun MapFab(
             })
         }
         add(MenuItem(
-            if (photoMarkersVisible) "隐藏照片" else "照片标记",
+            if (photoMarkersVisible) "隐藏照片回溯" else "照片回溯 · 实验",
             if (photoMarkersVisible) Icons.Filled.PhotoCamera else Icons.Outlined.PhotoCamera,
             if (photoMarkersVisible) MapChinaColors.FootprintPassBy else fabTextTertiary
         ) {
@@ -133,47 +164,78 @@ fun MapFab(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Box(
-            modifier = Modifier.size(62.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val strokeWidth = 2.dp.toPx()
-                drawCircle(
-                    color = fabSurfaceColor.copy(alpha = 0.78f),
-                    radius = size.minDimension / 2f - strokeWidth,
-                    style = Stroke(strokeWidth)
-                )
-                if (coveragePercent > 0) {
-                    drawArc(
-                        color = MapChinaColors.AccentGold,
-                        startAngle = -90f,
-                        sweepAngle = 360f * (coveragePercent / 100f).coerceIn(0f, 1f),
-                        useCenter = false,
-                        style = Stroke(strokeWidth)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (firstFootprintActivation) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = fabSurfaceColor,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            haptic.perform(HapticType.MEDIUM)
+                            onExpandedChange(!isExpanded)
+                        }
+                ) {
+                    Text(
+                        text = if (mapSelectionActive) "轻点地图选择" else "添加第一处足迹",
+                        color = fabTextColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                     )
                 }
+                Spacer(Modifier.width(8.dp))
             }
-            Surface(
-                shape = CircleShape,
-                color = fabPrimaryColor,
-                shadowElevation = 8.dp,
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .semantics { contentDescription = "地图工具" }
-                    .clickable {
-                        haptic.perform(HapticType.MEDIUM)
-                        onExpandedChange(!isExpanded)
-                    }
+            Box(
+                modifier = Modifier.size(62.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Explore,
-                        contentDescription = null,
-                        tint = if (visualStyle.isDark) Color(0xFF0F1428) else Color.White,
-                        modifier = Modifier.size(24.dp)
+                Canvas(Modifier.fillMaxSize()) {
+                    val strokeWidth = 2.dp.toPx()
+                    drawCircle(
+                        color = fabSurfaceColor.copy(alpha = 0.78f),
+                        radius = size.minDimension / 2f - strokeWidth,
+                        style = Stroke(strokeWidth)
                     )
+                    if (coveragePercent > 0) {
+                        drawArc(
+                            color = MapChinaColors.AccentGold,
+                            startAngle = -90f,
+                            sweepAngle = 360f * (coveragePercent / 100f).coerceIn(0f, 1f),
+                            useCenter = false,
+                            style = Stroke(strokeWidth)
+                        )
+                    }
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = fabPrimaryColor,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .semantics {
+                            contentDescription = if (firstFootprintActivation) {
+                                "添加第一处足迹"
+                            } else {
+                                "地图工具"
+                            }
+                        }
+                        .clickable {
+                            haptic.perform(HapticType.MEDIUM)
+                            onExpandedChange(!isExpanded)
+                        }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Explore,
+                            contentDescription = null,
+                            tint = if (visualStyle.isDark) Color(0xFF0F1428) else Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
@@ -187,12 +249,12 @@ private fun MapToolMenuItem(item: MenuItem, surfaceColor: Color, textColor: Colo
         color = surfaceColor,
         shadowElevation = 4.dp,
         modifier = Modifier
-            .height(42.dp)
+            .heightIn(min = 42.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = item.onClick)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

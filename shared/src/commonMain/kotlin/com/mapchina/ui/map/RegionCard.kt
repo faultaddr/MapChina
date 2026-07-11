@@ -66,6 +66,7 @@ fun RegionCard(
     region: RegionFootprintUi,
     attractionCount: Int,
     canDrillDown: Boolean,
+    firstFootprintActivation: Boolean = false,
     onMarkFootprint: (String, FootprintLevel) -> Unit,
     onRemoveFootprint: (String) -> Unit = {},
     onDrillDown: () -> Unit,
@@ -74,7 +75,9 @@ fun RegionCard(
     onClose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var footprintExpanded by remember { mutableStateOf(false) }
+    var footprintExpanded by remember(firstFootprintActivation) {
+        mutableStateOf(firstFootprintActivation)
+    }
     var confirmMessage by remember { mutableStateOf<String?>(null) }
     var lastMarkedLevel by remember { mutableStateOf<FootprintLevel?>(null) }
     val haptic = LocalHapticFeedback.current
@@ -193,8 +196,17 @@ fun RegionCard(
             Spacer(modifier = Modifier.height(14.dp))
         }
 
+        if (firstFootprintActivation && confirmMessage == null) {
+            Text(
+                text = "这次停留有多深？",
+                color = MapChinaColors.TextSecondary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
         // Action buttons row
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (!firstFootprintActivation) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -238,7 +250,7 @@ fun RegionCard(
 
         // Inline footprint selection
         AnimatedVisibility(
-            visible = footprintExpanded && confirmMessage == null,
+            visible = (firstFootprintActivation || footprintExpanded) && confirmMessage == null,
             enter = expandVertically(spring(stiffness = Spring.StiffnessMedium)),
             exit = shrinkVertically(spring(stiffness = Spring.StiffnessMedium))
         ) {
@@ -252,7 +264,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_PASS,
                     color = MapChinaColors.FootprintPassBy,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.PASS_BY)
                         lastMarkedLevel = FootprintLevel.PASS_BY
                         footprintExpanded = false
@@ -264,7 +276,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_SHORT,
                     color = MapChinaColors.FootprintShortVisit,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.SHORT_VISIT)
                         lastMarkedLevel = FootprintLevel.SHORT_VISIT
                         footprintExpanded = false
@@ -276,7 +288,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_DEEP,
                     color = MapChinaColors.FootprintDeep,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.DEEP)
                         lastMarkedLevel = FootprintLevel.DEEP
                         footprintExpanded = false
