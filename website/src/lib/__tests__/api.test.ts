@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchAttractions, fetchAttraction, fetchRegions, fetchRegion, fetchCommunityFeed, fetchCommunityPost } from '../api';
+import { fetchAttractions, fetchAttraction, fetchRegions, fetchCommunityFeed, fetchCommunityPost } from '../api';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -53,6 +53,17 @@ describe('fetchAttractions', () => {
     const result = await fetchAttractions();
     expect(result).toBeNull();
   });
+
+  it('returns null when the paginated payload is malformed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: 'not-an-array', total: 1, page: 1, limit: 20 }),
+    } as Response);
+
+    const result = await fetchAttractions();
+
+    expect(result).toBeNull();
+  });
 });
 
 describe('fetchAttraction', () => {
@@ -75,6 +86,17 @@ describe('fetchAttraction', () => {
     } as Response);
 
     const result = await fetchAttraction('nonexistent');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when a detail payload is malformed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([]),
+    } as Response);
+
+    const result = await fetchAttraction('broken');
+
     expect(result).toBeNull();
   });
 });
