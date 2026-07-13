@@ -131,6 +131,27 @@ class CarvingDocumentCodecTest {
     }
 
     @Test
+    fun v1LandscapePreferredAspectUsesShorterViewportEdgeForBrushSize() {
+        val legacy = """[{"inputs":[{"x":0,"y":0,"pressure":0.5,"elapsedTimeMillis":0},{"x":100,"y":50,"pressure":0.5,"elapsedTimeMillis":10}],"brushSize":20,"brushColorArgb":7,"brushType":"MONUMENTAL"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Success>(
+            CarvingDocumentCodec.decode(legacy, previewAspectRatio = 2f)
+        )
+
+        assertEquals(2f, result.document.canvasAspectRatio)
+        assertEquals(20f / (70f * 1.16f), result.document.strokes.single().sizeFraction, 0.0001f)
+    }
+
+    @Test
+    fun v1ElapsedTimeIsNonDecreasingWithinEachStroke() {
+        val legacy = """[{"inputs":[{"x":0,"y":0,"pressure":0.5,"elapsedTimeMillis":20},{"x":100,"y":50,"pressure":0.5,"elapsedTimeMillis":10}],"brushSize":20,"brushColorArgb":7,"brushType":"MONUMENTAL"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Success>(CarvingDocumentCodec.decode(legacy))
+
+        assertEquals(listOf(20L, 20L), result.document.strokes.single().points.map { it.elapsedTimeMillis })
+    }
+
+    @Test
     fun decodeNormalizesValuesAndDropsStrokesWithoutTwoValidPoints() {
         val result = assertIs<CarvingDecodeResult.Success>(
             CarvingDocumentCodec.decode(

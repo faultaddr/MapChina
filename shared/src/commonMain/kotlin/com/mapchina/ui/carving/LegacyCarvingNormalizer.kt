@@ -50,7 +50,7 @@ internal object LegacyCarvingNormalizer {
             strokes = validStrokes.map { stroke ->
                 CarvingStroke(
                     brushType = stroke.brushType,
-                    sizeFraction = (stroke.brushSize / viewport.width)
+                    sizeFraction = (stroke.brushSize / minOf(viewport.width, viewport.height))
                         .toFloat()
                         .coerceIn(MIN_SIZE_FRACTION, MAX_SIZE_FRACTION),
                     colorArgb = stroke.colorArgb,
@@ -140,11 +140,18 @@ internal object LegacyCarvingNormalizer {
         }
         if (validInputs.size < 2) return null
 
+        var lastElapsedTimeMillis = Long.MIN_VALUE
+        val nonDecreasingElapsedTimeMillis = validInputs.map { input ->
+            val elapsedTimeMillis = maxOf(lastElapsedTimeMillis, input.elapsedTimeMillis)
+            lastElapsedTimeMillis = elapsedTimeMillis
+            elapsedTimeMillis
+        }
+
         return ValidLegacyStroke(
             points = validInputs.map { input ->
                 LegacyPoint(input.x.toDouble(), input.y.toDouble(), input.pressure)
             },
-            elapsedTimeMillis = validInputs.map { it.elapsedTimeMillis },
+            elapsedTimeMillis = nonDecreasingElapsedTimeMillis,
             brushSize = brushSize.toDouble(),
             colorArgb = brushColorArgb,
             brushType = CarvingBrushType.entries.firstOrNull { it.name == brushType }
