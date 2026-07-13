@@ -41,6 +41,7 @@ class CarvingViewModel(
     val carvingList: StateFlow<List<Carving>> = _carvingList.asStateFlow()
 
     private var editingCarvingId: String? = null
+    private var editorSessionGeneration = 0L
 
     fun loadCarvingsByRegion(regionId: String) {
         _carvingList.value = carvingRepository.getCarvingsByRegion(regionId)
@@ -55,21 +56,25 @@ class CarvingViewModel(
     }
 
     fun loadCarvingForRegion(regionId: String) {
+        startEditorSession()
         val existing = carvingRepository.getCarvingsByRegion(regionId)
+        editingCarvingId = null
         _currentCarving.value = existing.firstOrNull()
         _existingStrokeData.value = null
+        _editorState.value = CarvingEditorState()
     }
 
     fun loadCarvingForEdit(carvingId: String) {
+        startEditorSession()
         val carving = carvingRepository.getCarving(carvingId)
         editingCarvingId = carving?.id
         _currentCarving.value = carving
         _existingStrokeData.value = carving?.strokeData
-        _saveComplete.value = false
-        _editorState.value = carving?.toEditorState() ?: CarvingEditorState()
+        _editorState.value = carving?.toEditorState() ?: CarvingEditorState(loadError = LOAD_ERROR)
     }
 
     fun beginNew(aspectRatio: Float) {
+        startEditorSession()
         editingCarvingId = null
         _currentCarving.value = null
         _existingStrokeData.value = null
@@ -80,7 +85,6 @@ class CarvingViewModel(
             ),
             sourceVersion = CURRENT_CARVING_VERSION
         )
-        _saveComplete.value = false
     }
 
     fun appendStroke(stroke: CarvingStroke) {
@@ -121,7 +125,10 @@ class CarvingViewModel(
         val normalizedDocument = (CarvingDocumentCodec.decode(strokeData) as? CarvingDecodeResult.Success)
             ?.document
             ?.takeIf { it.strokes.isNotEmpty() }
-            ?: return false
+            ?: run {
+                _editorState.value = state.copy(saveError = SAVE_ERROR)
+                return false
+            }
 
         val existingCarving = editingCarvingId?.let(carvingRepository::getCarving)
         val now = Clock.System.now().toEpochMilliseconds()
@@ -141,6 +148,7 @@ class CarvingViewModel(
             previewAspectRatio = normalizedDocument.canvasAspectRatio
         )
 
+        val saveSessionGeneration = editorSessionGeneration
         _editorState.value = state.copy(isSaving = true, saveError = null)
         vmScope.launch {
             try {
@@ -149,22 +157,26 @@ class CarvingViewModel(
                 } else {
                     carvingRepository.updateCarving(carving)
                 }
-                _currentCarving.value = carving
-                _existingStrokeData.value = strokeData
-                editingCarvingId = null
-                _editorState.value = _editorState.value.copy(
-                    document = normalizedDocument,
-                    sourceVersion = CURRENT_CARVING_VERSION,
-                    isDirty = false,
-                    isSaving = false,
-                    saveError = null
-                )
-                _saveComplete.value = true
+                if (saveSessionGeneration == editorSessionGeneration) {
+                    _currentCarving.value = carving
+                    _existingStrokeData.value = strokeData
+                    editingCarvingId = null
+                    _editorState.value = _editorState.value.copy(
+                        document = normalizedDocument,
+                        sourceVersion = CURRENT_CARVING_VERSION,
+                        isDirty = false,
+                        isSaving = false,
+                        saveError = null
+                    )
+                    _saveComplete.value = true
+                }
             } catch (_: Exception) {
-                _editorState.value = _editorState.value.copy(
-                    isSaving = false,
-                    saveError = SAVE_ERROR
-                )
+                if (saveSessionGeneration == editorSessionGeneration) {
+                    _editorState.value = _editorState.value.copy(
+                        isSaving = false,
+                        saveError = SAVE_ERROR
+                    )
+                }
             }
         }
         return true
@@ -243,6 +255,11 @@ class CarvingViewModel(
         val state = _editorState.value
         if (state.loadError != null || state.isSaving) return
         _editorState.value = transform(state)
+    }
+
+    private fun startEditorSession() {
+        editorSessionGeneration++
+        _saveComplete.value = false
     }
 
     private companion object {

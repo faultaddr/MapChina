@@ -11,6 +11,8 @@ import com.mapchina.ui.carving.v2.CarvingDocument
 import com.mapchina.ui.carving.v2.CarvingDocumentCodec
 import com.mapchina.ui.carving.v2.CarvingPoint
 import com.mapchina.ui.carving.v2.CarvingStroke
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -20,6 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CarvingViewModelTest {
@@ -137,8 +140,100 @@ class CarvingViewModelTest {
         assertFalse(viewModel.saveComplete.value)
     }
 
-    private fun existingCarving(data: String) = Carving(
-        id = "carving-1",
+    @Test
+    fun loadCarvingForRegion_resetsSaveComplete() = runTest {
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.appendStroke(thirdStroke)
+        assertTrue(guardedViewModel.saveEditorDocument("330000", "浙江省"))
+        advanceUntilIdle()
+        assertTrue(guardedViewModel.saveComplete.value)
+
+        guardedViewModel.loadCarvingForRegion("330000")
+
+        assertFalse(guardedViewModel.saveComplete.value)
+    }
+
+    @Test
+    fun inFlightSave_thenBeginNew_doesNotLetOldCompletionOverwriteNewSession() = runTest {
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.appendStroke(thirdStroke)
+        assertTrue(guardedViewModel.saveEditorDocument("330000", "浙江省"))
+
+        guardedViewModel.beginNew(0.8f)
+        advanceUntilIdle()
+
+        assertNull(guardedViewModel.currentCarving.value)
+        assertEquals(0.8f, guardedViewModel.editorState.value.document?.canvasAspectRatio)
+        assertEquals(emptyList(), guardedViewModel.editorState.value.document?.strokes)
+        assertFalse(guardedViewModel.saveComplete.value)
+        assertEquals(1, repository.getCarvingsByRegion("330000").size)
+    }
+
+    @Test
+    fun inFlightSave_thenLoadEdit_doesNotLetOldCompletionOverwriteLoadedSession() = runTest {
+        repository.insertCarving(existingCarving(twoStrokeFixture, id = "carving-2"))
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.appendStroke(thirdStroke)
+        assertTrue(guardedViewModel.saveEditorDocument("330000", "浙江省"))
+
+        guardedViewModel.loadCarvingForEdit("carving-2")
+        advanceUntilIdle()
+
+        assertEquals("carving-2", guardedViewModel.currentCarving.value?.id)
+        assertEquals(2, guardedViewModel.editorState.value.document?.strokes?.size)
+        assertFalse(guardedViewModel.saveComplete.value)
+
+        guardedViewModel.appendStroke(thirdStroke)
+        assertTrue(guardedViewModel.saveEditorDocument("other-region", "Other place"))
+        advanceUntilIdle()
+
+        val saved = assertNotNull(repository.getCarving("carving-2"))
+        val decoded = assertIs<CarvingDecodeResult.Success>(CarvingDocumentCodec.decode(saved.strokeData!!))
+        assertEquals(3, decoded.document.strokes.size)
+    }
+
+    @Test
+    fun saveEditorDocument_whileSaving_returnsFalseAndWritesOnlyOnce() = runTest {
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.appendStroke(thirdStroke)
+
+        assertTrue(guardedViewModel.saveEditorDocument("330000", "浙江省"))
+        assertFalse(guardedViewModel.saveEditorDocument("330000", "浙江省"))
+        advanceUntilIdle()
+
+        assertEquals(1, repository.getCarvingsByRegion("330000").size)
+    }
+
+    @Test
+    fun normalizedEmptyDocument_rejectsSaveAndReportsErrorWithoutWriting() {
+        val invalidStroke = thirdStroke.copy(points = listOf(thirdStroke.points.first()))
+        viewModel.beginNew(0.62f)
+        viewModel.appendStroke(invalidStroke)
+
+        assertFalse(viewModel.saveEditorDocument("330000", "浙江省"))
+        assertEquals("保存失败，请重试", viewModel.editorState.value.saveError)
+        assertTrue(repository.getAllCarvings().isEmpty())
+    }
+
+    @Test
+    fun missingCarvingId_entersReadOnlyLoadErrorState() {
+        viewModel.loadCarvingForEdit("missing")
+
+        assertEquals("这方碑刻暂时无法读取", viewModel.editorState.value.loadError)
+        assertNull(viewModel.editorState.value.document)
+        assertFalse(viewModel.saveEditorDocument("330000", "浙江省"))
+    }
+
+    private fun newViewModel(dispatcher: CoroutineDispatcher): CarvingViewModel {
+        return CarvingViewModel(repository, "test-user", dispatcher)
+    }
+
+    private fun existingCarving(data: String, id: String = "carving-1") = Carving(
+        id = id,
         userId = "test-user",
         regionId = "330000",
         regionName = "浙江省",
