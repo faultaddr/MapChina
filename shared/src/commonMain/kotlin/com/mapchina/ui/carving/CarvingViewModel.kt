@@ -15,8 +15,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.time.Clock
 
+@OptIn(ExperimentalAtomicApi::class)
 class CarvingViewModel(
     private val carvingRepository: CarvingRepository,
     private val userId: String = "",
@@ -41,7 +45,7 @@ class CarvingViewModel(
     val carvingList: StateFlow<List<Carving>> = _carvingList.asStateFlow()
 
     private var editingCarvingId: String? = null
-    private var editorSessionGeneration = 0L
+    private val editorSessionGeneration = AtomicLong(0L)
 
     fun loadCarvingsByRegion(regionId: String) {
         _carvingList.value = carvingRepository.getCarvingsByRegion(regionId)
@@ -148,7 +152,7 @@ class CarvingViewModel(
             previewAspectRatio = normalizedDocument.canvasAspectRatio
         )
 
-        val saveSessionGeneration = editorSessionGeneration
+        val saveSessionGeneration = editorSessionGeneration.load()
         _editorState.value = state.copy(isSaving = true, saveError = null)
         vmScope.launch {
             try {
@@ -157,7 +161,7 @@ class CarvingViewModel(
                 } else {
                     carvingRepository.updateCarving(carving)
                 }
-                if (saveSessionGeneration == editorSessionGeneration) {
+                if (saveSessionGeneration == editorSessionGeneration.load()) {
                     _currentCarving.value = carving
                     _existingStrokeData.value = strokeData
                     editingCarvingId = null
@@ -171,7 +175,7 @@ class CarvingViewModel(
                     _saveComplete.value = true
                 }
             } catch (_: Exception) {
-                if (saveSessionGeneration == editorSessionGeneration) {
+                if (saveSessionGeneration == editorSessionGeneration.load()) {
                     _editorState.value = _editorState.value.copy(
                         isSaving = false,
                         saveError = SAVE_ERROR
@@ -195,6 +199,7 @@ class CarvingViewModel(
         val now = Clock.System.now().toEpochMilliseconds()
         val id = editingCarvingId ?: "carving_${regionId}_${attractionId ?: "region"}_$now"
         val existingCarving = editingCarvingId?.let { carvingRepository.getCarving(it) }
+        val saveSessionGeneration = editorSessionGeneration.load()
         val carving = Carving(
             id = id,
             userId = userId,
@@ -209,18 +214,27 @@ class CarvingViewModel(
         )
         vmScope.launch {
             try {
-                if (editingCarvingId != null) {
+                if (existingCarving != null) {
                     carvingRepository.updateCarving(carving)
                 } else {
                     carvingRepository.insertCarving(carving)
                 }
-                _currentCarving.value = carving
-                editingCarvingId = null
             } catch (_: Exception) {
                 // If insert fails (e.g. duplicate id), try update
-                carvingRepository.updateCarving(carving)
+                try {
+                    carvingRepository.updateCarving(carving)
+                } catch (_: Exception) {
+                    if (saveSessionGeneration == editorSessionGeneration.load()) {
+                        _editorState.value = _editorState.value.copy(saveError = SAVE_ERROR)
+                    }
+                    return@launch
+                }
             }
-            _saveComplete.value = true
+            if (saveSessionGeneration == editorSessionGeneration.load()) {
+                _currentCarving.value = carving
+                editingCarvingId = null
+                _saveComplete.value = true
+            }
         }
     }
 
@@ -258,7 +272,7 @@ class CarvingViewModel(
     }
 
     private fun startEditorSession() {
-        editorSessionGeneration++
+        editorSessionGeneration.incrementAndFetch()
         _saveComplete.value = false
     }
 

@@ -228,6 +228,40 @@ class CarvingViewModelTest {
         assertFalse(viewModel.saveEditorDocument("330000", "浙江省"))
     }
 
+    @Test
+    @Suppress("DEPRECATION")
+    fun legacyInFlightSave_thenBeginNew_doesNotLetOldCompletionOverwriteNewSession() = runTest {
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.saveCarving("330000", "浙江省", "legacy-strokes")
+
+        guardedViewModel.beginNew(0.8f)
+        advanceUntilIdle()
+
+        assertNull(guardedViewModel.currentCarving.value)
+        assertEquals(0.8f, guardedViewModel.editorState.value.document?.canvasAspectRatio)
+        assertEquals(emptyList(), guardedViewModel.editorState.value.document?.strokes)
+        assertFalse(guardedViewModel.saveComplete.value)
+        assertEquals(1, repository.getCarvingsByRegion("330000").size)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun legacyInFlightSave_thenLoadRegion_doesNotLetOldCompletionOverwriteRegionSession() = runTest {
+        repository.insertCarving(existingCarving(twoStrokeFixture, id = "carving-2"))
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.beginNew(0.62f)
+        guardedViewModel.saveCarving("330000", "浙江省", "legacy-strokes")
+
+        guardedViewModel.loadCarvingForRegion("330000")
+        advanceUntilIdle()
+
+        assertEquals("carving-2", guardedViewModel.currentCarving.value?.id)
+        assertNull(guardedViewModel.editorState.value.document)
+        assertFalse(guardedViewModel.saveComplete.value)
+        assertEquals(2, repository.getCarvingsByRegion("330000").size)
+    }
+
     private fun newViewModel(dispatcher: CoroutineDispatcher): CarvingViewModel {
         return CarvingViewModel(repository, "test-user", dispatcher)
     }
