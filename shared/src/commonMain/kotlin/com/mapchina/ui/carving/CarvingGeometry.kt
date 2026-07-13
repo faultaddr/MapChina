@@ -136,7 +136,6 @@ private fun stableStrokeSeed(stroke: CarvingStroke, index: Int): Long {
     for (point in stroke.points) {
         seed = mixSeed(seed, point.x.toBits().toLong())
         seed = mixSeed(seed, point.y.toBits().toLong())
-        seed = mixSeed(seed, point.pressure.toBits().toLong())
         seed = mixSeed(seed, point.elapsedTimeMillis)
     }
     return if (seed == 0L) 1L else seed

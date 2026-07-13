@@ -49,6 +49,19 @@ class CarvingGeometryTest {
     }
 
     @Test
+    fun debris_ignoresPointPressure() {
+        val stroke = oneStrokeDocument.strokes.single()
+        val pressureOnlyVariant = stroke.copy(
+            points = stroke.points.map { point -> point.copy(pressure = 1f - point.pressure) }
+        )
+
+        assertEquals(
+            deterministicDebris(stroke, 0, 620f, 1000f),
+            deterministicDebris(pressureOnlyVariant, 0, 620f, 1000f)
+        )
+    }
+
+    @Test
     fun normalizePlatformPoints_clampsCoordinatesAndPressure() {
         val normalized = normalizePlatformPoints(
             points = listOf(
