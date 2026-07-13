@@ -3,6 +3,7 @@ package com.mapchina.ui.carving.v2
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -27,12 +28,22 @@ object CarvingDocumentCodec {
         return json.encodeToString(document.normalized())
     }
 
-    @Suppress("UNUSED_PARAMETER")
     fun decode(data: String, previewAspectRatio: Float? = null): CarvingDecodeResult {
         if (data.isBlank()) return CarvingDecodeResult.Empty
 
         return try {
             val element = json.parseToJsonElement(data)
+            if (element is JsonArray) {
+                val document = LegacyCarvingNormalizer.normalize(
+                    strokes = json.decodeFromJsonElement<List<LegacyStroke>>(element),
+                    preferredAspectRatio = previewAspectRatio
+                )
+                return if (document.strokes.isEmpty()) {
+                    CarvingDecodeResult.Invalid("legacy_document_has_no_valid_strokes")
+                } else {
+                    CarvingDecodeResult.Success(document = document, sourceVersion = 1)
+                }
+            }
             if (element !is JsonObject) {
                 return CarvingDecodeResult.Invalid("Expected a V2 document object")
             }

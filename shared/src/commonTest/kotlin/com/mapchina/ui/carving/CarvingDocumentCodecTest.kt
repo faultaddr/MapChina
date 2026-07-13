@@ -71,8 +71,63 @@ class CarvingDocumentCodecTest {
     }
 
     @Test
-    fun topLevelArrayIsInvalid() {
-        assertIs<CarvingDecodeResult.Invalid>(CarvingDocumentCodec.decode("[]"))
+    fun emptyV1ArrayHasNoValidStrokes() {
+        val result = assertIs<CarvingDecodeResult.Invalid>(CarvingDocumentCodec.decode("[]"))
+
+        assertEquals("legacy_document_has_no_valid_strokes", result.reason)
+    }
+
+    @Test
+    fun v1Array_normalizesGeometryAndKeepsBrushMetadata() {
+        val legacy = """[{"inputs":[{"x":100,"y":200,"pressure":0.4,"elapsedTimeMillis":0},{"x":300,"y":600,"pressure":0.8,"elapsedTimeMillis":20}],"brushSize":48,"brushColorArgb":-15000000,"brushType":"MONUMENTAL"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Success>(
+            CarvingDocumentCodec.decode(legacy, previewAspectRatio = 0.62f)
+        )
+
+        assertEquals(1, result.sourceVersion)
+        assertTrue(result.document.strokes.single().points.all { it.x in 0f..1f && it.y in 0f..1f })
+        assertEquals(CarvingBrushType.MONUMENTAL, result.document.strokes.single().brushType)
+        assertEquals(0.62f, result.document.canvasAspectRatio)
+        assertEquals(-15000000, result.document.strokes.single().colorArgb)
+        assertTrue(result.document.strokes.single().sizeFraction > 0f)
+    }
+
+    @Test
+    fun v1Conversion_isStableAcrossRepeatedReads() {
+        val legacy = """[{"inputs":[{"x":10,"y":20,"pressure":0.5,"elapsedTimeMillis":0},{"x":30,"y":60,"pressure":0.5,"elapsedTimeMillis":10}],"brushSize":12,"brushColorArgb":-15000000,"brushType":"MONUMENTAL"}]"""
+
+        val first = CarvingDocumentCodec.decode(legacy, null)
+        val second = CarvingDocumentCodec.decode(legacy, null)
+
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun v1UnknownBrushFallsBackToMonumental() {
+        val legacy = """[{"inputs":[{"x":10,"y":20,"pressure":0.5,"elapsedTimeMillis":0},{"x":30,"y":60,"pressure":0.5,"elapsedTimeMillis":10}],"brushSize":12,"brushColorArgb":7,"brushType":"FUTURE_BRUSH"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Success>(CarvingDocumentCodec.decode(legacy))
+
+        assertEquals(CarvingBrushType.MONUMENTAL, result.document.strokes.single().brushType)
+    }
+
+    @Test
+    fun v1InvalidStrokesAreSkippedAndNoValidStrokeIsInvalid() {
+        val legacy = """[{"inputs":[{"x":10,"y":20,"pressure":0.5,"elapsedTimeMillis":0}],"brushSize":12,"brushColorArgb":7,"brushType":"MONUMENTAL"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Invalid>(CarvingDocumentCodec.decode(legacy))
+
+        assertEquals("legacy_document_has_no_valid_strokes", result.reason)
+    }
+
+    @Test
+    fun v1WithoutPreferredAspectClampsContentAspectRatio() {
+        val legacy = """[{"inputs":[{"x":0,"y":0,"pressure":0.5,"elapsedTimeMillis":0},{"x":10,"y":100,"pressure":0.5,"elapsedTimeMillis":10}],"brushSize":2,"brushColorArgb":7,"brushType":"MONUMENTAL"}]"""
+
+        val result = assertIs<CarvingDecodeResult.Success>(CarvingDocumentCodec.decode(legacy, null))
+
+        assertEquals(0.55f, result.document.canvasAspectRatio)
     }
 
     @Test
