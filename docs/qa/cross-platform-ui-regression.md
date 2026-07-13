@@ -39,9 +39,10 @@
 
 | Flow | Android | iOS | Evidence | Notes |
 |---|---|---|---|---|
-| Region carving entry | PENDING | BLOCKED | iOS Simulator interactive run | iOS routes to `雕刻功能暂不支持此平台`. |
-| Create carving background | PENDING | BLOCKED | `shared/src/iosMain/.../CarvingScreen.kt` | The optimized drawing canvas is currently Android-only. |
-| Large calligraphic title effect | PENDING | BLOCKED | `shared/src/iosMain/.../CarvingScreen.kt` | The optimized drawing canvas is currently Android-only. |
+| Region carving entry | PASS | PASS | `.superpowers/sdd/carving-v2/android-final-carving-gallery.png`, `.superpowers/sdd/carving-v2/final-ios-release-roundtrip.xcresult` | Both platforms reach the shared gallery and editor. |
+| Create carving background | PASS | PASS | `.superpowers/sdd/carving-v2/android-final-ios-eight-editor.png`, `.superpowers/sdd/carving-v2/final-ios-release-roundtrip-screenshots` | The realistic cliff background and saved preview render on both platforms. |
+| Cross-platform stroke display/edit/save | PASS | PASS | `docs/qa/carving-v2-cross-platform.md` | Android 7 -> iOS 8 -> Android 9 V2 round trip passed. |
+| Large calligraphic title effect | PASS | PASS | Android and iOS final round-trip screenshots | Shared iron-chisel, large-script and weathering effects render consistently. |
 | Journal and atlas entry smoke | PENDING | PENDING | | Reachable screen and back path only. |
 
 ## Growth And Account
@@ -61,7 +62,6 @@
 
 ## Known Platform Gaps
 
-- iOS carving editor/list are placeholders; creation, realistic field background and calligraphic drawing cannot be parity-tested yet.
 - iOS photo picker and device-photo provider currently report unavailable even though profile toggles are visible.
 - Compose navigation supports explicit back actions, but native iOS edge-back is not wired into the shared navigation stack.
 
