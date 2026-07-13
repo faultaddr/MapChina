@@ -8,6 +8,7 @@ import com.mapchina.ui.carving.v2.CarvingPoint
 import com.mapchina.ui.carving.v2.CarvingStroke
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -54,6 +55,13 @@ class CarvingDocumentCodecTest {
     fun unknownVersionIsRejectedWithoutFallbackToV1() {
         assertIs<CarvingDecodeResult.Invalid>(
             CarvingDocumentCodec.decode("""{"version":9,"canvasAspectRatio":1,"strokes":[]}""")
+        )
+    }
+
+    @Test
+    fun missingVersionIsInvalid() {
+        assertIs<CarvingDecodeResult.Invalid>(
+            CarvingDocumentCodec.decode("""{"canvasAspectRatio":1,"strokes":[]}""")
         )
     }
 
@@ -114,6 +122,38 @@ class CarvingDocumentCodecTest {
         assertIs<CarvingDecodeResult.Invalid>(
             CarvingDocumentCodec.decode(
                 """{"version":2,"canvasAspectRatio":"NaN","strokes":[]}"""
+            )
+        )
+    }
+
+    @Test
+    fun zeroAspectRatioIsRejectedByEncode() {
+        assertFailsWith<IllegalArgumentException> {
+            CarvingDocumentCodec.encode(document.copy(canvasAspectRatio = 0f))
+        }
+    }
+
+    @Test
+    fun negativeAspectRatioIsRejectedByEncode() {
+        assertFailsWith<IllegalArgumentException> {
+            CarvingDocumentCodec.encode(document.copy(canvasAspectRatio = -1f))
+        }
+    }
+
+    @Test
+    fun zeroAspectRatioIsInvalidOnDecode() {
+        assertIs<CarvingDecodeResult.Invalid>(
+            CarvingDocumentCodec.decode(
+                """{"version":2,"canvasAspectRatio":0,"strokes":[]}"""
+            )
+        )
+    }
+
+    @Test
+    fun negativeAspectRatioIsInvalidOnDecode() {
+        assertIs<CarvingDecodeResult.Invalid>(
+            CarvingDocumentCodec.decode(
+                """{"version":2,"canvasAspectRatio":-1,"strokes":[]}"""
             )
         )
     }

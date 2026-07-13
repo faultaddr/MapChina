@@ -4,6 +4,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 
 object CarvingDocumentCodec {
@@ -20,8 +21,8 @@ object CarvingDocumentCodec {
         require(document.version == CURRENT_CARVING_VERSION) {
             "Only V2 carving documents can be encoded"
         }
-        require(document.canvasAspectRatio.isFinite()) {
-            "canvasAspectRatio must be finite"
+        require(document.canvasAspectRatio.isFinite() && document.canvasAspectRatio > 0f) {
+            "canvasAspectRatio must be finite and greater than zero"
         }
         return json.encodeToString(document.normalized())
     }
@@ -36,12 +37,20 @@ object CarvingDocumentCodec {
                 return CarvingDecodeResult.Invalid("Expected a V2 document object")
             }
 
+            val version = (element["version"] as? JsonPrimitive)
+                ?.takeUnless { it.isString }
+                ?.content
+                ?.toIntOrNull()
+            if (version != CURRENT_CARVING_VERSION) {
+                return CarvingDecodeResult.Invalid("V2 document must declare version 2")
+            }
+
             val document = json.decodeFromJsonElement<CarvingDocument>(element)
             if (document.version != CURRENT_CARVING_VERSION) {
                 return CarvingDecodeResult.Invalid("Unsupported carving version: ${document.version}")
             }
-            if (!document.canvasAspectRatio.isFinite()) {
-                return CarvingDecodeResult.Invalid("canvasAspectRatio must be finite")
+            if (!document.canvasAspectRatio.isFinite() || document.canvasAspectRatio <= 0f) {
+                return CarvingDecodeResult.Invalid("canvasAspectRatio must be finite and greater than zero")
             }
 
             CarvingDecodeResult.Success(
