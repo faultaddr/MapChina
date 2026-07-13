@@ -90,6 +90,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import com.mapchina.map.MapTheme
 import com.mapchina.map.visualStyle
+import com.mapchina.performance.RecompositionProbe
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,6 +101,8 @@ fun MapScreen(
     mapController: MapController = remember { MapController() },
     modifier: Modifier = Modifier
 ) {
+    RecompositionProbe("MapScreen")
+
     if (viewModel == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("足迹地图（初始化中）", color = MapChinaColors.TextPrimary)

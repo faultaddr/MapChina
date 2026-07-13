@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jetbrains.compose.resources.imageResource
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
@@ -41,6 +42,8 @@ fun ChinaMapView(
     controller: MapController,
     modifier: Modifier = Modifier
 ) {
+    RecompositionProbe("ChinaMapView")
+
     val renderState by controller.renderState.collectAsState()
     val pathCache = remember { GeoPathCache() }
     val textMeasurer = rememberTextMeasurer()

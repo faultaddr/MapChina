@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.ui.carving.v2.CarvingBrushSpec
 import com.mapchina.ui.carving.v2.CarvingBrushType
 import com.mapchina.ui.carving.v2.CarvingDocument
@@ -77,6 +78,8 @@ fun CarvingScreen(
     attractionName: String? = null,
     carvingId: String? = null
 ) {
+    RecompositionProbe("CarvingScreen")
+
     val haptic = LocalHapticFeedback.current
     val state by viewModel.editorState.collectAsState()
     val saveComplete by viewModel.saveComplete.collectAsState()

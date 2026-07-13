@@ -77,6 +77,7 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.platform.ExternalNavigator
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.coroutineScope
@@ -136,6 +137,8 @@ fun AttractionDetailScreen(
     onOpenCarving: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    RecompositionProbe("AttractionDetailScreen")
+
     val haptic = LocalHapticFeedback.current
     if (attraction == null) {
         Box(

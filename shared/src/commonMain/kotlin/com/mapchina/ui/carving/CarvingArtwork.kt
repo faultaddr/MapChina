@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.IntSize
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.ui.carving.v2.CarvingDocument
 import mapchina.shared.generated.resources.Res
 import mapchina.shared.generated.resources.cliff_face
@@ -24,6 +25,8 @@ fun CarvingArtwork(
     weatheredAlpha: Float = 1f,
     showBackground: Boolean = true
 ) {
+    RecompositionProbe("CarvingArtwork")
+
     val cliffFace = imageResource(Res.drawable.cliff_face)
     val layerAlpha = weatheredAlpha.coerceIn(0f, 1f)
 

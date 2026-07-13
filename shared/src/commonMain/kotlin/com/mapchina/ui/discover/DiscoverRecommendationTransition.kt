@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.ui.theme.MapChinaTypography
 import kotlin.math.hypot
@@ -96,6 +97,8 @@ fun RecommendationImageCard(
     onClick: (Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    RecompositionProbe("RecommendationImageCard")
+
     var bounds by remember(recommendation.id) { mutableStateOf(Rect.Zero) }
 
     Surface(
