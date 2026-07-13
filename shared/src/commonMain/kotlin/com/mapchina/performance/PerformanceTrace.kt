@@ -2,7 +2,6 @@ package com.mapchina.performance
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 
 private const val TracePrefix = "MAPCHINA_PERF"
@@ -11,15 +10,28 @@ private const val TracePrefix = "MAPCHINA_PERF"
 fun RecompositionProbe(name: String) {
     if (!performanceTracingEnabled()) return
 
-    val count = remember(name) { mutableIntStateOf(0) }
+    val policy = remember(name) { RecompositionTracePolicy(enabled = true) }
     SideEffect {
-        count.intValue += 1
-        performanceLog(formatRecompositionEvent(name, count.intValue))
+        policy.nextEvent(name)?.let(::performanceLog)
     }
 }
 
 fun formatRecompositionEvent(name: String, count: Int): String =
     "$TracePrefix|RECOMPOSE|$name|$count"
+
+internal class RecompositionTracePolicy(
+    private val enabled: Boolean,
+) {
+    var count: Int = 0
+        private set
+
+    fun nextEvent(name: String): String? {
+        if (!enabled) return null
+
+        count += 1
+        return formatRecompositionEvent(name, count)
+    }
+}
 
 expect fun performanceTracingEnabled(): Boolean
 

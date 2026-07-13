@@ -77,16 +77,49 @@ cleanup() {
 }
 trap cleanup EXIT
 
+ensure_log_collection_is_alive() {
+    if [[ -z "$LOG_PID" ]]; then
+        printf 'Device log collection was not started.\n' >&2
+        return 1
+    fi
+
+    if kill -0 "$LOG_PID" 2>/dev/null; then
+        return 0
+    fi
+
+    local collector_status
+    if wait "$LOG_PID"; then
+        collector_status=0
+    else
+        collector_status=$?
+    fi
+    LOG_PID=""
+    printf 'Device log collection exited unexpectedly (status %s); see %s/device.log.\n' \
+        "$collector_status" "$OUTPUT_DIR" >&2
+    return 1
+}
+
+wait_for_log_collection_readiness() {
+    local attempt
+    for ((attempt = 1; attempt <= 10; attempt++)); do
+        ensure_log_collection_is_alive || return 1
+        sleep 0.1
+    done
+}
+
 run_and_preserve_output "$OUTPUT_DIR/install.log" xcrun simctl install "$DEVICE_UDID" "$APP_PATH"
 run_and_preserve_output "$OUTPUT_DIR/launch.log" env SIMCTL_CHILD_MAPCHINA_PERF_TRACE=1 xcrun simctl launch "$DEVICE_UDID" "$BUNDLE_ID"
 
 record_command xcrun simctl spawn "$DEVICE_UDID" log stream --style compact --level debug
 xcrun simctl spawn "$DEVICE_UDID" log stream --style compact --level debug >"$OUTPUT_DIR/device.log" 2>&1 &
 LOG_PID=$!
+wait_for_log_collection_readiness
 
 run_and_preserve_output "$OUTPUT_DIR/animation-hitches.log" \
     xcrun xctrace record --template 'Animation Hitches' --device "$DEVICE_UDID" \
     --attach "$APP_PROCESS" --time-limit 30s --output "$OUTPUT_DIR/animation-hitches.trace" --no-prompt
+ensure_log_collection_is_alive
 run_and_preserve_output "$OUTPUT_DIR/time-profiler.log" \
     xcrun xctrace record --template 'Time Profiler' --device "$DEVICE_UDID" \
     --attach "$APP_PROCESS" --time-limit 30s --output "$OUTPUT_DIR/time-profiler.trace" --no-prompt
+ensure_log_collection_is_alive
