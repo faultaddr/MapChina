@@ -5,6 +5,12 @@ import androidx.compose.ui.Modifier
 import com.mapchina.ui.carving.v2.CarvingBrushSpec
 import com.mapchina.ui.carving.v2.CarvingStroke
 
+/** Adds the terminal pointer sample, retaining the existing coalescing contract. */
+fun finalizePlatformPoints(
+    activePoints: List<PlatformPoint>,
+    finalPoint: PlatformPoint
+): List<PlatformPoint> = coalescePlatformPoints(activePoints + finalPoint)
+
 @Composable
 expect fun PlatformCarvingInputSurface(
     brush: CarvingBrushSpec,

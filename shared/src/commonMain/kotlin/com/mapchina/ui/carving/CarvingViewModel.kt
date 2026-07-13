@@ -46,17 +46,21 @@ class CarvingViewModel(
 
     private var editingCarvingId: String? = null
     private val editorSessionGeneration = AtomicLong(0L)
+    private var activeListFilter: CarvingListFilter = CarvingListFilter.None
 
     fun loadCarvingsByRegion(regionId: String) {
-        _carvingList.value = carvingRepository.getCarvingsByRegion(regionId)
+        activeListFilter = CarvingListFilter.Region(regionId)
+        refreshCarvingList()
     }
 
     fun loadCarvingsByAttraction(attractionId: String) {
-        _carvingList.value = carvingRepository.getCarvingsByAttraction(attractionId)
+        activeListFilter = CarvingListFilter.Attraction(attractionId)
+        refreshCarvingList()
     }
 
     fun loadAllCarvings() {
-        _carvingList.value = carvingRepository.getAllCarvings()
+        activeListFilter = CarvingListFilter.All
+        refreshCarvingList()
     }
 
     fun loadCarvingForRegion(regionId: String) {
@@ -241,7 +245,19 @@ class CarvingViewModel(
     fun deleteCarving(id: String) {
         vmScope.launch {
             carvingRepository.deleteCarving(id)
-            _currentCarving.value = null
+            if (_currentCarving.value?.id == id) {
+                _currentCarving.value = null
+            }
+            refreshCarvingList()
+        }
+    }
+
+    private fun refreshCarvingList() {
+        _carvingList.value = when (val filter = activeListFilter) {
+            CarvingListFilter.None -> emptyList()
+            CarvingListFilter.All -> carvingRepository.getAllCarvings()
+            is CarvingListFilter.Region -> carvingRepository.getCarvingsByRegion(filter.regionId)
+            is CarvingListFilter.Attraction -> carvingRepository.getCarvingsByAttraction(filter.attractionId)
         }
     }
 
@@ -280,4 +296,11 @@ class CarvingViewModel(
         const val LOAD_ERROR = "这方碑刻暂时无法读取"
         const val SAVE_ERROR = "保存失败，请重试"
     }
+}
+
+private sealed interface CarvingListFilter {
+    data object None : CarvingListFilter
+    data object All : CarvingListFilter
+    data class Region(val regionId: String) : CarvingListFilter
+    data class Attraction(val attractionId: String) : CarvingListFilter
 }

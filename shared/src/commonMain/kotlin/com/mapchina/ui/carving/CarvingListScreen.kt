@@ -2,6 +2,7 @@ package com.mapchina.ui.carving
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -93,11 +95,6 @@ fun CarvingListScreen(
                 TextButton(onClick = {
                     viewModel.deleteCarving(deleteTarget!!.id)
                     deleteTarget = null
-                    when {
-                        showAll -> viewModel.loadAllCarvings()
-                        attractionId != null -> viewModel.loadCarvingsByAttraction(attractionId)
-                        regionId != null -> viewModel.loadCarvingsByRegion(regionId)
-                    }
                 }) { Text("删除", color = MapChinaColors.Error) }
             },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("取消") } }
@@ -198,19 +195,31 @@ private fun CarvingGalleryCard(carving: Carving, onClick: () -> Unit, onLongPres
 
 @Composable
 private fun CarvingPlacePicker(onDismiss: () -> Unit, onSelect: (CarvingPlaceTarget) -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MapChinaColors.SurfaceElevated,
-        modifier = Modifier.fillMaxSize().padding(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("选择留刻地点", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("取消") }
-            }
-            recommendedCarvingPlaces.forEach { place ->
-                TextButton(onClick = { onSelect(place) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(place.attractionName ?: place.regionName, modifier = Modifier.weight(1f))
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MapChinaColors.Background.copy(alpha = 0.62f))
+                .clickable(onClick = onDismiss)
+        )
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MapChinaColors.SurfaceElevated,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("选择留刻地点", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onDismiss) { Text("取消") }
+                }
+                recommendedCarvingPlaces.forEach { place ->
+                    TextButton(onClick = { onSelect(place) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(place.attractionName ?: place.regionName, modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

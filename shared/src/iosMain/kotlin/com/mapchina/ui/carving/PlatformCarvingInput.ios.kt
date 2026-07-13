@@ -62,12 +62,23 @@ actual fun PlatformCarvingInputSurface(
                                     elapsedTimeMillis = change.uptimeMillis - startedAt
                                 )
                             } else {
+                                val finalized = finalizePlatformPoints(
+                                    activePoints,
+                                    PlatformPoint(
+                                        x = change.position.x,
+                                        y = change.position.y,
+                                        pressure = change.pressure.takeIf { it > 0f } ?: 0.5f,
+                                        elapsedTimeMillis = change.uptimeMillis - startedAt
+                                    )
+                                )
+                                activePoints.clear()
+                                activePoints.addAll(finalized)
                                 completed = true
                             }
                         }
                         if (completed) {
                             val points = normalizePlatformPoints(
-                                coalescePlatformPoints(activePoints),
+                                activePoints,
                                 canvasSize.width.toFloat(),
                                 canvasSize.height.toFloat()
                             )

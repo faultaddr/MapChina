@@ -18,6 +18,18 @@ class CarvingUiPolicyTest {
     }
 
     @Test
+    fun saveError_isPresentedWithoutDiscardingTheDocument() {
+        val document = com.mapchina.ui.carving.v2.CarvingDocument(
+            canvasAspectRatio = 0.62f,
+            strokes = emptyList()
+        )
+        val state = CarvingEditorState(document = document, saveError = "保存失败，请重试")
+
+        assertEquals("保存失败，请重试", editorSaveFeedback(state))
+        assertEquals(document, state.document)
+    }
+
+    @Test
     fun galleryContext_fallsBackToChinaLandscape() {
         assertEquals("cn_landscape", carvingContextTarget("我的碑刻", null, null).regionId)
     }

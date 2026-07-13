@@ -220,6 +220,20 @@ class CarvingViewModelTest {
     }
 
     @Test
+    fun deleteCarving_refreshesTheActiveGalleryAfterDeletionCompletes() = runTest {
+        repository.insertCarving(existingCarving(twoStrokeFixture))
+        val guardedViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+        guardedViewModel.loadCarvingsByRegion("330000")
+
+        assertEquals(listOf("carving-1"), guardedViewModel.carvingList.value.map { it.id })
+
+        guardedViewModel.deleteCarving("carving-1")
+        advanceUntilIdle()
+
+        assertTrue(guardedViewModel.carvingList.value.isEmpty())
+    }
+
+    @Test
     fun missingCarvingId_entersReadOnlyLoadErrorState() {
         viewModel.loadCarvingForEdit("missing")
 
