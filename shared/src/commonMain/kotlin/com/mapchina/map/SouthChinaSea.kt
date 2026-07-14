@@ -1,5 +1,6 @@
 package com.mapchina.map
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -31,6 +32,42 @@ object SouthChinaSea {
         // 9. Final segment reconnecting toward mainland (~110E-111E, 20N)
         listOf(110.5 to 19.0, 111.0 to 20.0, 111.5 to 21.0)
     )
+}
+
+internal data class SouthChinaSeaCubicCommand(
+    val control1: Offset,
+    val control2: Offset,
+    val end: Offset,
+)
+
+internal data class SouthChinaSeaCurve(
+    val start: Offset,
+    val commands: List<SouthChinaSeaCubicCommand>,
+)
+
+internal fun buildSouthChinaSeaCurve(points: List<Offset>): SouthChinaSeaCurve? {
+    if (points.size < 2) return null
+
+    val commands = (0 until points.lastIndex).map { index ->
+        val previous = points.getOrElse(index - 1) { points[index] }
+        val start = points[index]
+        val end = points[index + 1]
+        val next = points.getOrElse(index + 2) { end }
+
+        SouthChinaSeaCubicCommand(
+            control1 = Offset(
+                x = start.x + (end.x - previous.x) / 6f,
+                y = start.y + (end.y - previous.y) / 6f,
+            ),
+            control2 = Offset(
+                x = end.x - (next.x - start.x) / 6f,
+                y = end.y - (next.y - start.y) / 6f,
+            ),
+            end = end,
+        )
+    }
+
+    return SouthChinaSeaCurve(start = points.first(), commands = commands)
 }
 
 fun DrawScope.drawSouthChinaSeaOnMap(
