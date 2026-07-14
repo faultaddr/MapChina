@@ -10,27 +10,59 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
 object SouthChinaSea {
-    // Standard nine-dash line: from east of Taiwan, down the east side of South China Sea,
-    // across the south near Nansha, and back up the west side toward Hainan.
+    // Standard ten-dash map data: nine South China Sea segments plus the segment east of Taiwan.
     val DASH_SEGMENTS = listOf(
-        // 1. Taiwan NE offshore (~121E, 26N) down to Taiwan E coast (~122E, 23N)
-        listOf(121.5 to 26.0, 122.0 to 24.0, 121.5 to 22.5),
-        // 2. Continue south along Philippines west coast (~119E-117E)
-        listOf(120.5 to 21.5, 119.5 to 19.5, 118.5 to 17.0),
-        // 3. Down to Scarborough / Huangyan (~117E, 15N)
-        listOf(117.5 to 15.5, 117.0 to 13.5, 116.5 to 11.5),
-        // 4. Further south toward Nansha (~116E-115E, 9N-7N)
-        listOf(116.0 to 10.0, 115.5 to 8.0, 114.5 to 6.5),
-        // 5. Southernmost near Nansha (~113E-112E, 5N-6N)
-        listOf(113.5 to 5.5, 112.0 to 5.0, 110.5 to 5.5),
-        // 6. West side heading NW (~109E, 7N)
-        listOf(109.5 to 6.5, 108.5 to 8.0, 108.0 to 10.5),
-        // 7. Continue north up west side (~107E-108E, 12N-14N)
-        listOf(108.0 to 12.5, 108.2 to 14.5, 108.5 to 16.0),
-        // 8. Approaching Hainan SE coast (~109E, 17N-18N)
-        listOf(108.8 to 17.0, 109.5 to 18.0, 110.0 to 18.5),
-        // 9. Final segment reconnecting toward mainland (~110E-111E, 20N)
-        listOf(110.5 to 19.0, 111.0 to 20.0, 111.5 to 21.0)
+        listOf(
+            109.51763678906526 to 16.360467782665847,
+            109.72339159230361 to 16.05587198177934,
+            109.8780414893003 to 15.766823920473868,
+            109.96506402665503 to 15.526031073258686,
+            109.98526818797363 to 15.335615618596712,
+        ),
+        listOf(
+            110.48331454715199 to 12.431407837351566,
+            110.48240767589328 to 12.085792287259398,
+            110.45136562643113 to 11.863835000833953,
+            110.25652028695671 to 11.393616070326182,
+        ),
+        listOf(
+            108.3388949586325 to 7.26656318024262,
+            108.30727608084116 to 6.727803403200289,
+            108.35631901989032 to 6.112648053307836,
+        ),
+        listOf(
+            111.94112275674237 to 3.553559321848772,
+            112.40151782268552 to 3.646409974664658,
+            112.92104341055976 to 3.845112027649191,
+        ),
+        listOf(
+            115.69079809651517 to 7.29016984601141,
+            116.4095482213759 to 8.137962397303875,
+        ),
+        listOf(
+            118.63503455703679 to 11.080904139262175,
+            118.85587024190139 to 11.457907321145406,
+            119.10128629647166 to 12.062751715859875,
+            119.12181771101825 to 12.135585760471585,
+        ),
+        listOf(
+            119.60808384544805 to 18.143451232827125,
+            119.91075760817219 to 18.77194701315816,
+            120.11918953031866 to 19.117669954512905,
+        ),
+        listOf(
+            121.40591812413318 to 20.8001943859176,
+            122.12216430894797 to 21.716094829922323,
+        ),
+        listOf(
+            122.80328441666389 to 23.665545127578547,
+            123.00481138309124 to 24.74934291726869,
+        ),
+        listOf(
+            119.16836075308866 to 15.107448879733406,
+            119.16981236678279 to 15.755038547478351,
+            119.17823197590195 to 16.265658015720753,
+        ),
     )
 }
 

@@ -7,9 +7,19 @@ import kotlin.test.assertTrue
 
 class SouthChinaSeaTest {
     @Test
-    fun geographicData_containsExactlyNineIndependentSegments() {
-        assertEquals(9, SouthChinaSea.DASH_SEGMENTS.size)
-        assertTrue(SouthChinaSea.DASH_SEGMENTS.all { it.size >= 3 })
+    fun geographicData_containsExactlyTenIndependentSegments() {
+        assertEquals(10, SouthChinaSea.DASH_SEGMENTS.size)
+        assertTrue(SouthChinaSea.DASH_SEGMENTS.all { it.size >= 2 })
+    }
+
+    @Test
+    fun geographicData_matchesSouthChinaSeaReferenceExtents() {
+        val points = SouthChinaSea.DASH_SEGMENTS.flatten()
+
+        assertEquals(108.30727608084116, points.minOf { it.first }, absoluteTolerance = 0.0001)
+        assertEquals(123.00481138309124, points.maxOf { it.first }, absoluteTolerance = 0.0001)
+        assertEquals(3.553559321848772, points.minOf { it.second }, absoluteTolerance = 0.0001)
+        assertEquals(24.74934291726869, points.maxOf { it.second }, absoluteTolerance = 0.0001)
     }
 
     @Test

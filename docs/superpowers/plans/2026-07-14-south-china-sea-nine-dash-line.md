@@ -1,8 +1,8 @@
-# South China Sea Nine-Dash Line Implementation Plan
+# South China Sea Ten-Dash Line Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the fragmented South China Sea symbol with exactly nine smooth, independent cartographic strokes on Android and iOS.
+**Goal:** Replace the fragmented South China Sea symbol with exactly ten smooth, independent cartographic strokes on Android and iOS, including the segment east of Taiwan.
 
 **Architecture:** `SouthChinaSea.kt` will expose a small internal Catmull-Rom-to-cubic geometry helper, then convert each geographic dash into one Compose `Path`. `ChinaMapView.kt` will continue to supply the active theme color while `SouthChinaSea.kt` owns width and zoom-dependent alpha. No map state, gesture, cache or persistence code changes.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Keep exactly nine geographic segments.
+- Keep exactly ten geographic segments using the Ministry of Civil Affairs map reference extents.
 - Render each geographic segment as one continuous path with no `PathEffect`.
 - Use round caps and round joins.
 - National view uses `1.05dp` and `0.50` alpha; closer view uses `0.85dp` and `0.42` alpha.
@@ -209,7 +209,7 @@ git commit -m "fix(map): render nine clean South China Sea strokes"
 
 **Interfaces:**
 - Consumes: final shared renderer from Task 2.
-- Produces: Android and iOS screenshots showing the same nine independent smooth strokes.
+- Produces: Android and iOS screenshots showing the same ten independent smooth strokes.
 
 - [ ] **Step 1: Build, install and launch Android**
 
@@ -232,7 +232,7 @@ adb shell screencap -p /sdcard/nine-dash-after.png
 adb pull /sdcard/nine-dash-after.png .superpowers/sdd/nine-dash-line/android-after.png
 ```
 
-Expected: nine complete strokes, no internal micro-dashes, no hard elbows and no app crash/ANR.
+Expected: ten complete strokes in the reference positions, no internal micro-dashes, no hard elbows and no app crash/ANR.
 
 - [ ] **Step 3: Build and capture iOS**
 
@@ -250,7 +250,7 @@ xcrun simctl io D8476254-6DB7-4288-B79B-BB4B1A268396 screenshot \
   .superpowers/sdd/nine-dash-line/ios-after.png
 ```
 
-Expected: build succeeds and iOS shows the same nine-stroke geometry at national-map scale.
+Expected: build succeeds and iOS shows the same ten-stroke geometry at national-map scale.
 
 - [ ] **Step 4: Final repository checks**
 
