@@ -3,8 +3,8 @@ package com.mapchina.map
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
@@ -70,34 +70,50 @@ internal fun buildSouthChinaSeaCurve(points: List<Offset>): SouthChinaSeaCurve? 
     return SouthChinaSeaCurve(start = points.first(), commands = commands)
 }
 
+internal data class SouthChinaSeaStrokeStyle(
+    val widthDp: Float,
+    val alpha: Float,
+)
+
+internal fun southChinaSeaStrokeStyle(zoomLevel: Float): SouthChinaSeaStrokeStyle =
+    if (zoomLevel < 6f) {
+        SouthChinaSeaStrokeStyle(widthDp = 1.05f, alpha = 0.50f)
+    } else {
+        SouthChinaSeaStrokeStyle(widthDp = 0.85f, alpha = 0.42f)
+    }
+
 fun DrawScope.drawSouthChinaSeaOnMap(
     projection: GeoProjection,
     zoomLevel: Float,
     strokeColor: Color,
-    islandColor: Color
 ) {
-    val lineWidth = if (zoomLevel < 6f) 1.2.dp.toPx() else 0.8.dp.toPx()
-    val dashOn = 6.dp.toPx()
-    val dashOff = 4.dp.toPx()
+    val strokeStyle = southChinaSeaStrokeStyle(zoomLevel)
 
     for (segment in SouthChinaSea.DASH_SEGMENTS) {
+        val curve = buildSouthChinaSeaCurve(
+            segment.map { projection.project(it.first, it.second) },
+        ) ?: continue
         val path = Path().apply {
-            val points = segment.map { projection.project(it.first, it.second) }
-            if (points.isNotEmpty()) {
-                moveTo(points[0].x, points[0].y)
-                for (i in 1 until points.size) {
-                    lineTo(points[i].x, points[i].y)
-                }
+            moveTo(curve.start.x, curve.start.y)
+            for (command in curve.commands) {
+                cubicTo(
+                    command.control1.x,
+                    command.control1.y,
+                    command.control2.x,
+                    command.control2.y,
+                    command.end.x,
+                    command.end.y,
+                )
             }
         }
         drawPath(
             path = path,
-            color = strokeColor,
+            color = strokeColor.copy(alpha = strokeStyle.alpha),
             style = Stroke(
-                width = lineWidth,
+                width = strokeStyle.widthDp.dp.toPx(),
                 cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashOn, dashOff))
-            )
+                join = StrokeJoin.Round,
+            ),
         )
     }
 }

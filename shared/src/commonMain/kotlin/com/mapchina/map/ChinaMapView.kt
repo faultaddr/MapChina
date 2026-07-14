@@ -212,8 +212,7 @@ fun ChinaMapView(
             drawSouthChinaSeaOnMap(
                 projection = projection,
                 zoomLevel = zoom,
-                strokeColor = visualStyle.labelColor.copy(alpha = 0.58f),
-                islandColor = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.PrimaryVariant
+                strokeColor = visualStyle.labelColor,
             )
 
             // L7: Region labels with collision avoidance

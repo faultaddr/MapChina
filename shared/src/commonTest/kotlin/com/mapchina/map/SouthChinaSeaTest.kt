@@ -32,4 +32,20 @@ class SouthChinaSeaTest {
                 command.end.x.isFinite() && command.end.y.isFinite()
         })
     }
+
+    @Test
+    fun strokeStyle_keepsNationalViewSubordinateToProvinceBoundaries() {
+        assertEquals(
+            SouthChinaSeaStrokeStyle(widthDp = 1.05f, alpha = 0.50f),
+            southChinaSeaStrokeStyle(zoomLevel = 5f),
+        )
+    }
+
+    @Test
+    fun strokeStyle_becomesLighterAndThinnerWhenZoomedIn() {
+        assertEquals(
+            SouthChinaSeaStrokeStyle(widthDp = 0.85f, alpha = 0.42f),
+            southChinaSeaStrokeStyle(zoomLevel = 6f),
+        )
+    }
 }
