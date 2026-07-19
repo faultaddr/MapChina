@@ -440,6 +440,12 @@ class MapController {
     fun setOnMapReadyListener(listener: (() -> Unit)?) { mapReadyListener = listener }
     fun setOnCameraAnimCompleteListener(listener: (() -> Unit)?) { cameraAnimCompleteListener = listener }
 
+    internal fun captureCameraAnimCompleteListener(): (() -> Unit)? =
+        cameraAnimCompleteListener
+
+    internal fun hasCameraAnimCompleteListener(): Boolean =
+        cameraAnimCompleteListener != null
+
     // ---- Internal event handling ----
 
     internal fun handleTap(offset: Offset) {

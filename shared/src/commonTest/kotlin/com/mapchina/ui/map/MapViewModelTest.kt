@@ -15,6 +15,7 @@ import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapController
+import com.mapchina.map.MapTheme
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayRole
 import com.mapchina.map.ViewportInsets
@@ -678,6 +679,178 @@ class MapViewModelTest {
             releaseAttractionResult.complete(Unit)
             delayedViewModel.onCleared()
         }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun controllerScopedShareMode_survivesNationalNavigateUpNoOp() = runTest {
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "shareScopeUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            val versionBefore = delayedViewModel.navigationVersion.value
+
+            delayedViewModel.enterShareMode()
+            delayedViewModel.navigateUp()
+            runCurrent()
+
+            assertEquals(
+                versionBefore to true,
+                delayedViewModel.navigationVersion.value to
+                    controller.renderState.value.shareMode
+            )
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun controllerScopedThemeRefresh_survivesReloadVersionChange() = runTest {
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "themeScopeUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            controller.setBackgroundTheme(MapTheme.INK_WASH)
+
+            delayedViewModel.refreshMapTheme()
+            delayedViewModel.reloadData()
+            runCurrent()
+
+            assertEquals(
+                MapTheme.DEFAULT,
+                controller.renderState.value.backgroundTheme
+            )
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun controllerScopedPhotoMarkerClear_survivesReloadVersionChange() = runTest {
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "photoScopeUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            controller.addImageMarker(
+                id = "queued-photo",
+                lat = 30.0,
+                lng = 104.0,
+                imagePath = "/tmp/queued-photo.jpg",
+                count = 1
+            )
+            delayedViewModel.togglePhotoMarkers()
+
+            delayedViewModel.togglePhotoMarkers()
+            delayedViewModel.reloadData()
+            runCurrent()
+
+            assertTrue(controller.renderState.value.imageMarkers.isEmpty())
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun staleCameraCompletionAfterNationalNavigation_cleansPresentationOnly() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        attractionRepo.insertAttraction(
+            Attraction(
+                id = "stale-camera-attraction",
+                name = "旧相机上下文景点",
+                regionId = "510100",
+                level = AttractionLevel.A4,
+                latitude = 30.0,
+                longitude = 104.0
+            )
+        )
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "cameraCleanupUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+            val staleCompletion =
+                assertNotNull(controller.captureCameraAnimCompleteListener())
+            assertEquals("510000", controller.renderState.value.pulseTarget)
+
+            delayedViewModel.navigateToNational()
+            staleCompletion.invoke()
+            runCurrent()
+
+            assertEquals(
+                listOf<Any?>(
+                    null,
+                    false,
+                    MapZoomLevel.NATIONAL,
+                    emptyList<String>(),
+                    listOf("510000"),
+                    emptyList<String>()
+                ),
+                listOf(
+                    controller.renderState.value.pulseTarget,
+                    controller.hasCameraAnimCompleteListener(),
+                    delayedViewModel.currentLevel.value,
+                    delayedViewModel.currentPath.value.map { it.id },
+                    delayedViewModel.regions.value.map { it.regionId },
+                    delayedViewModel.attractions.value.map { it.id }
+                )
+            )
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun navigateToNational_whenAlreadyNational_isTrueNoOp() {
+        val versionBefore = viewModel.navigationVersion.value
+
+        viewModel.navigateToNational()
+
+        assertEquals(versionBefore, viewModel.navigationVersion.value)
+    }
+
+    @Test
+    fun navigateToCurrentRegion_whenContextAlreadyMatches_isTrueNoOp() {
+        seedProvinceCityAndDistrict()
+        viewModel.navigateTo("510000")
+        val versionBefore = viewModel.navigationVersion.value
+
+        viewModel.navigateTo("510000")
+
+        assertEquals(versionBefore, viewModel.navigationVersion.value)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
