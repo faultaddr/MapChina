@@ -1,5 +1,15 @@
 package com.mapchina.map
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,5 +71,79 @@ class MapCameraFocusTest {
         assertEquals(0f, smoothStep(0f))
         assertEquals(0.5f, smoothStep(0.5f))
         assertEquals(1f, smoothStep(1f))
+    }
+
+    @Test
+    fun setCameraImmediately_cancelsInFlightFocus() = runTest {
+        assertImmediateCameraUpdateCancelsFocus { controller ->
+            controller.setCamera(
+                lat = 20.0,
+                lng = 80.0,
+                zoomLevel = 5f,
+                animated = false
+            )
+        }
+    }
+
+    @Test
+    fun zoomToBoundsImmediately_cancelsInFlightFocus() = runTest {
+        assertImmediateCameraUpdateCancelsFocus { controller ->
+            controller.zoomToBounds(
+                minLng = 110.0,
+                maxLng = 112.0,
+                minLat = 20.0,
+                maxLat = 22.0,
+                animated = false
+            )
+        }
+    }
+
+    @Test
+    fun fitChinaImmediately_cancelsInFlightFocus() = runTest {
+        assertImmediateCameraUpdateCancelsFocus { controller ->
+            controller.fitChinaInView(animated = false)
+        }
+    }
+
+    private suspend fun TestScope.assertImmediateCameraUpdateCancelsFocus(
+        updateImmediately: (MapController) -> Unit
+    ) {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val controller = MapController()
+        var requestCompletions = 0
+        var globalCompletions = 0
+        controller.setOnCameraAnimCompleteListener { globalCompletions += 1 }
+
+        try {
+            controller.focusCamera(
+                lat = 45.0,
+                lng = 120.0,
+                zoomLevel = 8f,
+                insets = ViewportInsets()
+            ) {
+                requestCompletions += 1
+            }
+            runCurrent()
+
+            updateImmediately(controller)
+            val expectedCamera = controller.viewport.camera
+
+            withContext(Dispatchers.Default) {
+                delay(700L)
+            }
+            advanceUntilIdle()
+
+            assertEquals(
+                Triple(expectedCamera, 0, 0),
+                Triple(
+                    controller.viewport.camera,
+                    requestCompletions,
+                    globalCompletions
+                )
+            )
+        } finally {
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
     }
 }

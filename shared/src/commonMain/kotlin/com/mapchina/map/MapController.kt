@@ -330,7 +330,9 @@ class MapController {
         if (animated) {
             animateCamera(lng, lat, zoomLevel)
         } else {
-            viewport.moveTo(lng, lat, zoomLevel)
+            applyImmediateCameraUpdate {
+                viewport.moveTo(lng, lat, zoomLevel)
+            }
         }
     }
 
@@ -352,7 +354,9 @@ class MapController {
     fun zoomToBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, animated: Boolean) {
         val (targetLng, targetLat, targetZoom) = computeZoomForBounds(minLng, maxLng, minLat, maxLat)
         if (animated) animateCamera(targetLng, targetLat, targetZoom)
-        else viewport.moveTo(targetLng, targetLat, targetZoom)
+        else applyImmediateCameraUpdate {
+            viewport.moveTo(targetLng, targetLat, targetZoom)
+        }
     }
 
     fun fitChinaInView(animated: Boolean) {
@@ -360,7 +364,9 @@ class MapController {
             val target = viewport.computeChinaFitTarget()
             animateCamera(target.first, target.second, target.third)
         } else {
-            viewport.fitChinaInView()
+            applyImmediateCameraUpdate {
+                viewport.fitChinaInView()
+            }
         }
     }
 
@@ -411,6 +417,11 @@ class MapController {
         animJob?.cancel()
         animJob = null
         cameraRequestGate.cancel()
+    }
+
+    private fun applyImmediateCameraUpdate(update: () -> Unit) {
+        cancelCameraAnimation()
+        update()
     }
 
     fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
