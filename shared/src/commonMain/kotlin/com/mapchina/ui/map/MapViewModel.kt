@@ -20,6 +20,7 @@ import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.map.OverlayRole
 import com.mapchina.map.OverlayStyle
 import com.mapchina.map.LabelData
 import kotlinx.coroutines.CoroutineScope
@@ -142,6 +143,18 @@ class MapViewModel(
 
     private val _currentPath = MutableStateFlow<List<Region>>(emptyList())
     val currentPath: StateFlow<List<Region>> = _currentPath.asStateFlow()
+
+    private val _mapLayerLoadState =
+        MutableStateFlow<MapLayerLoadState>(MapLayerLoadState.Idle)
+    val mapLayerLoadState: StateFlow<MapLayerLoadState> =
+        _mapLayerLoadState.asStateFlow()
+    private var pendingDrillRegionId: String? = null
+
+    private data class PreparedChildLayer(
+        val parent: Region,
+        val children: List<Region>,
+        val boundaries: Map<String, String>
+    )
 
     private val _achievementUnlock = MutableStateFlow<AchievementUnlockResult?>(null)
     val achievementUnlock: StateFlow<AchievementUnlockResult?> = _achievementUnlock.asStateFlow()
@@ -324,31 +337,116 @@ class MapViewModel(
     }
 
     fun drillIntoRegion(regionId: String) {
+        if (_mapLayerLoadState.value is MapLayerLoadState.Loading) return
         if (_currentPath.value.any { it.id == regionId }) return
         val region = regionRepository.getRegion(regionId) ?: return
-        _currentPath.value = _currentPath.value + region
-        _currentLevel.value = when (region.level) {
+        val label = when (region.level) {
+            RegionLevel.PROVINCE -> "正在展开市级地图"
+            RegionLevel.CITY -> "正在展开区级地图"
+            RegionLevel.DISTRICT -> return
+        }
+        pendingDrillRegionId = regionId
+        _mapLayerLoadState.value = MapLayerLoadState.Loading(regionId, label)
+        vmScope.launch {
+            val prepared = runCatching { prepareChildLayer(region) }.getOrNull()
+            if (pendingDrillRegionId != regionId) return@launch
+            if (prepared == null) {
+                val targetLabel =
+                    if (region.level == RegionLevel.PROVINCE) "市级" else "区级"
+                _mapLayerLoadState.value = MapLayerLoadState.Error(
+                    regionId = regionId,
+                    message = "${targetLabel}地图暂时无法展开"
+                )
+                return@launch
+            }
+            commitChildLayer(prepared)
+            pendingDrillRegionId = null
+            _mapLayerLoadState.value = MapLayerLoadState.Idle
+        }
+    }
+
+    private fun prepareChildLayer(parent: Region): PreparedChildLayer? {
+        var children = regionRepository.getChildRegions(parent.id)
+        var boundaries = regionRepository.getBoundariesByParentId(parent.id)
+        if (!isChildLayerReady(children, boundaries) && boundaryLoader != null) {
+            val loaded = boundaryLoader.loadChildRegions(parent.id).orEmpty()
+            if (loaded.isNotEmpty()) {
+                val level = when (parent.level) {
+                    RegionLevel.PROVINCE -> RegionLevel.CITY
+                    RegionLevel.CITY -> RegionLevel.DISTRICT
+                    RegionLevel.DISTRICT -> return null
+                }
+                regionRepository.insertRegionsInTransaction(
+                    loaded.map { Region(it.id, it.name, level, parent.id) }
+                )
+                regionRepository.updateBoundariesInTransaction(
+                    loaded.map { it.id to it.boundary }
+                )
+                children = regionRepository.getChildRegions(parent.id)
+                boundaries = regionRepository.getBoundariesByParentId(parent.id)
+                rebuildChildrenIndex()
+            }
+        }
+        if (!isChildLayerReady(children, boundaries)) return null
+        return PreparedChildLayer(parent, children, boundaries)
+    }
+
+    private fun isChildLayerReady(
+        children: List<Region>,
+        boundaries: Map<String, String>
+    ): Boolean =
+        children.isNotEmpty() &&
+            children.all { child -> !boundaries[child.id].isNullOrBlank() }
+
+    private fun commitChildLayer(prepared: PreparedChildLayer) {
+        _currentPath.value = _currentPath.value + prepared.parent
+        _currentLevel.value = when (prepared.parent.level) {
             RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
             RegionLevel.CITY -> MapZoomLevel.CITY
             RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
         }
+        applyPreparedRegions(prepared.children, prepared.boundaries)
         _selectedRegion.value = null
+        _selectedRegionAttractions.value = emptyList()
+        _bottomPanel.value = BottomPanel.None
+        cancelRegionFocus()
+        vmScope.launch { loadAttractionsForRegion(prepared.parent.id) }
+    }
 
-        // Highlight the tapped region during camera animation
-        val controller = _mapController
-        if (controller != null) {
-            controller.pulseOverlay(regionId)
-            controller.setOnCameraAnimCompleteListener {
-                controller.restorePulsedOverlay()
-                controller.setOnCameraAnimCompleteListener(null)
-                vmScope.launch {
-                    loadChildRegions(regionId)
-                    loadAttractionsForRegion(regionId)
-                }
-            }
+    private fun applyPreparedRegions(
+        children: List<Region>,
+        boundaries: Map<String, String>
+    ) {
+        val footprints = getFootprintCache()
+        val coverage = if (childrenIndexReady) {
+            computeCoverageBatch(children.map { it.id }, footprints)
+        } else {
+            emptyMap()
         }
+        lastBoundaries = boundaries
+        _regions.value = children.map { region ->
+            RegionFootprintUi(
+                regionId = region.id,
+                name = region.name,
+                footprintLevel = footprints[region.id],
+                normalizedPath = emptyList(),
+                bounds = RegionBounds(0f, 0f, 0f, 0f),
+                childCoverageRate = coverage[region.id] ?: 0f
+            )
+        }
+        syncOverlaysToMap(boundaries)
+    }
 
-        moveCameraToRegion(region)
+    fun retryLayerLoad() {
+        val regionId =
+            (mapLayerLoadState.value as? MapLayerLoadState.Error)?.regionId
+                ?: return
+        drillIntoRegion(regionId)
+    }
+
+    fun dismissLayerLoadError() {
+        pendingDrillRegionId = null
+        _mapLayerLoadState.value = MapLayerLoadState.Idle
     }
 
     private fun setProgrammaticCamera() {
@@ -1097,8 +1195,35 @@ class MapViewModel(
         val regionIds = mutableSetOf<String>()
         val labels = mutableMapOf<String, LabelData>()
 
-        // Keep province overlays visible but non-interactive when drilled down
-        val provinceIds = mutableSetOf<String>()
+        fun syncOverlay(
+            regionId: String,
+            boundary: String,
+            style: OverlayStyle,
+            isVisited: Boolean,
+            role: OverlayRole,
+            opacityMultiplier: Float
+        ) {
+            if (controller.hasOverlay(regionId)) {
+                controller.updateOverlayPresentation(
+                    regionId = regionId,
+                    style = style,
+                    isVisited = isVisited,
+                    role = role,
+                    opacityMultiplier = opacityMultiplier
+                )
+            } else {
+                controller.addOverlay(
+                    regionId = regionId,
+                    boundary = boundary,
+                    style = style,
+                    isVisited = isVisited,
+                    role = role,
+                    opacityMultiplier = opacityMultiplier
+                )
+            }
+        }
+
+        // Keep province overlays visible as national context when drilled down.
         if (_currentLevel.value != MapZoomLevel.NATIONAL && provinceBoundaryCache.isNotEmpty()) {
             val footprints = getFootprintCache()
             val coverageMap = if (childrenIndexReady) {
@@ -1107,11 +1232,17 @@ class MapViewModel(
 
             for ((id, boundary) in provinceBoundaryCache) {
                 regionIds.add(id)
-                provinceIds.add(id)
                 val coverage = coverageMap[id] ?: 0f
                 val fp = footprints[id]
                 val style = footprintOverlayStyle(fp, coverage)
-                controller.updateOverlayStyle(id, style, fp != null || coverage > 0f)
+                syncOverlay(
+                    regionId = id,
+                    boundary = boundary,
+                    style = style,
+                    isVisited = fp != null || coverage > 0f,
+                    role = OverlayRole.CONTEXT,
+                    opacityMultiplier = 0.25f
+                )
             }
         }
 
@@ -1121,11 +1252,14 @@ class MapViewModel(
             val boundary = boundaries?.get(region.regionId)
                 ?: regionRepository.getRegionBoundary(region.regionId)
             if (boundary != null) {
-                controller.addOverlay(
-                    region.regionId,
-                    boundary,
-                    style,
-                    region.footprintLevel != null || region.childCoverageRate > 0f
+                syncOverlay(
+                    regionId = region.regionId,
+                    boundary = boundary,
+                    style = style,
+                    isVisited = region.footprintLevel != null ||
+                        region.childCoverageRate > 0f,
+                    role = OverlayRole.ACTIVE,
+                    opacityMultiplier = 1f
                 )
             }
             // Add label if we have center coords
@@ -1146,10 +1280,6 @@ class MapViewModel(
             }
         }
         controller.removeOverlaysExcept(regionIds)
-        // Province overlays are visual-only when drilled down — remove from hit test
-        if (provinceIds.isNotEmpty()) {
-            controller.removeHitTestFor(provinceIds)
-        }
         controller.setLabels(labels)
         lastSyncedRegionIds = regionIds
     }

@@ -14,6 +14,7 @@ import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.map.OverlayRole
 import com.mapchina.map.ViewportInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -42,6 +43,13 @@ class MapViewModelTest {
     private lateinit var regionRepo: RegionRepository
     private lateinit var footprintRepo: FootprintRepository
     private lateinit var suggestionService: FootprintSuggestionService
+
+    private val provinceBoundary =
+        "[[100.0,30.0],[110.0,30.0],[110.0,40.0],[100.0,40.0],[100.0,30.0]]"
+    private val cityBoundary =
+        "[[103.0,32.0],[107.0,32.0],[107.0,36.0],[103.0,36.0],[103.0,32.0]]"
+    private val districtBoundary =
+        "[[104.0,33.0],[106.0,33.0],[106.0,35.0],[104.0,35.0],[104.0,33.0]]"
 
     @BeforeTest
     fun setup() {
@@ -212,30 +220,134 @@ class MapViewModelTest {
 
     @Test
     fun drillIntoProvince_updatesCurrentLevel() {
-        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        seedProvinceCityAndDistrict()
         viewModel.drillIntoRegion("510000")
         assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
-        assertEquals(1, viewModel.currentPath.value.size)
-        assertEquals("510000", viewModel.currentPath.value.first().id)
+        assertEquals("510000", viewModel.currentPath.value.single().id)
     }
 
     @Test
     fun drillIntoCity_thenNavigateUp() {
-        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
-        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        seedProvinceCityAndDistrict()
         viewModel.drillIntoRegion("510000")
         viewModel.drillIntoRegion("510100")
         assertEquals(MapZoomLevel.CITY, viewModel.currentLevel.value)
 
         viewModel.navigateUp()
         assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
-        assertEquals(1, viewModel.currentPath.value.size)
+        assertEquals("510000", viewModel.currentPath.value.single().id)
+    }
+
+    @Test
+    fun drillWithoutChildBoundaries_keepsCurrentLevelAndExposesRetry() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+
+        viewModel.drillIntoRegion("510000")
+
+        assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+        assertTrue(viewModel.currentPath.value.isEmpty())
+        assertEquals(
+            MapLayerLoadState.Error(
+                regionId = "510000",
+                message = "市级地图暂时无法展开"
+            ),
+            viewModel.mapLayerLoadState.value
+        )
+    }
+
+    @Test
+    fun drillWithMissingBoundaryForOneChild_keepsCurrentMapUnchanged() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.insertRegion(Region("510300", "自贡市", RegionLevel.CITY, "510000"))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+        regionRepo.updateBoundary("510100", cityBoundary)
+
+        viewModel.drillIntoRegion("510000")
+
+        assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+        assertTrue(viewModel.currentPath.value.isEmpty())
+        assertEquals(
+            MapLayerLoadState.Error("510000", "市级地图暂时无法展开"),
+            viewModel.mapLayerLoadState.value
+        )
+    }
+
+    @Test
+    fun drillError_canBeDismissedBackToIdle() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+
+        viewModel.drillIntoRegion("510000")
+        viewModel.dismissLayerLoadError()
+
+        assertEquals(MapLayerLoadState.Idle, viewModel.mapLayerLoadState.value)
+        assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+        assertTrue(viewModel.currentPath.value.isEmpty())
+    }
+
+    @Test
+    fun drillError_retryCommitsAfterChildrenBecomeReady() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        viewModel.drillIntoRegion("510000")
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+        regionRepo.updateBoundary("510100", cityBoundary)
+
+        viewModel.retryLayerLoad()
+
+        assertEquals(MapLayerLoadState.Idle, viewModel.mapLayerLoadState.value)
+        assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
+        assertEquals("510000", viewModel.currentPath.value.single().id)
+    }
+
+    @Test
+    fun drillWithReadyChildren_commitsPathAndKeepsProvinceAsContext() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+        regionRepo.updateBoundary("510100", cityBoundary)
+        val controller = MapController()
+        viewModel.mapController = controller
+        viewModel.reloadData()
+
+        try {
+            viewModel.drillIntoRegion("510000")
+
+            assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
+            assertEquals("510000", viewModel.currentPath.value.single().id)
+            assertEquals(
+                OverlayRole.CONTEXT,
+                controller.renderState.value.overlays["510000"]?.role
+            )
+            assertEquals(
+                0.25f,
+                controller.renderState.value.overlays["510000"]?.opacityMultiplier
+            )
+            assertEquals(
+                OverlayRole.ACTIVE,
+                controller.renderState.value.overlays["510100"]?.role
+            )
+            assertEquals(MapLayerLoadState.Idle, viewModel.mapLayerLoadState.value)
+        } finally {
+            viewModel.mapController = null
+            controller.dispose()
+        }
     }
 
     @Test
     fun navigateUp_fromNational_staysNational() {
         viewModel.navigateUp()
         assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+    }
+
+    private fun seedProvinceCityAndDistrict() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.insertRegion(Region("510104", "锦江区", RegionLevel.DISTRICT, "510100"))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+        regionRepo.updateBoundary("510100", cityBoundary)
+        regionRepo.updateBoundary("510104", districtBoundary)
     }
 
     @Test

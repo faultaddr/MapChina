@@ -47,7 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -147,6 +146,7 @@ fun MapScreen(
     val firstFootprintActivation by viewModel.firstFootprintActivation.collectAsState()
     val firstFootprintCelebration by viewModel.firstFootprintCelebration.collectAsState()
     val regionFocusState by viewModel.regionFocusState.collectAsState()
+    val mapLayerLoadState by viewModel.mapLayerLoadState.collectAsState()
 
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
@@ -170,7 +170,6 @@ fun MapScreen(
 
     var showAttractionsSheet by remember { mutableStateOf(false) }
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
-    val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
     var fabExpanded by remember { mutableStateOf(false) }
     var mapSelectionActive by remember { mutableStateOf(false) }
@@ -321,6 +320,17 @@ fun MapScreen(
             )
         }
 
+        MapLayerStatusPill(
+            state = mapLayerLoadState,
+            onRetry = viewModel::retryLayerLoad,
+            onDismiss = viewModel::dismissLayerLoadError,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 108.dp)
+                .zIndex(2f)
+        )
+
         // Scrim to dismiss FAB menu
         if (fabExpanded) {
             Box(
@@ -433,11 +443,7 @@ fun MapScreen(
                     },
                     onDrillDown = {
                         val regionId = selectedRegion!!.regionId
-                        viewModel.clearBottomPanel()
-                        scope.launch {
-                            delay(200)
-                            viewModel.drillIntoRegion(regionId)
-                        }
+                        viewModel.drillIntoRegion(regionId)
                     },
                     onShowAttractions = {
                         showAttractionsSheet = true
