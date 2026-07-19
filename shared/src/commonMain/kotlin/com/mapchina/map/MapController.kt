@@ -540,6 +540,7 @@ class MapController {
         durationMillis: Long = 400L,
         onComplete: ((Long) -> Unit)? = null
     ): Long {
+        require(durationMillis > 0L) { "durationMillis must be positive" }
         animJob?.cancel()
         val requestId = cameraRequestGate.begin()
         val startLng = viewport.centerLng

@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -102,6 +103,48 @@ class MapCameraFocusTest {
     fun fitChinaImmediately_cancelsInFlightFocus() = runTest {
         assertImmediateCameraUpdateCancelsFocus { controller ->
             controller.fitChinaInView(animated = false)
+        }
+    }
+
+    @Test
+    fun focusCamera_rejectsZeroDuration() = runTest {
+        assertInvalidFocusDuration { controller ->
+            controller.focusCamera(
+                lat = 45.0,
+                lng = 120.0,
+                zoomLevel = 8f,
+                insets = ViewportInsets(),
+                durationMillis = 0L
+            ) {}
+        }
+    }
+
+    @Test
+    fun focusBounds_rejectsNegativeDuration() = runTest {
+        assertInvalidFocusDuration { controller ->
+            controller.focusBounds(
+                minLng = 100.0,
+                maxLng = 110.0,
+                minLat = 30.0,
+                maxLat = 40.0,
+                insets = ViewportInsets(),
+                durationMillis = -1L
+            ) {}
+        }
+    }
+
+    private fun TestScope.assertInvalidFocusDuration(
+        startFocus: (MapController) -> Unit
+    ) {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val controller = MapController()
+        try {
+            assertFailsWith<IllegalArgumentException> {
+                startFocus(controller)
+            }
+        } finally {
+            controller.dispose()
+            Dispatchers.resetMain()
         }
     }
 
