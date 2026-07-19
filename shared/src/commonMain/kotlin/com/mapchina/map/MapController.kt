@@ -16,12 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.atan
-import kotlin.math.exp
-import kotlin.math.ln
-import kotlin.math.log2
-import kotlin.math.PI
-import kotlin.math.tan
 
 class MapController {
 
@@ -47,6 +41,7 @@ class MapController {
     private val projectedOverlayBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
 
     private var animJob: Job? = null
+    private val cameraRequestGate = CameraAnimationRequestGate()
 
     // Share mode: saved styles to restore
     private val savedOverlayStyles = mutableMapOf<String, OverlayStyle>()
@@ -339,33 +334,19 @@ class MapController {
         }
     }
 
-    fun computeZoomForBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double): Triple<Double, Double, Float> {
-        val w = viewport.canvasWidth
-        val h = viewport.canvasHeight
-        val targetLng = (minLng + maxLng) / 2.0
-        val targetLat = (minLat + maxLat) / 2.0
-
-        val lngSpan = maxLng - minLng
-        if (lngSpan <= 0.0 || w <= 0f || h <= 0f) {
-            return Triple(targetLng, targetLat, (viewport.zoomLevel + 3f).coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM))
-        }
-
-        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
-        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
-        val mercSpan = mercMax - mercMin
-
-        val padding = 0.75f
-        val scaleFromLng = (w * padding) / lngSpan.toFloat()
-        val scaleFromLat = if (mercSpan > 0.0)
-            (h * padding) / (mercSpan.toFloat() * (180.0 / PI).toFloat())
-        else Float.MAX_VALUE
-
-        val targetScale = minOf(scaleFromLng, scaleFromLat)
-        val targetZoom = (ViewportState.BASE_ZOOM +
-            log2((targetScale / ViewportState.BASE_SCALE).toDouble()).toFloat())
-            .coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM)
-
-        return Triple(targetLng, targetLat, targetZoom)
+    fun computeZoomForBounds(
+        minLng: Double,
+        maxLng: Double,
+        minLat: Double,
+        maxLat: Double
+    ): Triple<Double, Double, Float> {
+        val target = viewport.computeBoundsFitTarget(
+            minLng = minLng,
+            maxLng = maxLng,
+            minLat = minLat,
+            maxLat = maxLat
+        )
+        return Triple(target.centerLng, target.centerLat, target.zoomLevel)
     }
 
     fun zoomToBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, animated: Boolean) {
@@ -381,6 +362,55 @@ class MapController {
         } else {
             viewport.fitChinaInView()
         }
+    }
+
+    fun focusBounds(
+        minLng: Double,
+        maxLng: Double,
+        minLat: Double,
+        maxLat: Double,
+        insets: ViewportInsets,
+        durationMillis: Long = 650L,
+        onComplete: (Long) -> Unit
+    ): Long {
+        val target = viewport.computeBoundsFitTarget(
+            minLng,
+            maxLng,
+            minLat,
+            maxLat,
+            insets
+        )
+        return animateCamera(
+            targetLng = target.centerLng,
+            targetLat = target.centerLat,
+            targetZoom = target.zoomLevel,
+            durationMillis = durationMillis,
+            onComplete = onComplete
+        )
+    }
+
+    fun focusCamera(
+        lat: Double,
+        lng: Double,
+        zoomLevel: Float,
+        insets: ViewportInsets,
+        durationMillis: Long = 650L,
+        onComplete: (Long) -> Unit
+    ): Long {
+        val target = viewport.offsetCameraTarget(lng, lat, zoomLevel, insets)
+        return animateCamera(
+            targetLng = target.centerLng,
+            targetLat = target.centerLat,
+            targetZoom = target.zoomLevel,
+            durationMillis = durationMillis,
+            onComplete = onComplete
+        )
+    }
+
+    fun cancelCameraAnimation() {
+        animJob?.cancel()
+        animJob = null
+        cameraRequestGate.cancel()
     }
 
     fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
@@ -492,43 +522,53 @@ class MapController {
 
     // ---- Animation ----
 
-    private fun animateCamera(targetLng: Double, targetLat: Double, targetZoom: Float) {
+    private fun animateCamera(
+        targetLng: Double,
+        targetLat: Double,
+        targetZoom: Float,
+        durationMillis: Long = 400L,
+        onComplete: ((Long) -> Unit)? = null
+    ): Long {
         animJob?.cancel()
+        val requestId = cameraRequestGate.begin()
         val startLng = viewport.centerLng
         val startLat = viewport.centerLat
         val startZoom = viewport.zoomLevel
 
         if (startLng == targetLng && startLat == targetLat && startZoom == targetZoom) {
-            cameraAnimCompleteListener?.invoke()
-            return
+            if (cameraRequestGate.isActive(requestId)) {
+                onComplete?.invoke(requestId)
+                cameraAnimCompleteListener?.invoke()
+            }
+            return requestId
         }
 
         animJob = animationScope.launch {
-            val durationMs = 400L
             val startTime = TimeSource.Monotonic.markNow()
-            var lastT = -1f
-            while (true) {
+            while (cameraRequestGate.isActive(requestId)) {
                 val elapsed = startTime.elapsedNow().inWholeMilliseconds
-                val t = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
-                if (t != lastT) {
-                    val eased = t * t * (3f - 2f * t)
-                    val lng = startLng + (targetLng - startLng) * eased
-                    val lat = startLat + (targetLat - startLat) * eased
-                    val zoom = startZoom + (targetZoom - startZoom) * eased
-                    viewport.updateCamera(lng, lat, zoom)
-                    lastT = t
-                }
-                if (t >= 1f) break
+                val progress = (elapsed.toFloat() / durationMillis).coerceIn(0f, 1f)
+                val eased = smoothStep(progress)
+                viewport.updateCamera(
+                    lng = startLng + (targetLng - startLng) * eased,
+                    lat = startLat + (targetLat - startLat) * eased,
+                    zoom = startZoom + (targetZoom - startZoom) * eased
+                )
+                if (progress >= 1f) break
                 delay(16)
             }
-            cameraAnimCompleteListener?.invoke()
+            if (cameraRequestGate.isActive(requestId)) {
+                onComplete?.invoke(requestId)
+                cameraAnimCompleteListener?.invoke()
+            }
         }
+        return requestId
     }
 
     // ---- Lifecycle ----
 
     fun detachFromComposition() {
-        animJob?.cancel()
+        cancelCameraAnimation()
         pulseJob?.cancel()
     }
 

@@ -5,6 +5,28 @@ import kotlin.time.TimeSource
 import kotlin.math.PI
 import kotlin.math.sin
 
+internal fun smoothStep(progress: Float): Float {
+    val t = progress.coerceIn(0f, 1f)
+    return t * t * (3f - 2f * t)
+}
+
+internal class CameraAnimationRequestGate {
+    private var sequence = 0L
+    private var activeRequest = 0L
+
+    fun begin(): Long {
+        sequence += 1L
+        activeRequest = sequence
+        return activeRequest
+    }
+
+    fun isActive(requestId: Long): Boolean = requestId == activeRequest
+
+    fun cancel() {
+        activeRequest = 0L
+    }
+}
+
 fun celebrationPulseAlpha(progress: Float): Float {
     val clamped = progress.coerceIn(0f, 1f)
     val wave = sin(clamped * PI.toFloat() * 2f)
