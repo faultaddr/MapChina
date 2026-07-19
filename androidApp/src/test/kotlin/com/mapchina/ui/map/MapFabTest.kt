@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
@@ -37,13 +38,22 @@ class MapFabTest {
                 isExpanded = false,
                 onExpandedChange = {},
                 onTogglePhotos = {},
-                onMyLocation = { locationCount++ }
+                onMyLocation = { locationCount++ },
+                reducedMotion = true,
+                isScreenActive = false
             )
         }
 
-        onNodeWithContentDescription("当前定位").assertIsDisplayed().performClick()
+        onNodeWithContentDescription("当前定位")
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .assertWidthIsEqualTo(44.dp)
+            .performClick()
         assertEquals(1, locationCount)
-        onNodeWithContentDescription("地图工具").assertIsDisplayed()
+        onNodeWithContentDescription("地图工具")
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .assertWidthIsEqualTo(48.dp)
     }
 
     @OptIn(ExperimentalTestApi::class)

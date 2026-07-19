@@ -10,6 +10,19 @@ internal fun smoothStep(progress: Float): Float {
     return t * t * (3f - 2f * t)
 }
 
+internal fun mapLayerTransitionDurationMillis(
+    reducedMotion: Boolean
+): Int = if (reducedMotion) 0 else 220
+
+internal fun focusOverlayOpacity(
+    isSelected: Boolean,
+    hasFocus: Boolean,
+    progress: Float
+): Float {
+    if (!hasFocus || isSelected) return 1f
+    return 1f - progress.coerceIn(0f, 1f) * 0.75f
+}
+
 internal class CameraAnimationRequestGate {
     private var sequence = 0L
     private var activeRequest = 0L

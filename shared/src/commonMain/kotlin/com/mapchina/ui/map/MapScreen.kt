@@ -59,6 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.navigation3.runtime.NavKey
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.map.ChinaMapView
@@ -132,6 +135,9 @@ fun MapScreen(
     val density = LocalDensity.current
     val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
     val reducedMotion = rememberReducedMotionEnabled()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+    val isScreenActive = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
 
     val currentLevel by viewModel.currentLevel.collectAsState()
     val mapRenderState by mapController.renderState.collectAsState()
@@ -269,7 +275,8 @@ fun MapScreen(
         // Full-screen map
         ChinaMapView(
             controller = mapController,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            reducedMotion = reducedMotion
         )
 
         Box(
@@ -359,6 +366,8 @@ fun MapScreen(
                 isExpanded = fabExpanded,
                 onExpandedChange = { fabExpanded = it },
                 onTogglePhotos = { viewModel.togglePhotoMarkers() },
+                reducedMotion = reducedMotion,
+                isScreenActive = isScreenActive,
                 onShare = { viewModel.enterShareMode() },
                 onDepart = { showDartTravel = true },
                 onNavigateToNational = if (currentLevel != MapZoomLevel.NATIONAL) {

@@ -1,5 +1,8 @@
 package com.mapchina.map
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -40,7 +44,8 @@ import com.mapchina.ui.theme.MapChinaColors
 @Composable
 fun ChinaMapView(
     controller: MapController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    reducedMotion: Boolean = false
 ) {
     RecompositionProbe("ChinaMapView")
 
@@ -48,6 +53,31 @@ fun ChinaMapView(
     val pathCache = remember { GeoPathCache() }
     val textMeasurer = rememberTextMeasurer()
     val visualStyle = renderState.backgroundTheme.visualStyle
+    val activeLayerKey = remember(renderState.overlays) {
+        renderState.overlays
+            .filterValues { it.role == OverlayRole.ACTIVE }
+            .keys
+            .sorted()
+            .joinToString("|")
+    }
+    val activeLayerAlpha = remember { Animatable(1f) }
+    LaunchedEffect(activeLayerKey, reducedMotion) {
+        val duration = mapLayerTransitionDurationMillis(reducedMotion)
+        if (duration == 0) {
+            activeLayerAlpha.snapTo(1f)
+        } else {
+            activeLayerAlpha.snapTo(0f)
+            activeLayerAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(duration)
+            )
+        }
+    }
+    val selectionDimProgress by animateFloatAsState(
+        targetValue = if (renderState.pulseTarget == null) 0f else 1f,
+        animationSpec = tween(if (reducedMotion) 0 else 180),
+        label = "selectionDim"
+    )
 
     val backgroundBitmap: ImageBitmap? = renderState.backgroundTheme.backgroundRes?.let {
         imageResource(it)
@@ -129,7 +159,17 @@ fun ChinaMapView(
 
             for ((regionId, data) in renderState.orderedRegionOverlays()) {
                 val overlayPaths = pathCache.paths[regionId] ?: continue
-                val opacity = data.opacityMultiplier.coerceIn(0f, 1f)
+                val selectionOpacity = focusOverlayOpacity(
+                    isSelected = regionId == renderState.pulseTarget,
+                    hasFocus = renderState.pulseTarget != null &&
+                        data.role == OverlayRole.ACTIVE,
+                    progress = selectionDimProgress
+                )
+                val opacity = (
+                    data.opacityMultiplier *
+                        selectionOpacity *
+                        if (data.role == OverlayRole.ACTIVE) activeLayerAlpha.value else 1f
+                ).coerceIn(0f, 1f)
                 val fillColor = if (visualStyle.isDark && !data.isVisited) {
                     visualStyle.regionSurfaceColor.copy(alpha = 0.96f * opacity)
                 } else {
