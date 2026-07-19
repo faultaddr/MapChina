@@ -19,6 +19,8 @@ import com.mapchina.map.MapTheme
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayRole
 import com.mapchina.map.ViewportInsets
+import com.mapchina.platform.DevicePhoto
+import com.mapchina.platform.PhotoResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -407,8 +409,6 @@ class MapViewModelTest {
             delayedViewModel.showRegionPanel("510100")
             runCurrent()
 
-            val selectionBeforeRequest = delayedViewModel.selectedRegion.value
-            val panelBeforeRequest = delayedViewModel.bottomPanel.value
             delayedViewModel.drillIntoRegion("510100")
             assertEquals(
                 MapLayerLoadState.Loading("510100", "正在展开区级地图"),
@@ -427,8 +427,8 @@ class MapViewModelTest {
                 listOf("510000"),
                 delayedViewModel.regions.value.map { it.regionId }
             )
-            assertEquals(selectionBeforeRequest, delayedViewModel.selectedRegion.value)
-            assertEquals(panelBeforeRequest, delayedViewModel.bottomPanel.value)
+            assertNull(delayedViewModel.selectedRegion.value)
+            assertEquals(BottomPanel.None, delayedViewModel.bottomPanel.value)
             assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
         } finally {
             delayedViewModel.onCleared()
@@ -683,6 +683,172 @@ class MapViewModelTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun ordinaryChildLayerResult_cannotPublishAfterNavigationChanges() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "ordinaryLayerIntentUser"
+        )
+        val controller = MapController()
+        val childPrepared = CompletableDeferred<Unit>()
+        val releaseChild = CompletableDeferred<Unit>()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.afterOrdinaryLayerPrepared = { source ->
+                if (source == "510000") {
+                    childPrepared.complete(Unit)
+                    releaseChild.await()
+                }
+            }
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+            assertNotNull(controller.captureCameraAnimCompleteListener()).invoke()
+            runCurrent()
+            assertTrue(childPrepared.isCompleted)
+
+            delayedViewModel.navigateToNational()
+            runCurrent()
+            assertEquals(
+                listOf("510000"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+
+            releaseChild.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                listOf("510000"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertNationalControllerRender(controller)
+        } finally {
+            releaseChild.complete(Unit)
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun closedPhotoIntent_rejectsLateClustersAndMarkers() = runTest {
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "photoIntentUser"
+        )
+        val controller = MapController()
+        val photoLoaded = CompletableDeferred<Unit>()
+        val releasePhoto = CompletableDeferred<Unit>()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.photoLoadOverride = {
+                PhotoResult.SUCCESS to listOf(
+                    DevicePhoto(
+                        id = "late-photo",
+                        filePath = "/tmp/late-photo.jpg",
+                        latitude = 30.0,
+                        longitude = 104.0,
+                        dateTaken = 1L
+                    )
+                )
+            }
+            delayedViewModel.afterPhotoLoad = {
+                photoLoaded.complete(Unit)
+                releasePhoto.await()
+            }
+
+            delayedViewModel.togglePhotoMarkers()
+            runCurrent()
+            assertTrue(photoLoaded.isCompleted)
+
+            delayedViewModel.togglePhotoMarkers()
+            runCurrent()
+            assertFalse(delayedViewModel.photoMarkersVisible.value)
+            assertTrue(controller.renderState.value.imageMarkers.isEmpty())
+
+            releasePhoto.complete(Unit)
+            runCurrent()
+
+            assertFalse(delayedViewModel.photoMarkersVisible.value)
+            assertTrue(delayedViewModel.photoClusters.value.isEmpty())
+            assertTrue(controller.renderState.value.imageMarkers.isEmpty())
+        } finally {
+            releasePhoto.complete(Unit)
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun staleCurrentLocationIntent_cannotOverrideLaterNavigationCamera() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+        regionRepo.updateBoundariesInTransaction(
+            listOf(
+                "110000" to "[[116.0,39.0],[117.0,39.0],[117.0,40.0],[116.0,40.0],[116.0,39.0]]",
+                "110100" to "[[116.2,39.7],[116.8,39.7],[116.8,40.0],[116.2,40.0],[116.2,39.7]]",
+                "110101" to "[[116.4,39.9],[116.5,39.9],[116.5,40.0],[116.4,40.0],[116.4,39.9]]"
+            )
+        )
+        val locationRead = CompletableDeferred<Unit>()
+        val releaseLocation = CompletableDeferred<Unit>()
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            regionMatcher = RegionMatcher(regionRepo),
+            userId = "locationIntentUser",
+            dispatcher = StandardTestDispatcher(testScheduler),
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+        )
+        val controller = MapController()
+
+        try {
+            gpsViewModel.mapController = controller
+            runCurrent()
+            gpsViewModel.afterCurrentLocationRead = {
+                locationRead.complete(Unit)
+                releaseLocation.await()
+            }
+            gpsViewModel.activateCurrentLocation()
+            runCurrent()
+            assertTrue(locationRead.isCompleted)
+
+            gpsViewModel.navigateTo("510000")
+            runCurrent()
+            val expectedCamera = gpsViewModel.getSavedCameraState()
+
+            releaseLocation.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                listOf("510000"),
+                gpsViewModel.currentPath.value.map { it.id }
+            )
+            assertEquals(expectedCamera, gpsViewModel.getSavedCameraState())
+        } finally {
+            releaseLocation.complete(Unit)
+            gpsViewModel.mapController = null
+            gpsViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun controllerScopedShareMode_survivesNationalNavigateUpNoOp() = runTest {
         val delayedViewModel = createDelayedViewModel(
             StandardTestDispatcher(testScheduler),
@@ -833,6 +999,114 @@ class MapViewModelTest {
         }
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun lateCameraCompletion_cannotCleanNewPresentationOwner() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "cameraOwnerUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+            val staleCompletion =
+                assertNotNull(controller.captureCameraAnimCompleteListener())
+
+            delayedViewModel.navigateTo("330000")
+            runCurrent()
+            val currentCompletion =
+                assertNotNull(controller.captureCameraAnimCompleteListener())
+            assertTrue(staleCompletion !== currentCompletion)
+            assertEquals("330000", controller.renderState.value.pulseTarget)
+
+            staleCompletion.invoke()
+            runCurrent()
+
+            assertEquals("330000", controller.renderState.value.pulseTarget)
+            assertTrue(controller.captureCameraAnimCompleteListener() === currentCompletion)
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun controllerReplacement_drainsOldCleanupWithoutCleaningNewOwner() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "controllerRetirementUser"
+        )
+        val oldController = MapController()
+        val replacementController = MapController()
+
+        try {
+            delayedViewModel.mapController = oldController
+            runCurrent()
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+            assertEquals("510000", oldController.renderState.value.pulseTarget)
+            assertTrue(oldController.hasCameraAnimCompleteListener())
+
+            delayedViewModel.mapController = replacementController
+            delayedViewModel.navigateTo("330000")
+            runCurrent()
+
+            assertNull(oldController.renderState.value.pulseTarget)
+            assertFalse(oldController.hasCameraAnimCompleteListener())
+            assertEquals("330000", replacementController.renderState.value.pulseTarget)
+            assertTrue(replacementController.hasCameraAnimCompleteListener())
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            oldController.dispose()
+            replacementController.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun viewModelClear_drainsControllerLifecycleCleanup() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "controllerDrainUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+            assertEquals("510000", controller.renderState.value.pulseTarget)
+            assertTrue(controller.hasCameraAnimCompleteListener())
+
+            delayedViewModel.onCleared()
+            delayedViewModel.awaitControllerEffectsDrained()
+
+            assertNull(controller.renderState.value.pulseTarget)
+            assertFalse(controller.hasCameraAnimCompleteListener())
+        } finally {
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
     @Test
     fun navigateToNational_whenAlreadyNational_isTrueNoOp() {
         val versionBefore = viewModel.navigationVersion.value
@@ -851,6 +1125,116 @@ class MapViewModelTest {
         viewModel.navigateTo("510000")
 
         assertEquals(versionBefore, viewModel.navigationVersion.value)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun nationalNavigateToNational_cleansFocusWithoutVersionChange() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "nationalFocusCleanupUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.focusRegion("510000", ViewportInsets(), reducedMotion = false)
+            delayedViewModel.showRegionPanel("510000")
+            runCurrent()
+            val versionBefore = delayedViewModel.navigationVersion.value
+            assertTrue(delayedViewModel.regionFocusState.value is RegionFocusState.Animating)
+
+            delayedViewModel.navigateToNational()
+            runCurrent()
+
+            assertEquals(versionBefore, delayedViewModel.navigationVersion.value)
+            assertEquals(RegionFocusState.Idle, delayedViewModel.regionFocusState.value)
+            assertNull(delayedViewModel.selectedRegion.value)
+            assertEquals(BottomPanel.None, delayedViewModel.bottomPanel.value)
+            assertNull(controller.renderState.value.pulseTarget)
+            assertFalse(controller.hasCameraAnimCompleteListener())
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun nationalNavigateUp_cleansFocusWithoutVersionChange() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "nationalUpFocusCleanupUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.focusRegion("510000", ViewportInsets(), reducedMotion = false)
+            delayedViewModel.showRegionPanel("510000")
+            runCurrent()
+            val versionBefore = delayedViewModel.navigationVersion.value
+
+            delayedViewModel.navigateUp()
+            runCurrent()
+
+            assertEquals(versionBefore, delayedViewModel.navigationVersion.value)
+            assertEquals(RegionFocusState.Idle, delayedViewModel.regionFocusState.value)
+            assertNull(delayedViewModel.selectedRegion.value)
+            assertEquals(BottomPanel.None, delayedViewModel.bottomPanel.value)
+            assertNull(controller.renderState.value.pulseTarget)
+            assertFalse(controller.hasCameraAnimCompleteListener())
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun sameRegionNavigateTo_cleansPresentationWithoutVersionChange() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "sameRegionCleanupUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.navigateTo("510000")
+            delayedViewModel.selectRegion("510000")
+            delayedViewModel.showRegionPanel("510000")
+            runCurrent()
+            val versionBefore = delayedViewModel.navigationVersion.value
+            assertEquals("510000", controller.renderState.value.pulseTarget)
+
+            delayedViewModel.navigateTo("510000")
+            runCurrent()
+
+            assertEquals(versionBefore, delayedViewModel.navigationVersion.value)
+            assertNull(delayedViewModel.selectedRegion.value)
+            assertEquals(BottomPanel.None, delayedViewModel.bottomPanel.value)
+            assertNull(controller.renderState.value.pulseTarget)
+            assertFalse(controller.hasCameraAnimCompleteListener())
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
