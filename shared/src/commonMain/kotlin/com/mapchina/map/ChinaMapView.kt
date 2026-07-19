@@ -127,28 +127,28 @@ fun ChinaMapView(
                 controller.updateHitTestBounds(pathCache.bounds)
             }
 
-            for ((regionId, overlayPaths) in pathCache.paths) {
-                val data = renderState.overlays[regionId] ?: continue
+            for ((regionId, data) in renderState.orderedRegionOverlays()) {
+                val overlayPaths = pathCache.paths[regionId] ?: continue
+                val opacity = data.opacityMultiplier.coerceIn(0f, 1f)
                 val fillColor = if (visualStyle.isDark && !data.isVisited) {
-                    visualStyle.regionSurfaceColor.copy(alpha = 0.96f)
+                    visualStyle.regionSurfaceColor.copy(alpha = 0.96f * opacity)
                 } else {
-                    data.style.toFillColor()
+                    data.style.toFillColor().let { it.copy(alpha = it.alpha * opacity) }
                 }
                 val strokeColor = if (visualStyle.isDark && !data.isVisited) {
-                    visualStyle.labelColor.copy(alpha = 0.28f)
+                    visualStyle.labelColor.copy(alpha = 0.28f * opacity)
                 } else {
-                    data.style.toStrokeColor()
+                    data.style.toStrokeColor().let { it.copy(alpha = it.alpha * opacity) }
                 }
                 val strokeWidth = if (zoom < 6f) 0.9.dp.toPx() else 0.75.dp.toPx()
 
                 for (path in overlayPaths) {
                     drawPath(
                         path,
-                        color = visualStyle.regionSurfaceColor.copy(alpha = if (visualStyle.isDark) 0.88f else 0.94f)
+                        color = visualStyle.regionSurfaceColor.copy(
+                            alpha = (if (visualStyle.isDark) 0.88f else 0.94f) * opacity
+                        )
                     )
-                }
-
-                for (path in overlayPaths) {
                     drawPath(path, color = fillColor)
                     drawPath(path, color = strokeColor, style = Stroke(width = strokeWidth))
                 }

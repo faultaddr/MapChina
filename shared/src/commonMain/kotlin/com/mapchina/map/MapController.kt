@@ -44,6 +44,7 @@ class MapController {
 
     private val hitTestBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
     private val hitTestCoords = mutableMapOf<String, List<List<Pair<Double, Double>>>>()
+    private val projectedOverlayBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
 
     private var animJob: Job? = null
 
@@ -57,10 +58,30 @@ class MapController {
 
     // ---- Overlay operations ----
 
-    fun addOverlay(regionId: String, boundary: String, style: OverlayStyle, isVisited: Boolean = false) {
+    fun addOverlay(
+        regionId: String,
+        boundary: String,
+        style: OverlayStyle,
+        isVisited: Boolean = false,
+        role: OverlayRole = OverlayRole.ACTIVE,
+        opacityMultiplier: Float = 1f
+    ) {
         val coords = BoundaryParser.parseFlatCoords(boundary)
         hitTestCoords[regionId] = coords
-        _renderState.update { it.copy(overlays = it.overlays + (regionId to OverlayData(coords, style, isVisited))) }
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to OverlayData(
+                        coords = coords,
+                        style = style,
+                        isVisited = isVisited,
+                        role = role,
+                        opacityMultiplier = opacityMultiplier
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
     }
 
     fun updateOverlayStyle(regionId: String, style: OverlayStyle, isVisited: Boolean? = null) {
@@ -69,15 +90,62 @@ class MapController {
         _renderState.update { it.copy(overlays = it.overlays + (regionId to existing.copy(style = style, isVisited = visited))) }
     }
 
+    fun updateOverlayRole(
+        regionId: String,
+        role: OverlayRole,
+        opacityMultiplier: Float
+    ) {
+        val existing = _renderState.value.overlays[regionId] ?: return
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to existing.copy(
+                        role = role,
+                        opacityMultiplier = opacityMultiplier.coerceIn(0f, 1f)
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
+    }
+
+    fun hasOverlay(regionId: String): Boolean =
+        _renderState.value.overlays.containsKey(regionId)
+
+    fun updateOverlayPresentation(
+        regionId: String,
+        style: OverlayStyle,
+        isVisited: Boolean,
+        role: OverlayRole,
+        opacityMultiplier: Float
+    ) {
+        val existing = _renderState.value.overlays[regionId] ?: return
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to existing.copy(
+                        style = style,
+                        isVisited = isVisited,
+                        role = role,
+                        opacityMultiplier = opacityMultiplier.coerceIn(0f, 1f)
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
+    }
+
     fun removeOverlay(regionId: String) {
         hitTestCoords.remove(regionId)
         hitTestBounds.remove(regionId)
+        projectedOverlayBounds.remove(regionId)
         _renderState.update { it.copy(overlays = it.overlays - regionId) }
     }
 
     fun clearOverlays() {
         hitTestCoords.clear()
         hitTestBounds.clear()
+        projectedOverlayBounds.clear()
         _renderState.update { it.copy(overlays = emptyMap()) }
     }
 
@@ -91,7 +159,10 @@ class MapController {
     fun removeOverlaysExcept(regionIds: Set<String>) {
         hitTestCoords.keys.retainAll(regionIds)
         hitTestBounds.keys.retainAll(regionIds)
-        _renderState.update { it.copy(overlays = it.overlays.filterKeys { k -> k in regionIds }) }
+        projectedOverlayBounds.keys.retainAll(regionIds)
+        _renderState.update {
+            it.copy(overlays = it.overlays.filterKeys { key -> key in regionIds })
+        }
     }
 
     private var pulseJob: Job? = null
@@ -376,9 +447,20 @@ class MapController {
 
     internal fun handleLongPress(offset: Offset) {}
 
-    internal fun updateHitTestBounds(bounds: Map<String, androidx.compose.ui.geometry.Rect>) {
+    private fun rebuildInteractiveBounds() {
+        val activeIds = _renderState.value.overlays
+            .filterValues { it.role == OverlayRole.ACTIVE }
+            .keys
         hitTestBounds.clear()
-        hitTestBounds.putAll(bounds)
+        hitTestBounds.putAll(projectedOverlayBounds.filterKeys { it in activeIds })
+    }
+
+    internal fun updateHitTestBounds(
+        bounds: Map<String, androidx.compose.ui.geometry.Rect>
+    ) {
+        projectedOverlayBounds.clear()
+        projectedOverlayBounds.putAll(bounds)
+        rebuildInteractiveBounds()
     }
 
     internal fun notifyMapReady() {
