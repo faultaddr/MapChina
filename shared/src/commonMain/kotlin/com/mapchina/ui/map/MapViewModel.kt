@@ -593,8 +593,9 @@ class MapViewModel(
     private var attractionVisitsCache: Map<String, FootprintLevel>? = null
 
     init {
+        val initialContext = captureNavigationContext()
         vmScope.launch {
-            loadTopLevelRegions()
+            loadTopLevelRegions(initialContext)
             rebuildChildrenIndex()
             childrenIndexReady = true
             refreshCoverage()
@@ -603,16 +604,13 @@ class MapViewModel(
 
     fun reloadData() {
         invalidateLayerLoad()
+        val expectedContext = captureNavigationContext()
         cancelRegionFocus()
         invalidateCaches()
         refreshFirstFootprintActivation()
         _programmaticCamera = true
         vmScope.launch {
-            if (_currentPath.value.isEmpty()) {
-                loadTopLevelRegions()
-            } else {
-                refreshRegions()
-            }
+            refreshRegions(expectedContext)
             if (!childrenIndexReady) {
                 rebuildChildrenIndex()
                 childrenIndexReady = true
@@ -957,7 +955,7 @@ class MapViewModel(
             cleanupNoOpNavigationPresentation()
             return
         }
-        navigationState.update { state ->
+        val updated = navigationState.updateAndGet { state ->
             state.withInvalidatedNavigation().copy(
                 currentLevel = MapZoomLevel.NATIONAL,
                 currentPath = emptyList(),
@@ -965,6 +963,7 @@ class MapViewModel(
                 attractionsRegionId = null
             )
         }
+        val targetContext = updated.toNavigationContextSnapshot()
         cleanupChangedNavigationPresentation()
         enqueueControllerEffect(ControllerEffectScope.NAVIGATION_SCOPED) { controller, _ ->
             val target = controller.viewport.computeChinaFitTarget()
@@ -976,7 +975,7 @@ class MapViewModel(
             controller.clearMarkers()
         }
         vmScope.launch {
-            loadTopLevelRegions()
+            loadTopLevelRegions(targetContext)
         }
     }
 
@@ -1018,6 +1017,7 @@ class MapViewModel(
                     delay(LOCATION_WARMUP_DELAY_MS)
                     provider.getCurrentLocation()
                 }
+            if (!isCurrentCameraIntent(locationIntent)) return@launch
             if (location == null) {
                 showAutoMarkMessage("暂时无法获取当前位置")
                 return@launch
@@ -1100,13 +1100,14 @@ class MapViewModel(
                 else -> invalidated
             }
         }
+        val targetContext = updated.toNavigationContextSnapshot()
         cleanupChangedNavigationPresentation()
         val parent = updated.currentPath.lastOrNull()
         if (parent != null) {
             moveCameraToRegion(parent)
 
             vmScope.launch {
-                loadChildRegions(parent.id)
+                loadChildRegions(parent.id, targetContext)
                 loadAttractionsForRegion(parent.id, updated.navigationVersion)
             }
         } else if (pathBeforeNavigation.isNotEmpty()) {
@@ -1121,7 +1122,7 @@ class MapViewModel(
             }
 
             vmScope.launch {
-                loadTopLevelRegions()
+                loadTopLevelRegions(targetContext)
             }
         }
     }
@@ -1152,6 +1153,7 @@ class MapViewModel(
             )
         }
 
+        val targetContext = updated.toNavigationContextSnapshot()
         cleanupChangedNavigationPresentation()
         val presentationOwner = nextPresentationOwner()
         enqueuePresentationInstall(presentationOwner) { controller, state ->
@@ -1169,7 +1171,7 @@ class MapViewModel(
                     completionSnapshot
                 ) { _, _ ->
                     vmScope.launch {
-                        loadChildRegions(regionId)
+                        loadChildRegions(regionId, targetContext)
                         loadAttractionsForRegion(regionId, updated.navigationVersion)
                     }
                 }
@@ -1397,7 +1399,7 @@ class MapViewModel(
             }
             lastAutoMarkedRegionIds.clear()
             invalidateCaches()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
         }
     }
 
@@ -1406,7 +1408,7 @@ class MapViewModel(
             val result = footprintSuggestionService?.confirm(userId, suggestionId, level) ?: return@launch
             result.footprint?.let { completeFirstFootprintIfNeeded(it.regionId, level) }
             invalidateCaches()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
                 _achievementUnlock.value = result.achievementResult
             }
@@ -1594,7 +1596,7 @@ class MapViewModel(
             if (isFirstFootprint) firstFootprintPersistenceInFlight.value = false
             refreshFirstFootprintActivation()
             invalidateCaches()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
             if (succeeded) updateOverlayColor(regionId, level)
             if (result?.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
                 _achievementUnlock.value = result.achievementResult
@@ -1607,7 +1609,7 @@ class MapViewModel(
             footprintService.removeFootprint(userId, regionId)
             invalidateCaches()
             refreshFirstFootprintActivation()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
         }
     }
 
@@ -1617,7 +1619,7 @@ class MapViewModel(
             if (result.isSuccess) completeFirstFootprintIfNeeded(regionId, level)
             invalidateCaches()
             refreshAttractions()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
             if (result.achievementResult != null && result.achievementResult.newlyUnlocked.isNotEmpty()) {
                 _achievementUnlock.value = result.achievementResult
             }
@@ -1630,7 +1632,7 @@ class MapViewModel(
             invalidateCaches()
             refreshFirstFootprintActivation()
             refreshAttractions()
-            refreshRegions()
+            refreshRegions(captureNavigationContext())
         }
     }
 
@@ -1728,14 +1730,15 @@ class MapViewModel(
         }
     }
 
-    private fun captureNavigationContext(): NavigationContextSnapshot {
-        val state = navigationState.value
-        return NavigationContextSnapshot(
-            navigationVersion = state.navigationVersion,
-            sourcePath = state.currentPath.map { it.id },
-            sourceLevel = state.currentLevel
+    private fun NavigationState.toNavigationContextSnapshot(): NavigationContextSnapshot =
+        NavigationContextSnapshot(
+            navigationVersion = navigationVersion,
+            sourcePath = currentPath.map { it.id },
+            sourceLevel = currentLevel
         )
-    }
+
+    private fun captureNavigationContext(): NavigationContextSnapshot =
+        navigationState.value.toNavigationContextSnapshot()
 
     private fun NavigationState.matches(
         expected: NavigationContextSnapshot
@@ -1744,8 +1747,16 @@ class MapViewModel(
             currentPath.map { it.id } == expected.sourcePath &&
             currentLevel == expected.sourceLevel
 
-    private suspend fun loadTopLevelRegions() {
-        val expected = captureNavigationContext()
+    private fun NavigationContextSnapshot.isNationalTarget(): Boolean =
+        sourcePath.isEmpty() && sourceLevel == MapZoomLevel.NATIONAL
+
+    private fun NavigationContextSnapshot.bindsChildLayer(parentId: String): Boolean =
+        sourcePath.lastOrNull() == parentId &&
+            sourceLevel != MapZoomLevel.NATIONAL
+
+    private suspend fun loadTopLevelRegions(
+        expected: NavigationContextSnapshot
+    ) {
         val provinces = regionRepository.getRegionsByLevel(RegionLevel.PROVINCE)
         if (provinces.isEmpty()) return
         val footprints = getFootprintCache()
@@ -1769,7 +1780,7 @@ class MapViewModel(
         }
         afterOrdinaryLayerPrepared?.invoke("national")
         val updated = navigationState.updateAndGet { state ->
-            if (!state.matches(expected)) state
+            if (!expected.isNationalTarget() || !state.matches(expected)) state
             else state.copy(currentRegions = regions)
         }
         if (updated.currentRegions !== regions) return
@@ -1780,8 +1791,10 @@ class MapViewModel(
         syncOverlaysToMap(boundaries)
     }
 
-    private suspend fun loadChildRegions(parentId: String) {
-        val expected = captureNavigationContext()
+    private suspend fun loadChildRegions(
+        parentId: String,
+        expected: NavigationContextSnapshot
+    ) {
         var children = regionRepository.getChildRegions(parentId)
 
         if (children.isEmpty() && boundaryLoader != null) {
@@ -1815,7 +1828,7 @@ class MapViewModel(
         }
         afterOrdinaryLayerPrepared?.invoke(parentId)
         val updated = navigationState.updateAndGet { state ->
-            if (!state.matches(expected)) state
+            if (!expected.bindsChildLayer(parentId) || !state.matches(expected)) state
             else state.copy(currentRegions = regions)
         }
         if (updated.currentRegions !== regions) return
@@ -1847,14 +1860,12 @@ class MapViewModel(
         syncOverlaysToMap(boundaries)
     }
 
-    private fun refreshRegions() {
-        val parentId = _currentPath.value.lastOrNull()?.id
-        vmScope.launch {
-            if (parentId != null) {
-                loadChildRegions(parentId)
-            } else {
-                loadTopLevelRegions()
-            }
+    private suspend fun refreshRegions(expected: NavigationContextSnapshot) {
+        val parentId = expected.sourcePath.lastOrNull()
+        if (parentId != null) {
+            loadChildRegions(parentId, expected)
+        } else {
+            loadTopLevelRegions(expected)
         }
     }
 
@@ -1917,11 +1928,12 @@ class MapViewModel(
                 else -> invalidated
             }
         }
+        val targetContext = updated.toNavigationContextSnapshot()
         cleanupChangedNavigationPresentation()
         val parent = updated.currentPath.lastOrNull()
         if (parent != null) {
             vmScope.launch {
-                loadChildRegions(parent.id)
+                loadChildRegions(parent.id, targetContext)
                 loadAttractionsForRegion(parent.id, updated.navigationVersion)
             }
         } else if (pathBeforeNavigation.isNotEmpty()) {
@@ -1935,7 +1947,7 @@ class MapViewModel(
                 controller.clearMarkers()
             }
             vmScope.launch {
-                loadTopLevelRegions()
+                loadTopLevelRegions(targetContext)
             }
         }
     }

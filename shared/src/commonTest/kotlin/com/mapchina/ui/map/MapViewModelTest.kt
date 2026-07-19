@@ -735,6 +735,94 @@ class MapViewModelTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun queuedNationalLoad_cannotCaptureNewerProvincialContextOnWorkerStart() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "queuedNationalSnapshotUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertEquals(
+                listOf("510104"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+
+            delayedViewModel.navigateToNational()
+            delayedViewModel.navigateTo("510000")
+            assertEquals(MapZoomLevel.PROVINCIAL, delayedViewModel.currentLevel.value)
+            assertEquals(
+                listOf("510000"),
+                delayedViewModel.currentPath.value.map { it.id }
+            )
+
+            runCurrent()
+
+            assertEquals(
+                listOf("510104"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertFalse(
+                controller.renderState.value.overlays["510000"]?.role ==
+                    OverlayRole.ACTIVE
+            )
+        } finally {
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun queuedChildLoad_cannotCaptureNewerCityContextOnWorkerStart() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "queuedChildSnapshotUser"
+        )
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertEquals(
+                listOf("510104"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+
+            delayedViewModel.navigateUp()
+            delayedViewModel.navigateTo("510100")
+            assertEquals(MapZoomLevel.CITY, delayedViewModel.currentLevel.value)
+            assertEquals(
+                listOf("510000", "510100"),
+                delayedViewModel.currentPath.value.map { it.id }
+            )
+
+            runCurrent()
+
+            assertEquals(
+                listOf("510104"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun closedPhotoIntent_rejectsLateClustersAndMarkers() = runTest {
         val delayedViewModel = createDelayedViewModel(
             StandardTestDispatcher(testScheduler),
@@ -1586,6 +1674,37 @@ class MapViewModelTest {
 
         assertEquals("110101", gpsViewModel.selectedRegion.value?.regionId)
         assertEquals(BottomPanel.Region("110101"), gpsViewModel.bottomPanel.value)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun staleCurrentLocationNullRetry_doesNotShowUnavailableMessage() = runTest {
+        seedProvinceCityAndDistrict()
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            regionMatcher = RegionMatcher(regionRepo),
+            userId = "staleNullLocationUser",
+            dispatcher = StandardTestDispatcher(testScheduler),
+            currentLocationProvider = SequencedCurrentLocationProvider(
+                listOf(null, null)
+            )
+        )
+
+        try {
+            gpsViewModel.activateCurrentLocation()
+            runCurrent()
+
+            gpsViewModel.navigateTo("510000")
+            advanceTimeBy(900L)
+            runCurrent()
+
+            assertNull(gpsViewModel.autoMarkMessage.value)
+        } finally {
+            gpsViewModel.onCleared()
+        }
     }
 
     @Test
