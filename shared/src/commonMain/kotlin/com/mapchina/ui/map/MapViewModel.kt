@@ -27,14 +27,50 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val LOCATION_WARMUP_DELAY_MS = 900L
+
+@OptIn(kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi::class)
+private class ProjectedStateFlow<S, T>(
+    private val source: StateFlow<S>,
+    private val transform: (S) -> T
+) : StateFlow<T> {
+    override val value: T
+        get() = transform(source.value)
+
+    override val replayCache: List<T>
+        get() = listOf(value)
+
+    override suspend fun collect(collector: FlowCollector<T>): Nothing =
+        source.collect(
+            object : FlowCollector<S> {
+                private var emitted = false
+                private var previous: T? = null
+
+                override suspend fun emit(value: S) {
+                    val projected = transform(value)
+                    if (!emitted || previous != projected) {
+                        emitted = true
+                        previous = projected
+                        collector.emit(projected)
+                    }
+                }
+            }
+        )
+}
+
+private fun <S, T> StateFlow<S>.project(
+    transform: (S) -> T
+): StateFlow<T> = ProjectedStateFlow(this, transform)
 
 data class AttractionUi(
     val id: String,
@@ -139,21 +175,9 @@ class MapViewModel(
         com.mapchina.ui.ShareModeState.value = false
     }
 
-    private val _currentLevel = MutableStateFlow(MapZoomLevel.NATIONAL)
-    val currentLevel: StateFlow<MapZoomLevel> = _currentLevel.asStateFlow()
-
-    private val _currentPath = MutableStateFlow<List<Region>>(emptyList())
-    val currentPath: StateFlow<List<Region>> = _currentPath.asStateFlow()
-
-    private val _mapLayerLoadState =
-        MutableStateFlow<MapLayerLoadState>(MapLayerLoadState.Idle)
-    val mapLayerLoadState: StateFlow<MapLayerLoadState> =
-        _mapLayerLoadState.asStateFlow()
-
     private data class PreparedChildLayer(
         val parent: Region,
-        val children: List<Region>,
-        val boundaries: Map<String, String>
+        val children: List<Region>
     )
 
     private data class LayerLoadRequest(
@@ -163,11 +187,32 @@ class MapViewModel(
         val sourceLevel: MapZoomLevel
     )
 
-    private var layerLoadGeneration = 0L
-    private val activeLayerLoadRequest =
-        MutableStateFlow<LayerLoadRequest?>(null)
-    private val failedLayerLoadRequest =
-        MutableStateFlow<LayerLoadRequest?>(null)
+    private data class NavigationState(
+        val currentLevel: MapZoomLevel = MapZoomLevel.NATIONAL,
+        val currentPath: List<Region> = emptyList(),
+        val currentRegions: List<RegionFootprintUi> = emptyList(),
+        val selectedRegion: RegionFootprintUi? = null,
+        val selectedRegionAttractions: List<AttractionUi> = emptyList(),
+        val bottomPanel: BottomPanel = BottomPanel.None,
+        val mapLayerLoadState: MapLayerLoadState = MapLayerLoadState.Idle,
+        val layerLoadGeneration: Long = 0L,
+        val activeLayerLoadRequest: LayerLoadRequest? = null,
+        val failedLayerLoadRequest: LayerLoadRequest? = null,
+        val committedLayerGeneration: Long? = null
+    )
+
+    private val navigationState = MutableStateFlow(NavigationState())
+
+    private val _currentLevel = navigationState.project { it.currentLevel }
+    val currentLevel: StateFlow<MapZoomLevel> = _currentLevel
+
+    private val _currentPath = navigationState.project { it.currentPath }
+    val currentPath: StateFlow<List<Region>> = _currentPath
+
+    private val _mapLayerLoadState = navigationState.project { it.mapLayerLoadState }
+    val mapLayerLoadState: StateFlow<MapLayerLoadState> = _mapLayerLoadState
+
+    internal var afterLayerLoadValidation: (suspend () -> Unit)? = null
 
     private val _achievementUnlock = MutableStateFlow<AchievementUnlockResult?>(null)
     val achievementUnlock: StateFlow<AchievementUnlockResult?> = _achievementUnlock.asStateFlow()
@@ -175,17 +220,19 @@ class MapViewModel(
     private val _drillDownHint = MutableStateFlow<String?>(null)
     val drillDownHint: StateFlow<String?> = _drillDownHint.asStateFlow()
 
-    private val _regions = MutableStateFlow<List<RegionFootprintUi>>(emptyList())
-    val regions: StateFlow<List<RegionFootprintUi>> = _regions.asStateFlow()
+    private val _regions = navigationState.project { it.currentRegions }
+    val regions: StateFlow<List<RegionFootprintUi>> = _regions
 
-    private val _selectedRegion = MutableStateFlow<RegionFootprintUi?>(null)
-    val selectedRegion: StateFlow<RegionFootprintUi?> = _selectedRegion.asStateFlow()
+    private val _selectedRegion = navigationState.project { it.selectedRegion }
+    val selectedRegion: StateFlow<RegionFootprintUi?> = _selectedRegion
 
     private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
     val attractions: StateFlow<List<AttractionUi>> = _attractions.asStateFlow()
 
-    private val _selectedRegionAttractions = MutableStateFlow<List<AttractionUi>>(emptyList())
-    val selectedRegionAttractions: StateFlow<List<AttractionUi>> = _selectedRegionAttractions.asStateFlow()
+    private val _selectedRegionAttractions =
+        navigationState.project { it.selectedRegionAttractions }
+    val selectedRegionAttractions: StateFlow<List<AttractionUi>> =
+        _selectedRegionAttractions
 
     private val _photoClusters = MutableStateFlow<List<PhotoCluster>>(emptyList())
     val photoClusters: StateFlow<List<PhotoCluster>> = _photoClusters.asStateFlow()
@@ -199,8 +246,8 @@ class MapViewModel(
     val footprintSuggestions: StateFlow<List<com.mapchina.domain.model.FootprintSuggestion>> =
         footprintSuggestionService?.suggestions ?: MutableStateFlow(emptyList())
 
-    private val _bottomPanel = MutableStateFlow<BottomPanel>(BottomPanel.None)
-    val bottomPanel: StateFlow<BottomPanel> = _bottomPanel.asStateFlow()
+    private val _bottomPanel = navigationState.project { it.bottomPanel }
+    val bottomPanel: StateFlow<BottomPanel> = _bottomPanel
 
     private val _previewAttraction = MutableStateFlow<AttractionUi?>(null)
     val previewAttraction: StateFlow<AttractionUi?> = _previewAttraction.asStateFlow()
@@ -275,7 +322,7 @@ class MapViewModel(
                 lastSyncedRegionIds = emptySet()
                 applyMapTheme(value)
                 if (_regions.value.isNotEmpty()) {
-                    syncOverlaysToMap(lastBoundaries)
+                    syncOverlaysForNavigationState(navigationState.value)
                 }
                 value.setOnCameraZoomChangeListener { zoom ->
                     savedCameraZoom = zoom
@@ -352,62 +399,99 @@ class MapViewModel(
     }
 
     fun drillIntoRegion(regionId: String) {
-        if (_currentPath.value.any { it.id == regionId }) return
         val region = regionRepository.getRegion(regionId) ?: return
         val label = when (region.level) {
             RegionLevel.PROVINCE -> "正在展开市级地图"
             RegionLevel.CITY -> "正在展开区级地图"
             RegionLevel.DISTRICT -> return
         }
-        val request = beginLayerLoad(regionId)
-        _mapLayerLoadState.value = MapLayerLoadState.Loading(regionId, label)
+        val request = beginLayerLoad(regionId, label) ?: return
+        launchLayerLoad(request, region)
+    }
+
+    private fun launchLayerLoad(request: LayerLoadRequest, region: Region) {
         vmScope.launch {
             val prepared = runCatching { prepareChildLayer(region) }.getOrNull()
-            if (!isCurrentLayerLoad(request)) return@launch
+            val preparedRegions = prepared?.let { buildRegionUi(it.children) }
+            afterLayerLoadValidation?.invoke()
             if (prepared == null) {
-                val targetLabel =
-                    if (region.level == RegionLevel.PROVINCE) "市级" else "区级"
-                activeLayerLoadRequest.value = null
-                failedLayerLoadRequest.value = request
-                _mapLayerLoadState.value = MapLayerLoadState.Error(
-                    regionId = regionId,
-                    message = "${targetLabel}地图暂时无法展开"
-                )
+                reduceLayerLoadError(request, region)
                 return@launch
             }
-            commitChildLayer(prepared)
-            activeLayerLoadRequest.value = null
-            failedLayerLoadRequest.value = null
-            _mapLayerLoadState.value = MapLayerLoadState.Idle
+            commitChildLayer(request, prepared, preparedRegions.orEmpty())
         }
     }
 
-    private fun beginLayerLoad(regionId: String): LayerLoadRequest {
-        layerLoadGeneration += 1L
-        return LayerLoadRequest(
-            generation = layerLoadGeneration,
-            regionId = regionId,
-            sourcePath = _currentPath.value.map { it.id },
-            sourceLevel = _currentLevel.value
-        ).also { request ->
-            activeLayerLoadRequest.value = request
-            failedLayerLoadRequest.value = null
+    private fun beginLayerLoad(
+        regionId: String,
+        label: String,
+        retryRequest: LayerLoadRequest? = null
+    ): LayerLoadRequest? {
+        val updated = navigationState.updateAndGet { state ->
+            if (retryRequest != null && !canRetryLayerLoad(state, retryRequest)) {
+                return@updateAndGet state.withInvalidatedLayerLoad()
+            }
+            if (state.currentPath.any { it.id == regionId }) {
+                return@updateAndGet state
+            }
+            val generation = state.layerLoadGeneration + 1L
+            val request = LayerLoadRequest(
+                generation = generation,
+                regionId = regionId,
+                sourcePath = state.currentPath.map { it.id },
+                sourceLevel = state.currentLevel
+            )
+            state.copy(
+                mapLayerLoadState = MapLayerLoadState.Loading(regionId, label),
+                layerLoadGeneration = generation,
+                activeLayerLoadRequest = request,
+                failedLayerLoadRequest = null,
+                committedLayerGeneration = null
+            )
+        }
+        if (updated.currentPath.any { it.id == regionId }) return null
+        return updated.activeLayerLoadRequest?.takeIf { request ->
+            request.regionId == regionId &&
+                request.generation == updated.layerLoadGeneration
         }
     }
 
-    private fun isCurrentLayerLoad(request: LayerLoadRequest): Boolean =
-        activeLayerLoadRequest.value == request &&
-            sourceContextMatches(request)
+    private fun isCurrentLayerLoad(
+        state: NavigationState,
+        request: LayerLoadRequest
+    ): Boolean =
+        state.activeLayerLoadRequest == request &&
+            sourceContextMatches(state, request)
 
-    private fun sourceContextMatches(request: LayerLoadRequest): Boolean =
-        _currentLevel.value == request.sourceLevel &&
-            _currentPath.value.map { it.id } == request.sourcePath
+    private fun sourceContextMatches(
+        state: NavigationState,
+        request: LayerLoadRequest
+    ): Boolean =
+        state.currentLevel == request.sourceLevel &&
+            state.currentPath.map { it.id } == request.sourcePath
+
+    private fun canRetryLayerLoad(
+        state: NavigationState,
+        request: LayerLoadRequest
+    ): Boolean {
+        val error = state.mapLayerLoadState as? MapLayerLoadState.Error
+            ?: return false
+        return state.failedLayerLoadRequest == request &&
+            error.regionId == request.regionId &&
+            sourceContextMatches(state, request)
+    }
+
+    private fun NavigationState.withInvalidatedLayerLoad(): NavigationState =
+        copy(
+            mapLayerLoadState = MapLayerLoadState.Idle,
+            layerLoadGeneration = layerLoadGeneration + 1L,
+            activeLayerLoadRequest = null,
+            failedLayerLoadRequest = null,
+            committedLayerGeneration = null
+        )
 
     private fun invalidateLayerLoad() {
-        layerLoadGeneration += 1L
-        activeLayerLoadRequest.value = null
-        failedLayerLoadRequest.value = null
-        _mapLayerLoadState.value = MapLayerLoadState.Idle
+        navigationState.update { it.withInvalidatedLayerLoad() }
     }
 
     private fun prepareChildLayer(parent: Region): PreparedChildLayer? {
@@ -433,7 +517,7 @@ class MapViewModel(
             }
         }
         if (!isChildLayerReady(children, boundaries)) return null
-        return PreparedChildLayer(parent, children, boundaries)
+        return PreparedChildLayer(parent, children)
     }
 
     private fun isChildLayerReady(
@@ -443,33 +527,48 @@ class MapViewModel(
         children.isNotEmpty() &&
             children.all { child -> !boundaries[child.id].isNullOrBlank() }
 
-    private fun commitChildLayer(prepared: PreparedChildLayer) {
-        _currentPath.value = _currentPath.value + prepared.parent
-        _currentLevel.value = when (prepared.parent.level) {
-            RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
-            RegionLevel.CITY -> MapZoomLevel.CITY
-            RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+    private fun commitChildLayer(
+        request: LayerLoadRequest,
+        prepared: PreparedChildLayer,
+        preparedRegions: List<RegionFootprintUi>
+    ) {
+        val committed = navigationState.updateAndGet { state ->
+            if (!isCurrentLayerLoad(state, request)) return@updateAndGet state
+            state.copy(
+                currentPath = state.currentPath + prepared.parent,
+                currentLevel = when (prepared.parent.level) {
+                    RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
+                    RegionLevel.CITY -> MapZoomLevel.CITY
+                    RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+                },
+                currentRegions = preparedRegions,
+                selectedRegion = null,
+                selectedRegionAttractions = emptyList(),
+                bottomPanel = BottomPanel.None,
+                mapLayerLoadState = MapLayerLoadState.Idle,
+                activeLayerLoadRequest = null,
+                failedLayerLoadRequest = null,
+                committedLayerGeneration = request.generation
+            )
         }
-        applyPreparedRegions(prepared.children, prepared.boundaries)
-        _selectedRegion.value = null
-        _selectedRegionAttractions.value = emptyList()
-        _bottomPanel.value = BottomPanel.None
+        if (committed.committedLayerGeneration != request.generation) return
+
         cancelRegionFocus()
-        vmScope.launch { loadAttractionsForRegion(prepared.parent.id) }
+        val latest = navigationState.value
+        syncOverlaysForNavigationState(latest)
+        if (latest.committedLayerGeneration == request.generation) {
+            vmScope.launch { loadAttractionsForRegion(prepared.parent.id) }
+        }
     }
 
-    private fun applyPreparedRegions(
-        children: List<Region>,
-        boundaries: Map<String, String>
-    ) {
+    private fun buildRegionUi(children: List<Region>): List<RegionFootprintUi> {
         val footprints = getFootprintCache()
         val coverage = if (childrenIndexReady) {
             computeCoverageBatch(children.map { it.id }, footprints)
         } else {
             emptyMap()
         }
-        lastBoundaries = boundaries
-        _regions.value = children.map { region ->
+        return children.map { region ->
             RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
@@ -479,27 +578,58 @@ class MapViewModel(
                 childCoverageRate = coverage[region.id] ?: 0f
             )
         }
-        syncOverlaysToMap(boundaries)
     }
 
-    fun retryLayerLoad() {
-        val error = mapLayerLoadState.value as? MapLayerLoadState.Error
-            ?: return
-        val failedRequest = failedLayerLoadRequest.value
-        if (
-            failedRequest == null ||
-            failedRequest.regionId != error.regionId ||
-            !sourceContextMatches(failedRequest)
-        ) {
-            invalidateLayerLoad()
-            return
+    private fun reduceLayerLoadError(
+        request: LayerLoadRequest,
+        region: Region
+    ) {
+        val targetLabel =
+            if (region.level == RegionLevel.PROVINCE) "市级" else "区级"
+        navigationState.update { state ->
+            if (!isCurrentLayerLoad(state, request)) return@update state
+            state.copy(
+                mapLayerLoadState = MapLayerLoadState.Error(
+                    regionId = request.regionId,
+                    message = "${targetLabel}地图暂时无法展开"
+                ),
+                activeLayerLoadRequest = null,
+                failedLayerLoadRequest = request,
+                committedLayerGeneration = null
+            )
         }
-        drillIntoRegion(error.regionId)
+    }
+
+    private fun levelAfterDrill(parent: Region): MapZoomLevel =
+        when (parent.level) {
+            RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
+            RegionLevel.CITY -> MapZoomLevel.CITY
+            RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+        }
+
+    fun retryLayerLoad() {
+        val failedRequest = navigationState.value.failedLayerLoadRequest ?: return
+        val region = regionRepository.getRegion(failedRequest.regionId) ?: return
+        val label = when (region.level) {
+            RegionLevel.PROVINCE -> "正在展开市级地图"
+            RegionLevel.CITY -> "正在展开区级地图"
+            RegionLevel.DISTRICT -> return
+        }
+        val request = beginLayerLoad(
+            regionId = failedRequest.regionId,
+            label = label,
+            retryRequest = failedRequest
+        ) ?: return
+        launchLayerLoad(request, region)
     }
 
     fun dismissLayerLoadError() {
-        failedLayerLoadRequest.value = null
-        _mapLayerLoadState.value = MapLayerLoadState.Idle
+        navigationState.update { state ->
+            state.copy(
+                failedLayerLoadRequest = null,
+                mapLayerLoadState = MapLayerLoadState.Idle
+            )
+        }
     }
 
     private fun setProgrammaticCamera() {
@@ -512,10 +642,13 @@ class MapViewModel(
     }
 
     fun navigateToNational() {
-        invalidateLayerLoad()
+        navigationState.update { state ->
+            state.withInvalidatedLayerLoad().copy(
+                currentLevel = MapZoomLevel.NATIONAL,
+                currentPath = emptyList()
+            )
+        }
         cancelRegionFocus()
-        _currentLevel.value = MapZoomLevel.NATIONAL
-        _currentPath.value = emptyList()
         val controller = _mapController
         if (controller != null) {
             val target = controller.viewport.computeChinaFitTarget()
@@ -594,26 +727,34 @@ class MapViewModel(
     }
 
     fun navigateUp() {
-        invalidateLayerLoad()
-        cancelRegionFocus()
-        val path = _currentPath.value
-        if (path.size > 1) {
-            _currentPath.value = path.dropLast(1)
-            val parent = _currentPath.value.last()
-            _currentLevel.value = when (parent.level) {
-                RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
-                RegionLevel.CITY -> MapZoomLevel.CITY
-                RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+        val pathBeforeNavigation = navigationState.value.currentPath
+        val updated = navigationState.updateAndGet { state ->
+            val invalidated = state.withInvalidatedLayerLoad()
+            when {
+                state.currentPath.size > 1 -> {
+                    val path = state.currentPath.dropLast(1)
+                    invalidated.copy(
+                        currentPath = path,
+                        currentLevel = levelAfterDrill(path.last())
+                    )
+                }
+                state.currentPath.size == 1 -> invalidated.copy(
+                    currentLevel = MapZoomLevel.NATIONAL,
+                    currentPath = emptyList()
+                )
+                else -> invalidated
             }
+        }
+        cancelRegionFocus()
+        val parent = updated.currentPath.lastOrNull()
+        if (parent != null) {
             moveCameraToRegion(parent)
 
             vmScope.launch {
                 loadChildRegions(parent.id)
                 loadAttractionsForRegion(parent.id)
             }
-        } else if (path.size == 1) {
-            _currentLevel.value = MapZoomLevel.NATIONAL
-            _currentPath.value = emptyList()
+        } else if (pathBeforeNavigation.isNotEmpty()) {
             val controller = _mapController
             if (controller != null) {
                 val target = controller.viewport.computeChinaFitTarget()
@@ -634,15 +775,14 @@ class MapViewModel(
 
     fun navigateTo(regionId: String) {
         val region = regionRepository.getRegion(regionId) ?: return
-        invalidateLayerLoad()
         val path = buildPathTo(regionId)
-        _currentPath.value = path
-        _currentLevel.value = when (region.level) {
-            RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
-            RegionLevel.CITY -> MapZoomLevel.CITY
-            RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+        navigationState.update { state ->
+            state.withInvalidatedLayerLoad().copy(
+                currentPath = path,
+                currentLevel = levelAfterDrill(region),
+                selectedRegion = null
+            )
         }
-        _selectedRegion.value = null
 
         val controller = _mapController
         if (controller != null) {
@@ -662,12 +802,12 @@ class MapViewModel(
 
     fun selectRegion(regionId: String) {
         val fromList = _regions.value.find { it.regionId == regionId }
-        if (fromList != null) {
-            _selectedRegion.value = fromList
+        val selected = if (fromList != null) {
+            fromList
         } else {
             val region = regionRepository.getRegion(regionId) ?: return
             val footprints = getFootprintCache()
-            _selectedRegion.value = RegionFootprintUi(
+            RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
                 footprintLevel = footprints[region.id],
@@ -675,6 +815,7 @@ class MapViewModel(
                 bounds = RegionBounds(0f, 0f, 0f, 0f)
             )
         }
+        navigationState.update { it.copy(selectedRegion = selected) }
         vmScope.launch { loadAttractionsForSelectedRegion(regionId) }
     }
 
@@ -738,8 +879,12 @@ class MapViewModel(
 
     fun clearSelection() {
         cancelRegionFocus()
-        _selectedRegion.value = null
-        _selectedRegionAttractions.value = emptyList()
+        navigationState.update {
+            it.copy(
+                selectedRegion = null,
+                selectedRegionAttractions = emptyList()
+            )
+        }
     }
 
     fun dismissAchievementUnlock() {
@@ -809,16 +954,18 @@ class MapViewModel(
                 imageUrl = attraction.imageUrl
             )
         }
-        _bottomPanel.value = BottomPanel.AttractionPreview(attractionId)
+        navigationState.update {
+            it.copy(bottomPanel = BottomPanel.AttractionPreview(attractionId))
+        }
     }
 
     fun showRegionPanel(regionId: String) {
-        _bottomPanel.value = BottomPanel.Region(regionId)
+        navigationState.update { it.copy(bottomPanel = BottomPanel.Region(regionId)) }
         _previewAttraction.value = null
     }
 
     fun clearBottomPanel() {
-        _bottomPanel.value = BottomPanel.None
+        navigationState.update { it.copy(bottomPanel = BottomPanel.None) }
         _previewAttraction.value = null
     }
 
@@ -959,15 +1106,26 @@ class MapViewModel(
 
     fun markFootprint(regionId: String, level: FootprintLevel) {
         val isFirstFootprint = _firstFootprintActivation.value
-        val previousRegions = _regions.value
-        val previousSelectedRegion = _selectedRegion.value
+        val previousNavigationState = navigationState.value
         if (isFirstFootprint) {
             firstFootprintPersistenceInFlight.value = true
-            _regions.value = _regions.value.map { region ->
-                if (region.regionId == regionId) region.copy(footprintLevel = level) else region
-            }
-            _selectedRegion.value = _selectedRegion.value?.let { region ->
-                if (region.regionId == regionId) region.copy(footprintLevel = level) else region
+            navigationState.update { state ->
+                state.copy(
+                    currentRegions = state.currentRegions.map { region ->
+                        if (region.regionId == regionId) {
+                            region.copy(footprintLevel = level)
+                        } else {
+                            region
+                        }
+                    },
+                    selectedRegion = state.selectedRegion?.let { region ->
+                        if (region.regionId == regionId) {
+                            region.copy(footprintLevel = level)
+                        } else {
+                            region
+                        }
+                    }
+                )
             }
             completeFirstFootprintIfNeeded(regionId, level)
             updateOverlayColor(regionId, level)
@@ -984,8 +1142,12 @@ class MapViewModel(
                 if (!isFirstFootprint) completeFirstFootprintIfNeeded(regionId, level)
             } else if (isFirstFootprint) {
                 _firstFootprintCelebration.value = null
-                _regions.value = previousRegions
-                _selectedRegion.value = previousSelectedRegion
+                navigationState.update { state ->
+                    state.copy(
+                        currentRegions = previousNavigationState.currentRegions,
+                        selectedRegion = previousNavigationState.selectedRegion
+                    )
+                }
                 showAutoMarkMessage("标记失败，请重试")
             }
             if (isFirstFootprint) firstFootprintPersistenceInFlight.value = false
@@ -1065,7 +1227,7 @@ class MapViewModel(
     private suspend fun loadAttractionsForSelectedRegion(regionId: String) {
         val list = attractionService.getAttractionsByParentRegion(regionId)
         val visits = getAttractionVisitsCache()
-        _selectedRegionAttractions.value = list.map { attraction ->
+        val attractions = list.map { attraction ->
             AttractionUi(
                 id = attraction.id,
                 name = attraction.name,
@@ -1075,6 +1237,9 @@ class MapViewModel(
                 visitLevel = visits[attraction.id],
                 imageUrl = attraction.imageUrl
             )
+        }
+        navigationState.update {
+            it.copy(selectedRegionAttractions = attractions)
         }
     }
 
@@ -1089,7 +1254,7 @@ class MapViewModel(
         provinceCenterCache = provinces.associate { it.id to (regionRepository.getRegionCenter(it.id) ?: (0.0 to 0.0)) }
         provinceNameCache = provinces.associate { it.id to it.name }
 
-        _regions.value = provinces.map { region ->
+        val regions = provinces.map { region ->
             RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
@@ -1101,6 +1266,7 @@ class MapViewModel(
                 } else 0f
             )
         }
+        navigationState.update { it.copy(currentRegions = regions) }
         syncOverlaysToMap(boundaries)
     }
 
@@ -1125,7 +1291,7 @@ class MapViewModel(
         val boundaries = regionRepository.getBoundariesByParentId(parentId)
         lastBoundaries = boundaries
 
-        _regions.value = children.map { region ->
+        val regions = children.map { region ->
             RegionFootprintUi(
                 regionId = region.id,
                 name = region.name,
@@ -1137,6 +1303,7 @@ class MapViewModel(
                 } else 0f
             )
         }
+        navigationState.update { it.copy(currentRegions = regions) }
         syncOverlaysToMap(boundaries)
     }
 
@@ -1146,8 +1313,14 @@ class MapViewModel(
         if (currentRegions.isEmpty()) return
 
         val coverageMap = computeCoverageBatch(currentRegions.map { it.regionId }, footprints)
-        _regions.value = currentRegions.map { region ->
-            region.copy(childCoverageRate = coverageMap[region.regionId] ?: 0f)
+        navigationState.update { state ->
+            state.copy(
+                currentRegions = state.currentRegions.map { region ->
+                    region.copy(
+                        childCoverageRate = coverageMap[region.regionId] ?: 0f
+                    )
+                }
+            )
         }
         val parentId = _currentPath.value.lastOrNull()?.id
         val boundaries = if (parentId != null) {
@@ -1204,23 +1377,31 @@ class MapViewModel(
     }
 
     private fun zoomOutToParent() {
-        invalidateLayerLoad()
-        val path = _currentPath.value
-        if (path.size > 1) {
-            _currentPath.value = path.dropLast(1)
-            val parent = _currentPath.value.last()
-            _currentLevel.value = when (parent.level) {
-                RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
-                RegionLevel.CITY -> MapZoomLevel.CITY
-                RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
+        val pathBeforeNavigation = navigationState.value.currentPath
+        val updated = navigationState.updateAndGet { state ->
+            val invalidated = state.withInvalidatedLayerLoad()
+            when {
+                state.currentPath.size > 1 -> {
+                    val path = state.currentPath.dropLast(1)
+                    invalidated.copy(
+                        currentPath = path,
+                        currentLevel = levelAfterDrill(path.last())
+                    )
+                }
+                state.currentPath.size == 1 -> invalidated.copy(
+                    currentLevel = MapZoomLevel.NATIONAL,
+                    currentPath = emptyList()
+                )
+                else -> invalidated
             }
+        }
+        val parent = updated.currentPath.lastOrNull()
+        if (parent != null) {
             vmScope.launch {
                 loadChildRegions(parent.id)
                 loadAttractionsForRegion(parent.id)
             }
-        } else if (path.size == 1) {
-            _currentLevel.value = MapZoomLevel.NATIONAL
-            _currentPath.value = emptyList()
+        } else if (pathBeforeNavigation.isNotEmpty()) {
             val controller = _mapController
             if (controller != null) {
                 val target = controller.viewport.computeChinaFitTarget()
@@ -1240,7 +1421,21 @@ class MapViewModel(
 
     private var neighborOutlinesLoaded = false
 
-    private fun syncOverlaysToMap(boundaries: Map<String, String>? = null) {
+    private fun syncOverlaysForNavigationState(state: NavigationState) {
+        val parentId = state.currentPath.lastOrNull()?.id
+        val boundaries = if (parentId != null) {
+            regionRepository.getBoundariesByParentId(parentId)
+        } else {
+            regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
+        }
+        lastBoundaries = boundaries
+        syncOverlaysToMap(boundaries, state)
+    }
+
+    private fun syncOverlaysToMap(
+        boundaries: Map<String, String>? = null,
+        state: NavigationState = navigationState.value
+    ) {
         val controller = _mapController ?: return
 
         // Load neighbor outlines once
@@ -1281,7 +1476,7 @@ class MapViewModel(
         }
 
         // Keep province overlays visible as national context when drilled down.
-        if (_currentLevel.value != MapZoomLevel.NATIONAL && provinceBoundaryCache.isNotEmpty()) {
+        if (state.currentLevel != MapZoomLevel.NATIONAL && provinceBoundaryCache.isNotEmpty()) {
             val footprints = getFootprintCache()
             val coverageMap = if (childrenIndexReady) {
                 computeCoverageBatch(provinceBoundaryCache.keys.toList(), footprints)
@@ -1303,7 +1498,7 @@ class MapViewModel(
             }
         }
 
-        for (region in _regions.value) {
+        for (region in state.currentRegions) {
             regionIds.add(region.regionId)
             val style = footprintOverlayStyle(region.footprintLevel, region.childCoverageRate)
             val boundary = boundaries?.get(region.regionId)
@@ -1322,14 +1517,14 @@ class MapViewModel(
             // Add label if we have center coords
             val center = regionRepository.getRegionCenter(region.regionId)
             if (center != null) {
-                val minZoom = when (_currentLevel.value) {
+                val minZoom = when (state.currentLevel) {
                     MapZoomLevel.NATIONAL -> 3.5f
                     MapZoomLevel.PROVINCIAL -> 6f
                     else -> 7f
                 }
                 labels[region.regionId] = LabelData(
                     id = region.regionId,
-                    name = mapLabelName(region.name, _currentLevel.value),
+                    name = mapLabelName(region.name, state.currentLevel),
                     lat = center.first,
                     lng = center.second,
                     minZoom = minZoom

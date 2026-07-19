@@ -16,9 +16,13 @@ import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayRole
 import com.mapchina.map.ViewportInsets
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -240,6 +244,54 @@ class MapViewModelTest {
     }
 
     @Test
+    fun readyDrillAndNavigation_keepSynchronousStateFlowValueSemantics() {
+        seedProvinceCityAndDistrict()
+
+        viewModel.drillIntoRegion("510000")
+        assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
+        assertEquals("510000", viewModel.currentPath.value.single().id)
+        assertEquals(listOf("510100"), viewModel.regions.value.map { it.regionId })
+
+        viewModel.drillIntoRegion("510100")
+        viewModel.navigateUp()
+        assertEquals(MapZoomLevel.PROVINCIAL, viewModel.currentLevel.value)
+        assertEquals("510000", viewModel.currentPath.value.single().id)
+
+        viewModel.navigateToNational()
+        assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+        assertTrue(viewModel.currentPath.value.isEmpty())
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun projectedStateFlow_collectsOnlyDistinctFieldChanges() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "projectedStateFlowUser"
+        )
+        val levels = mutableListOf<MapZoomLevel>()
+
+        try {
+            runCurrent()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                delayedViewModel.currentLevel.take(2).toList(levels)
+            }
+            delayedViewModel.selectRegion("510000")
+            delayedViewModel.showRegionPanel("510000")
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+
+            assertEquals(
+                listOf(MapZoomLevel.NATIONAL, MapZoomLevel.PROVINCIAL),
+                levels
+            )
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @Test
     fun drillWithoutChildBoundaries_keepsCurrentLevelAndExposesRetry() {
         regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
         regionRepo.updateBoundary("510000", provinceBoundary)
@@ -373,6 +425,90 @@ class MapViewModelTest {
             )
             assertEquals(selectionBeforeRequest, delayedViewModel.selectedRegion.value)
             assertEquals(panelBeforeRequest, delayedViewModel.bottomPanel.value)
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun validatedChildLayerCompletion_cannotCommitAfterNavigationInvalidatesIt() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "validatedThenInvalidatedUser"
+        )
+        val validated = CompletableDeferred<Unit>()
+        val releaseCompletion = CompletableDeferred<Unit>()
+        val callOrder = mutableListOf<String>()
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.afterLayerLoadValidation = {
+                callOrder += "old completion passed validation"
+                validated.complete(Unit)
+                releaseCompletion.await()
+                callOrder += "old completion released before commit"
+            }
+
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertTrue(validated.isCompleted)
+
+            callOrder += "navigateToNational invalidated old request"
+            delayedViewModel.navigateToNational()
+            assertEquals(MapZoomLevel.NATIONAL, delayedViewModel.currentLevel.value)
+            assertTrue(delayedViewModel.currentPath.value.isEmpty())
+
+            callOrder += "release old completion"
+            releaseCompletion.complete(Unit)
+            runCurrent()
+            callOrder += "observed ${delayedViewModel.currentLevel.value}"
+            println("layer-load TOCTOU: ${callOrder.joinToString(" -> ")}")
+
+            assertEquals(MapZoomLevel.NATIONAL, delayedViewModel.currentLevel.value)
+            assertTrue(delayedViewModel.currentPath.value.isEmpty())
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun validatedChildLayerError_cannotPublishAfterNavigationInvalidatesIt() = runTest {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "validatedErrorThenInvalidatedUser"
+        )
+        val validated = CompletableDeferred<Unit>()
+        val releaseCompletion = CompletableDeferred<Unit>()
+
+        try {
+            runCurrent()
+            delayedViewModel.afterLayerLoadValidation = {
+                validated.complete(Unit)
+                releaseCompletion.await()
+            }
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            assertTrue(validated.isCompleted)
+
+            delayedViewModel.navigateToNational()
+            assertEquals(
+                MapLayerLoadState.Idle,
+                delayedViewModel.mapLayerLoadState.value
+            )
+
+            releaseCompletion.complete(Unit)
+            runCurrent()
+
+            assertEquals(MapZoomLevel.NATIONAL, delayedViewModel.currentLevel.value)
+            assertTrue(delayedViewModel.currentPath.value.isEmpty())
             assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
         } finally {
             delayedViewModel.onCleared()
