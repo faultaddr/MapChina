@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -147,6 +148,8 @@ class MapViewModel(
     fun onCleared() {
         invalidateLayerLoad()
         cancelRegionFocus()
+        _mapController = null
+        controllerEffects.close()
         vmScope.cancel()
     }
 
@@ -157,22 +160,25 @@ class MapViewModel(
     }
 
     fun refreshMapTheme() {
-        val controller = _mapController ?: return
-        applyMapTheme(controller)
+        enqueueControllerEffect { controller, _ ->
+            applyMapTheme(controller)
+        }
     }
 
     fun enterShareMode() {
-        val controller = _mapController ?: return
         _shareMode.value = true
         com.mapchina.ui.ShareModeState.value = true
-        controller.setShareMode(true)
+        enqueueControllerEffect { controller, _ ->
+            controller.setShareMode(true)
+        }
     }
 
     fun exitShareMode() {
-        val controller = _mapController ?: return
-        controller.setShareMode(false)
         _shareMode.value = false
         com.mapchina.ui.ShareModeState.value = false
+        enqueueControllerEffect { controller, _ ->
+            controller.setShareMode(false)
+        }
     }
 
     private data class PreparedChildLayer(
@@ -188,9 +194,12 @@ class MapViewModel(
     )
 
     private data class NavigationState(
+        val navigationVersion: Long = 0L,
         val currentLevel: MapZoomLevel = MapZoomLevel.NATIONAL,
         val currentPath: List<Region> = emptyList(),
         val currentRegions: List<RegionFootprintUi> = emptyList(),
+        val currentAttractions: List<AttractionUi> = emptyList(),
+        val attractionsRegionId: String? = null,
         val selectedRegion: RegionFootprintUi? = null,
         val selectedRegionAttractions: List<AttractionUi> = emptyList(),
         val bottomPanel: BottomPanel = BottomPanel.None,
@@ -199,6 +208,17 @@ class MapViewModel(
         val activeLayerLoadRequest: LayerLoadRequest? = null,
         val failedLayerLoadRequest: LayerLoadRequest? = null,
         val committedLayerGeneration: Long? = null
+    )
+
+    private data class ControllerEffect(
+        val navigationVersion: Long,
+        val controller: MapController,
+        val apply: (MapController, NavigationState) -> Unit
+    )
+
+    private data class ControllerEffectSnapshot(
+        val navigationVersion: Long,
+        val controller: MapController
     )
 
     private val navigationState = MutableStateFlow(NavigationState())
@@ -213,6 +233,8 @@ class MapViewModel(
     val mapLayerLoadState: StateFlow<MapLayerLoadState> = _mapLayerLoadState
 
     internal var afterLayerLoadValidation: (suspend () -> Unit)? = null
+    internal var afterChildLayerEffectSnapshot: (suspend () -> Unit)? = null
+    internal var afterAttractionsLoad: (suspend (String) -> Unit)? = null
 
     private val _achievementUnlock = MutableStateFlow<AchievementUnlockResult?>(null)
     val achievementUnlock: StateFlow<AchievementUnlockResult?> = _achievementUnlock.asStateFlow()
@@ -226,8 +248,8 @@ class MapViewModel(
     private val _selectedRegion = navigationState.project { it.selectedRegion }
     val selectedRegion: StateFlow<RegionFootprintUi?> = _selectedRegion
 
-    private val _attractions = MutableStateFlow<List<AttractionUi>>(emptyList())
-    val attractions: StateFlow<List<AttractionUi>> = _attractions.asStateFlow()
+    private val _attractions = navigationState.project { it.currentAttractions }
+    val attractions: StateFlow<List<AttractionUi>> = _attractions
 
     private val _selectedRegionAttractions =
         navigationState.project { it.selectedRegionAttractions }
@@ -311,6 +333,42 @@ class MapViewModel(
     private var savedCameraLat: Double = 35.5
     private var savedCameraLng: Double = 104.0
     private var savedCameraZoom: Float = 3.5f
+
+    private val controllerEffects = Channel<ControllerEffect>(Channel.UNLIMITED)
+    private val controllerEffectConsumer = vmScope.launch {
+        for (effect in controllerEffects) {
+            val latest = navigationState.value
+            if (
+                latest.navigationVersion == effect.navigationVersion &&
+                _mapController === effect.controller
+            ) {
+                effect.apply(effect.controller, latest)
+            }
+        }
+    }
+
+    private fun captureControllerEffect(): ControllerEffectSnapshot? {
+        val controller = _mapController ?: return null
+        return ControllerEffectSnapshot(
+            navigationVersion = navigationState.value.navigationVersion,
+            controller = controller
+        )
+    }
+
+    private fun enqueueControllerEffect(
+        snapshot: ControllerEffectSnapshot? = captureControllerEffect(),
+        apply: (MapController, NavigationState) -> Unit
+    ) {
+        snapshot ?: return
+        controllerEffects.trySend(
+            ControllerEffect(
+                navigationVersion = snapshot.navigationVersion,
+                controller = snapshot.controller,
+                apply = apply
+            )
+        )
+    }
+
     var mapController: MapController?
         get() = _mapController
         set(value) {
@@ -320,18 +378,20 @@ class MapViewModel(
             _mapController = value
             if (value != null) {
                 lastSyncedRegionIds = emptySet()
-                applyMapTheme(value)
-                if (_regions.value.isNotEmpty()) {
-                    syncOverlaysForNavigationState(navigationState.value)
-                }
-                value.setOnCameraZoomChangeListener { zoom ->
-                    savedCameraZoom = zoom
-                    onCameraZoomChanged(zoom)
-                }
-                value.setOnCameraPositionListener { lat, lng, zoom ->
-                    savedCameraLat = lat
-                    savedCameraLng = lng
-                    savedCameraZoom = zoom
+                enqueueControllerEffect { controller, state ->
+                    applyMapTheme(controller)
+                    if (state.currentRegions.isNotEmpty()) {
+                        reconcileOverlaysForNavigationState(controller, state)
+                    }
+                    controller.setOnCameraZoomChangeListener { zoom ->
+                        savedCameraZoom = zoom
+                        onCameraZoomChanged(zoom)
+                    }
+                    controller.setOnCameraPositionListener { lat, lng, zoom ->
+                        savedCameraLat = lat
+                        savedCameraLng = lng
+                        savedCameraZoom = zoom
+                    }
                 }
             }
         }
@@ -483,6 +543,7 @@ class MapViewModel(
 
     private fun NavigationState.withInvalidatedLayerLoad(): NavigationState =
         copy(
+            navigationVersion = navigationVersion + 1L,
             mapLayerLoadState = MapLayerLoadState.Idle,
             layerLoadGeneration = layerLoadGeneration + 1L,
             activeLayerLoadRequest = null,
@@ -527,7 +588,7 @@ class MapViewModel(
         children.isNotEmpty() &&
             children.all { child -> !boundaries[child.id].isNullOrBlank() }
 
-    private fun commitChildLayer(
+    private suspend fun commitChildLayer(
         request: LayerLoadRequest,
         prepared: PreparedChildLayer,
         preparedRegions: List<RegionFootprintUi>
@@ -535,6 +596,7 @@ class MapViewModel(
         val committed = navigationState.updateAndGet { state ->
             if (!isCurrentLayerLoad(state, request)) return@updateAndGet state
             state.copy(
+                navigationVersion = state.navigationVersion + 1L,
                 currentPath = state.currentPath + prepared.parent,
                 currentLevel = when (prepared.parent.level) {
                     RegionLevel.PROVINCE -> MapZoomLevel.PROVINCIAL
@@ -542,6 +604,8 @@ class MapViewModel(
                     RegionLevel.DISTRICT -> MapZoomLevel.DISTRICT
                 },
                 currentRegions = preparedRegions,
+                currentAttractions = emptyList(),
+                attractionsRegionId = null,
                 selectedRegion = null,
                 selectedRegionAttractions = emptyList(),
                 bottomPanel = BottomPanel.None,
@@ -555,9 +619,16 @@ class MapViewModel(
 
         cancelRegionFocus()
         val latest = navigationState.value
-        syncOverlaysForNavigationState(latest)
+        val effectSnapshot = captureControllerEffect()
+        afterChildLayerEffectSnapshot?.invoke()
+        enqueueOverlayReconcile(effectSnapshot)
         if (latest.committedLayerGeneration == request.generation) {
-            vmScope.launch { loadAttractionsForRegion(prepared.parent.id) }
+            vmScope.launch {
+                loadAttractionsForRegion(
+                    regionId = prepared.parent.id,
+                    navigationVersion = latest.navigationVersion
+                )
+            }
         }
     }
 
@@ -645,23 +716,23 @@ class MapViewModel(
         navigationState.update { state ->
             state.withInvalidatedLayerLoad().copy(
                 currentLevel = MapZoomLevel.NATIONAL,
-                currentPath = emptyList()
+                currentPath = emptyList(),
+                currentAttractions = emptyList(),
+                attractionsRegionId = null
             )
         }
         cancelRegionFocus()
-        val controller = _mapController
-        if (controller != null) {
+        enqueueControllerEffect { controller, _ ->
             val target = controller.viewport.computeChinaFitTarget()
             savedCameraLat = target.first
             savedCameraLng = target.second
             savedCameraZoom = target.third
             setProgrammaticCamera()
             controller.fitChinaInView(true)
+            controller.clearMarkers()
         }
         vmScope.launch {
             loadTopLevelRegions()
-            _attractions.value = emptyList()
-            mapController?.clearMarkers()
         }
     }
 
@@ -673,7 +744,9 @@ class MapViewModel(
             savedCameraLng = location.second
             savedCameraZoom = 10f
             setProgrammaticCamera()
-            mapController?.setCamera(location.first, location.second, 10f, true)
+            enqueueControllerEffect { controller, _ ->
+                controller.setCamera(location.first, location.second, 10f, true)
+            }
         }
     }
 
@@ -715,12 +788,14 @@ class MapViewModel(
                 RegionLevel.DISTRICT -> 10f
             }
             setProgrammaticCamera()
-            mapController?.setCamera(
-                location.first,
-                location.second,
-                savedCameraZoom,
-                true
-            )
+            enqueueControllerEffect { controller, _ ->
+                controller.setCamera(
+                    location.first,
+                    location.second,
+                    savedCameraZoom,
+                    true
+                )
+            }
             selectRegion(target.id)
             showRegionPanel(target.id)
         }
@@ -735,12 +810,16 @@ class MapViewModel(
                     val path = state.currentPath.dropLast(1)
                     invalidated.copy(
                         currentPath = path,
-                        currentLevel = levelAfterDrill(path.last())
+                        currentLevel = levelAfterDrill(path.last()),
+                        currentAttractions = emptyList(),
+                        attractionsRegionId = null
                     )
                 }
                 state.currentPath.size == 1 -> invalidated.copy(
                     currentLevel = MapZoomLevel.NATIONAL,
-                    currentPath = emptyList()
+                    currentPath = emptyList(),
+                    currentAttractions = emptyList(),
+                    attractionsRegionId = null
                 )
                 else -> invalidated
             }
@@ -752,23 +831,21 @@ class MapViewModel(
 
             vmScope.launch {
                 loadChildRegions(parent.id)
-                loadAttractionsForRegion(parent.id)
+                loadAttractionsForRegion(parent.id, updated.navigationVersion)
             }
         } else if (pathBeforeNavigation.isNotEmpty()) {
-            val controller = _mapController
-            if (controller != null) {
+            enqueueControllerEffect { controller, _ ->
                 val target = controller.viewport.computeChinaFitTarget()
                 savedCameraLat = target.first
                 savedCameraLng = target.second
                 savedCameraZoom = target.third
                 setProgrammaticCamera()
                 controller.fitChinaInView(true)
+                controller.clearMarkers()
             }
 
             vmScope.launch {
                 loadTopLevelRegions()
-                _attractions.value = emptyList()
-                mapController?.clearMarkers()
             }
         }
     }
@@ -776,23 +853,30 @@ class MapViewModel(
     fun navigateTo(regionId: String) {
         val region = regionRepository.getRegion(regionId) ?: return
         val path = buildPathTo(regionId)
-        navigationState.update { state ->
+        val updated = navigationState.updateAndGet { state ->
             state.withInvalidatedLayerLoad().copy(
                 currentPath = path,
                 currentLevel = levelAfterDrill(region),
+                currentAttractions = emptyList(),
+                attractionsRegionId = null,
                 selectedRegion = null
             )
         }
 
-        val controller = _mapController
-        if (controller != null) {
+        enqueueControllerEffect { controller, state ->
             controller.pulseOverlay(regionId)
             controller.setOnCameraAnimCompleteListener {
-                controller.restorePulsedOverlay()
-                controller.setOnCameraAnimCompleteListener(null)
-                vmScope.launch {
-                    loadChildRegions(regionId)
-                    loadAttractionsForRegion(regionId)
+                val completionSnapshot = ControllerEffectSnapshot(
+                    navigationVersion = state.navigationVersion,
+                    controller = controller
+                )
+                enqueueControllerEffect(completionSnapshot) { currentController, _ ->
+                    currentController.restorePulsedOverlay()
+                    currentController.setOnCameraAnimCompleteListener(null)
+                    vmScope.launch {
+                        loadChildRegions(regionId)
+                        loadAttractionsForRegion(regionId, updated.navigationVersion)
+                    }
                 }
             }
         }
@@ -815,8 +899,15 @@ class MapViewModel(
                 bounds = RegionBounds(0f, 0f, 0f, 0f)
             )
         }
-        navigationState.update { it.copy(selectedRegion = selected) }
-        vmScope.launch { loadAttractionsForSelectedRegion(regionId) }
+        val updated = navigationState.updateAndGet {
+            it.copy(
+                selectedRegion = selected,
+                selectedRegionAttractions = emptyList()
+            )
+        }
+        vmScope.launch {
+            loadAttractionsForSelectedRegion(regionId, updated.navigationVersion)
+        }
     }
 
     fun focusRegion(
@@ -827,10 +918,8 @@ class MapViewModel(
         val region = regionRepository.getRegion(regionId) ?: return null
         selectRegion(regionId)
         clearBottomPanel()
-        _mapController?.pulseOverlay(regionId)
         val focusRequest = regionFocusCoordinator.begin(regionId)
-        val controller = _mapController
-        if (controller == null) {
+        if (_mapController == null) {
             regionFocusCoordinator.complete(focusRequest)
             return focusRequest
         }
@@ -839,34 +928,37 @@ class MapViewModel(
         val complete: (Long) -> Unit = {
             regionFocusCoordinator.complete(focusRequest)
         }
-        if (bounds != null) {
-            controller.focusBounds(
-                minLng = bounds.minLng,
-                maxLng = bounds.maxLng,
-                minLat = bounds.minLat,
-                maxLat = bounds.maxLat,
-                insets = insets,
-                durationMillis = duration,
-                onComplete = complete
-            )
-        } else {
-            val center = regionRepository.getRegionCenter(regionId)
-            if (center == null) {
-                regionFocusCoordinator.complete(focusRequest)
-            } else {
-                val zoom = when (region.level) {
-                    RegionLevel.PROVINCE -> 7f
-                    RegionLevel.CITY -> 9f
-                    RegionLevel.DISTRICT -> 11f
-                }
-                controller.focusCamera(
-                    lat = center.first,
-                    lng = center.second,
-                    zoomLevel = zoom,
+        enqueueControllerEffect { controller, _ ->
+            controller.pulseOverlay(regionId)
+            if (bounds != null) {
+                controller.focusBounds(
+                    minLng = bounds.minLng,
+                    maxLng = bounds.maxLng,
+                    minLat = bounds.minLat,
+                    maxLat = bounds.maxLat,
                     insets = insets,
                     durationMillis = duration,
                     onComplete = complete
                 )
+            } else {
+                val center = regionRepository.getRegionCenter(regionId)
+                if (center == null) {
+                    regionFocusCoordinator.complete(focusRequest)
+                } else {
+                    val zoom = when (region.level) {
+                        RegionLevel.PROVINCE -> 7f
+                        RegionLevel.CITY -> 9f
+                        RegionLevel.DISTRICT -> 11f
+                    }
+                    controller.focusCamera(
+                        lat = center.first,
+                        lng = center.second,
+                        zoomLevel = zoom,
+                        insets = insets,
+                        durationMillis = duration,
+                        onComplete = complete
+                    )
+                }
             }
         }
         return focusRequest
@@ -874,7 +966,9 @@ class MapViewModel(
 
     fun cancelRegionFocus() {
         regionFocusCoordinator.cancel()
-        _mapController?.cancelCameraAnimation()
+        enqueueControllerEffect { controller, _ ->
+            controller.cancelCameraAnimation()
+        }
     }
 
     fun clearSelection() {
@@ -931,7 +1025,9 @@ class MapViewModel(
             syncPhotoMarkersToMap()
             autoMarkFromPhotos()
         } else {
-            _mapController?.clearImageMarkers()
+            enqueueControllerEffect { controller, _ ->
+                controller.clearImageMarkers()
+            }
             _photoClusters.value = emptyList()
         }
     }
@@ -1077,29 +1173,41 @@ class MapViewModel(
     }
 
     fun syncPhotoMarkersToMap() {
-        val controller = _mapController ?: return
+        val effectSnapshot = captureControllerEffect() ?: return
         val provider = devicePhotoProvider ?: return
         if (!provider.isAvailable()) return
         vmScope.launch {
             val permResult = provider.checkPermission()
             if (permResult == PhotoResult.NO_PERMISSION) {
-                controller.clearImageMarkers()
+                enqueueControllerEffect(effectSnapshot) { controller, _ ->
+                    controller.clearImageMarkers()
+                }
                 _photoClusters.value = emptyList()
                 showAutoMarkMessage("请授予相册权限以读取照片")
                 return@launch
             }
             val photos = provider.getPhotosWithLocation()
             if (photos.isEmpty()) {
-                controller.clearImageMarkers()
+                enqueueControllerEffect(effectSnapshot) { controller, _ ->
+                    controller.clearImageMarkers()
+                }
                 _photoClusters.value = emptyList()
                 showAutoMarkMessage("未找到带位置信息的照片")
                 return@launch
             }
             val clusters = PhotoClusterer.cluster(photos)
             _photoClusters.value = clusters
-            controller.clearImageMarkers()
-            for (cluster in clusters) {
-                controller.addImageMarker(cluster.id, cluster.latitude, cluster.longitude, cluster.coverPath, cluster.count)
+            enqueueControllerEffect(effectSnapshot) { controller, _ ->
+                controller.clearImageMarkers()
+                for (cluster in clusters) {
+                    controller.addImageMarker(
+                        cluster.id,
+                        cluster.latitude,
+                        cluster.longitude,
+                        cluster.coverPath,
+                        cluster.count
+                    )
+                }
             }
         }
     }
@@ -1194,23 +1302,35 @@ class MapViewModel(
     }
 
     private fun refreshAttractions() {
-        val currentParentId = _currentPath.value.lastOrNull()?.id
+        val snapshot = navigationState.value
+        val currentParentId = snapshot.currentPath.lastOrNull()?.id
         if (currentParentId != null) {
             vmScope.launch {
-                loadAttractionsForRegion(currentParentId)
-                loadAttractionsForSelectedRegion(currentParentId)
+                loadAttractionsForRegion(
+                    currentParentId,
+                    snapshot.navigationVersion
+                )
             }
         }
-        val selectedId = _selectedRegion.value?.regionId
+        val selectedId = snapshot.selectedRegion?.regionId
         if (selectedId != null) {
-            vmScope.launch { loadAttractionsForSelectedRegion(selectedId) }
+            vmScope.launch {
+                loadAttractionsForSelectedRegion(
+                    selectedId,
+                    snapshot.navigationVersion
+                )
+            }
         }
     }
 
-    private suspend fun loadAttractionsForRegion(regionId: String) {
+    private suspend fun loadAttractionsForRegion(
+        regionId: String,
+        navigationVersion: Long
+    ) {
         val list = attractionService.getAttractionsByParentRegion(regionId)
         val visits = getAttractionVisitsCache()
-        _attractions.value = list.map { attraction ->
+        afterAttractionsLoad?.invoke(regionId)
+        val attractions = list.map { attraction ->
             AttractionUi(
                 id = attraction.id,
                 name = attraction.name,
@@ -1221,10 +1341,35 @@ class MapViewModel(
                 imageUrl = attraction.imageUrl
             )
         }
-        syncMarkersToMap()
+        val updated = navigationState.updateAndGet { state ->
+            if (
+                state.navigationVersion != navigationVersion ||
+                state.currentPath.lastOrNull()?.id != regionId
+            ) {
+                state
+            } else {
+                state.copy(
+                    currentAttractions = attractions,
+                    attractionsRegionId = regionId
+                )
+            }
+        }
+        if (
+            updated.navigationVersion == navigationVersion &&
+            updated.attractionsRegionId == regionId
+        ) {
+            enqueueMarkerReconcile(
+                captureControllerEffect()?.takeIf {
+                    it.navigationVersion == navigationVersion
+                }
+            )
+        }
     }
 
-    private suspend fun loadAttractionsForSelectedRegion(regionId: String) {
+    private suspend fun loadAttractionsForSelectedRegion(
+        regionId: String,
+        navigationVersion: Long
+    ) {
         val list = attractionService.getAttractionsByParentRegion(regionId)
         val visits = getAttractionVisitsCache()
         val attractions = list.map { attraction ->
@@ -1238,8 +1383,15 @@ class MapViewModel(
                 imageUrl = attraction.imageUrl
             )
         }
-        navigationState.update {
-            it.copy(selectedRegionAttractions = attractions)
+        navigationState.update { state ->
+            if (
+                state.navigationVersion != navigationVersion ||
+                state.selectedRegion?.regionId != regionId
+            ) {
+                state
+            } else {
+                state.copy(selectedRegionAttractions = attractions)
+            }
         }
     }
 
@@ -1385,12 +1537,16 @@ class MapViewModel(
                     val path = state.currentPath.dropLast(1)
                     invalidated.copy(
                         currentPath = path,
-                        currentLevel = levelAfterDrill(path.last())
+                        currentLevel = levelAfterDrill(path.last()),
+                        currentAttractions = emptyList(),
+                        attractionsRegionId = null
                     )
                 }
                 state.currentPath.size == 1 -> invalidated.copy(
                     currentLevel = MapZoomLevel.NATIONAL,
-                    currentPath = emptyList()
+                    currentPath = emptyList(),
+                    currentAttractions = emptyList(),
+                    attractionsRegionId = null
                 )
                 else -> invalidated
             }
@@ -1399,29 +1555,38 @@ class MapViewModel(
         if (parent != null) {
             vmScope.launch {
                 loadChildRegions(parent.id)
-                loadAttractionsForRegion(parent.id)
+                loadAttractionsForRegion(parent.id, updated.navigationVersion)
             }
         } else if (pathBeforeNavigation.isNotEmpty()) {
-            val controller = _mapController
-            if (controller != null) {
+            enqueueControllerEffect { controller, _ ->
                 val target = controller.viewport.computeChinaFitTarget()
                 savedCameraLat = target.first
                 savedCameraLng = target.second
                 savedCameraZoom = target.third
                 setProgrammaticCamera()
                 controller.fitChinaInView(true)
+                controller.clearMarkers()
             }
             vmScope.launch {
                 loadTopLevelRegions()
-                _attractions.value = emptyList()
-                mapController?.clearMarkers()
             }
         }
     }
 
-    private var neighborOutlinesLoaded = false
+    private var neighborOutlinesController: MapController? = null
 
-    private fun syncOverlaysForNavigationState(state: NavigationState) {
+    private fun enqueueOverlayReconcile(
+        snapshot: ControllerEffectSnapshot? = captureControllerEffect()
+    ) {
+        enqueueControllerEffect(snapshot) { controller, state ->
+            reconcileOverlaysForNavigationState(controller, state)
+        }
+    }
+
+    private fun reconcileOverlaysForNavigationState(
+        controller: MapController,
+        state: NavigationState
+    ) {
         val parentId = state.currentPath.lastOrNull()?.id
         val boundaries = if (parentId != null) {
             regionRepository.getBoundariesByParentId(parentId)
@@ -1429,19 +1594,25 @@ class MapViewModel(
             regionRepository.getBoundariesByLevel(RegionLevel.PROVINCE)
         }
         lastBoundaries = boundaries
-        syncOverlaysToMap(boundaries, state)
+        reconcileOverlaysToMap(controller, boundaries, state)
     }
 
     private fun syncOverlaysToMap(
-        boundaries: Map<String, String>? = null,
-        state: NavigationState = navigationState.value
+        @Suppress("UNUSED_PARAMETER")
+        boundaries: Map<String, String>? = null
     ) {
-        val controller = _mapController ?: return
+        enqueueOverlayReconcile()
+    }
 
+    private fun reconcileOverlaysToMap(
+        controller: MapController,
+        boundaries: Map<String, String>?,
+        state: NavigationState
+    ) {
         // Load neighbor outlines once
-        if (!neighborOutlinesLoaded) {
-            neighborOutlinesLoaded = true
+        if (neighborOutlinesController !== controller) {
             controller.setNeighborOutlines(com.mapchina.map.NeighborOutlines.all)
+            neighborOutlinesController = controller
         }
 
         val regionIds = mutableSetOf<String>()
@@ -1560,31 +1731,42 @@ class MapViewModel(
         return this
     }
 
-    private fun syncMarkersToMap() {
-        val controller = _mapController ?: return
-        controller.clearMarkers()
-        val level = _currentLevel.value
-        if (level != MapZoomLevel.CITY && level != MapZoomLevel.DISTRICT) return
-        for (attraction in _attractions.value) {
-            val fullAttraction = attractionService.getAttraction(attraction.id) ?: continue
-            controller.addAttractionMarker(
-                attraction.id, attraction.name,
-                fullAttraction.latitude, fullAttraction.longitude,
-                fullAttraction.imageUrl,
-                attraction.visitLevel != null
-            )
+    private fun enqueueMarkerReconcile(
+        snapshot: ControllerEffectSnapshot? = captureControllerEffect()
+    ) {
+        enqueueControllerEffect(snapshot) { controller, state ->
+            controller.clearMarkers()
+            if (
+                state.currentLevel != MapZoomLevel.CITY &&
+                state.currentLevel != MapZoomLevel.DISTRICT
+            ) {
+                return@enqueueControllerEffect
+            }
+            for (attraction in state.currentAttractions) {
+                val fullAttraction =
+                    attractionService.getAttraction(attraction.id) ?: continue
+                controller.addAttractionMarker(
+                    attraction.id,
+                    attraction.name,
+                    fullAttraction.latitude,
+                    fullAttraction.longitude,
+                    fullAttraction.imageUrl,
+                    attraction.visitLevel != null
+                )
+            }
         }
     }
 
     private fun updateOverlayColor(regionId: String, level: FootprintLevel) {
-        val controller = _mapController ?: return
         val region = _regions.value.find { it.regionId == regionId }
         val coverage = region?.childCoverageRate ?: 0f
         val style = footprintOverlayStyle(level, coverage)
         val boundary = regionRepository.getRegionBoundary(regionId)
         if (boundary != null) {
-            controller.removeOverlay(regionId)
-            controller.addOverlay(regionId, boundary, style, true)
+            enqueueControllerEffect { controller, _ ->
+                controller.removeOverlay(regionId)
+                controller.addOverlay(regionId, boundary, style, true)
+            }
         }
     }
 
@@ -1610,30 +1792,40 @@ class MapViewModel(
     }
 
     private fun moveCameraToRegion(region: Region) {
-        val controller = _mapController ?: return
         val bounds = regionRepository.getRegionBounds(region.id)
-        if (bounds != null) {
-            val (targetLng, targetLat, targetZoom) = controller.computeZoomForBounds(
-                bounds.minLng, bounds.maxLng, bounds.minLat, bounds.maxLat
-            )
-            savedCameraLat = targetLat
-            savedCameraLng = targetLng
-            savedCameraZoom = targetZoom
-            setProgrammaticCamera()
-            controller.zoomToBounds(bounds.minLng, bounds.maxLng, bounds.minLat, bounds.maxLat, true)
-        } else {
-            val zoom = when (region.level) {
-                RegionLevel.PROVINCE -> 7f
-                RegionLevel.CITY -> 9f
-                RegionLevel.DISTRICT -> 11f
-            }
-            val center = regionRepository.getRegionCenter(region.id)
-            if (center != null) {
-                savedCameraLat = center.first
-                savedCameraLng = center.second
-                savedCameraZoom = zoom
+        enqueueControllerEffect { controller, _ ->
+            if (bounds != null) {
+                val target = controller.computeZoomForBounds(
+                    bounds.minLng,
+                    bounds.maxLng,
+                    bounds.minLat,
+                    bounds.maxLat
+                )
+                savedCameraLat = target.second
+                savedCameraLng = target.first
+                savedCameraZoom = target.third
                 setProgrammaticCamera()
-                controller.setCamera(center.first, center.second, zoom, true)
+                controller.zoomToBounds(
+                    bounds.minLng,
+                    bounds.maxLng,
+                    bounds.minLat,
+                    bounds.maxLat,
+                    true
+                )
+            } else {
+                val zoom = when (region.level) {
+                    RegionLevel.PROVINCE -> 7f
+                    RegionLevel.CITY -> 9f
+                    RegionLevel.DISTRICT -> 11f
+                }
+                val center = regionRepository.getRegionCenter(region.id)
+                if (center != null) {
+                    savedCameraLat = center.first
+                    savedCameraLng = center.second
+                    savedCameraZoom = zoom
+                    setProgrammaticCamera()
+                    controller.setCamera(center.first, center.second, zoom, true)
+                }
             }
         }
     }

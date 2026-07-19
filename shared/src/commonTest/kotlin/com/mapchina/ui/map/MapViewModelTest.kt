@@ -5,6 +5,8 @@ import com.mapchina.data.local.TestDatabaseDriverFactory
 import com.mapchina.data.repository.AttractionRepository
 import com.mapchina.data.repository.FootprintRepository
 import com.mapchina.data.repository.RegionRepository
+import com.mapchina.domain.model.Attraction
+import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.model.Region
 import com.mapchina.domain.model.RegionLevel
@@ -43,6 +45,7 @@ import kotlin.test.assertTrue
 class MapViewModelTest {
 
     private lateinit var viewModel: MapViewModel
+    private lateinit var attractionRepo: AttractionRepository
     private lateinit var attractionService: AttractionService
     private lateinit var footprintService: FootprintService
     private lateinit var regionRepo: RegionRepository
@@ -61,7 +64,7 @@ class MapViewModelTest {
         val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
-        val attractionRepo = AttractionRepository(database)
+        attractionRepo = AttractionRepository(database)
         attractionService = AttractionService(attractionRepo)
         footprintService = FootprintService(footprintRepo, regionRepo, null)
         suggestionService = FootprintSuggestionService(regionRepo, footprintService)
@@ -517,6 +520,168 @@ class MapViewModelTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun staleChildEffectAfterNationalRender_cannotOverrideControllerOrAttractions() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        attractionRepo.insertAttraction(
+            Attraction(
+                id = "stale-city-attraction",
+                name = "旧市级景点",
+                regionId = "510104",
+                level = AttractionLevel.A4,
+                latitude = 30.0,
+                longitude = 104.0
+            )
+        )
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "staleEffectSnapshotUser"
+        )
+        val controller = MapController()
+        val childSnapshotRead = CompletableDeferred<Unit>()
+        val releaseChildEffect = CompletableDeferred<Unit>()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.afterChildLayerEffectSnapshot = {
+                childSnapshotRead.complete(Unit)
+                releaseChildEffect.await()
+            }
+
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertTrue(childSnapshotRead.isCompleted)
+
+            delayedViewModel.navigateToNational()
+            runCurrent()
+            assertNationalControllerRender(controller)
+            assertEquals(
+                emptyList(),
+                delayedViewModel.attractions.value.map { it.id }
+            )
+
+            releaseChildEffect.complete(Unit)
+            runCurrent()
+
+            assertNationalControllerRender(controller)
+            assertEquals(
+                emptyList(),
+                delayedViewModel.attractions.value.map { it.id }
+            )
+        } finally {
+            releaseChildEffect.complete(Unit)
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun queuedChildEffect_cannotWriteReplacementController() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "replacementEffectUser"
+        )
+        val oldController = MapController()
+        val replacementController = MapController()
+        val childSnapshotRead = CompletableDeferred<Unit>()
+        val releaseChildEffect = CompletableDeferred<Unit>()
+
+        try {
+            delayedViewModel.mapController = oldController
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.afterChildLayerEffectSnapshot = {
+                childSnapshotRead.complete(Unit)
+                releaseChildEffect.await()
+            }
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertTrue(childSnapshotRead.isCompleted)
+
+            delayedViewModel.navigateToNational()
+            runCurrent()
+            delayedViewModel.mapController = replacementController
+            runCurrent()
+            assertNationalControllerRender(replacementController)
+
+            releaseChildEffect.complete(Unit)
+            runCurrent()
+
+            assertNationalControllerRender(replacementController)
+        } finally {
+            releaseChildEffect.complete(Unit)
+            delayedViewModel.mapController = null
+            delayedViewModel.onCleared()
+            oldController.dispose()
+            replacementController.dispose()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun oldAttractionResult_cannotPublishAfterNavigationVersionChanges() = runTest {
+        seedProvinceCityAndDistrict()
+        attractionRepo.insertAttraction(
+            Attraction(
+                id = "stale-attraction-result",
+                name = "旧景点结果",
+                regionId = "510104",
+                level = AttractionLevel.A4,
+                latitude = 30.0,
+                longitude = 104.0
+            )
+        )
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "staleAttractionResultUser"
+        )
+        val attractionLoaded = CompletableDeferred<Unit>()
+        val releaseAttractionResult = CompletableDeferred<Unit>()
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.afterAttractionsLoad = { regionId ->
+                if (regionId == "510100") {
+                    attractionLoaded.complete(Unit)
+                    releaseAttractionResult.await()
+                }
+            }
+
+            delayedViewModel.drillIntoRegion("510100")
+            runCurrent()
+            assertTrue(attractionLoaded.isCompleted)
+
+            delayedViewModel.navigateToNational()
+            runCurrent()
+            assertTrue(delayedViewModel.attractions.value.isEmpty())
+
+            releaseAttractionResult.complete(Unit)
+            runCurrent()
+
+            assertEquals(
+                emptyList(),
+                delayedViewModel.attractions.value.map { it.id }
+            )
+        } finally {
+            releaseAttractionResult.complete(Unit)
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun delayedChildLayerCompletingAfterReload_cannotCommitStaleDrill() = runTest {
         seedProvinceCityAndDistrict()
         val delayedViewModel = createDelayedViewModel(
@@ -675,6 +840,13 @@ class MapViewModelTest {
         regionRepo.updateBoundary("510000", provinceBoundary)
         regionRepo.updateBoundary("510100", cityBoundary)
         regionRepo.updateBoundary("510104", districtBoundary)
+    }
+
+    private fun assertNationalControllerRender(controller: MapController) {
+        assertEquals(
+            mapOf("510000" to OverlayRole.ACTIVE),
+            controller.renderState.value.overlays.mapValues { (_, overlay) -> overlay.role }
+        )
     }
 
     private fun createDelayedViewModel(
