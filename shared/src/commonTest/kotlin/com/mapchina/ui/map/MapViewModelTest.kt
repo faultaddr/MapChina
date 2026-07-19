@@ -12,11 +12,20 @@ import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.RegionMatcher
+import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.map.ViewportInsets
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -68,6 +77,74 @@ class MapViewModelTest {
     @Test
     fun initialPath_isEmpty() {
         assertEquals(0, viewModel.currentPath.value.size)
+    }
+
+    @Test
+    fun focusRegion_withoutSpatialData_finishesAndSelectsRegion() {
+        regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
+
+        viewModel.focusRegion(
+            regionId = "330000",
+            insets = ViewportInsets(),
+            reducedMotion = false
+        )
+
+        assertEquals("330000", viewModel.selectedRegion.value?.regionId)
+        assertEquals(
+            RegionFocusState.Focused("330000"),
+            viewModel.regionFocusState.value
+        )
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun focusRegion_withSpatialData_staysAnimatingUntilCameraCompletes() = runTest {
+        regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
+        regionRepo.updateBoundary(
+            "330000",
+            "[[118.0,27.0],[123.0,27.0],[123.0,32.0],[118.0,32.0],[118.0,27.0]]"
+        )
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val controller = MapController()
+
+        try {
+            viewModel.mapController = controller
+            val request = assertNotNull(
+                viewModel.focusRegion(
+                    regionId = "330000",
+                    insets = ViewportInsets(),
+                    reducedMotion = true
+                )
+            )
+
+            assertEquals(
+                RegionFocusState.Animating("330000", request),
+                viewModel.regionFocusState.value
+            )
+            assertEquals(BottomPanel.None, viewModel.bottomPanel.value)
+
+            runCurrent()
+            assertEquals(
+                RegionFocusState.Animating("330000", request),
+                viewModel.regionFocusState.value
+            )
+
+            withContext(Dispatchers.Default) {
+                delay(160L)
+            }
+            advanceTimeBy(16L)
+            runCurrent()
+
+            assertEquals(
+                RegionFocusState.Focused("330000"),
+                viewModel.regionFocusState.value
+            )
+            assertEquals(BottomPanel.None, viewModel.bottomPanel.value)
+        } finally {
+            viewModel.mapController = null
+            controller.dispose()
+            Dispatchers.resetMain()
+        }
     }
 
     @Test

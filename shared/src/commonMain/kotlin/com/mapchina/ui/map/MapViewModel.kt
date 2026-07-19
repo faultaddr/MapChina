@@ -14,6 +14,7 @@ import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.map.MapController
 import com.mapchina.map.MapTheme
+import com.mapchina.map.ViewportInsets
 import com.mapchina.platform.PhotoResult
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
@@ -107,6 +108,7 @@ class MapViewModel(
     val persistentMapController = MapController()
 
     fun onCleared() {
+        cancelRegionFocus()
         vmScope.cancel()
     }
 
@@ -196,6 +198,9 @@ class MapViewModel(
     private var provinceBoundaryCache: Map<String, String> = emptyMap()
     private var provinceCenterCache: Map<String, Pair<Double, Double>> = emptyMap()
     private var provinceNameCache: Map<String, String> = emptyMap()
+    private val regionFocusCoordinator = RegionFocusCoordinator()
+    val regionFocusState: StateFlow<RegionFocusState> =
+        regionFocusCoordinator.state
 
     private fun invalidateCaches() {
         footprintCache = null
@@ -237,6 +242,7 @@ class MapViewModel(
         get() = _mapController
         set(value) {
             if (_mapController === value) return
+            cancelRegionFocus()
             _mapController = value
             if (value != null) {
                 lastSyncedRegionIds = emptySet()
@@ -355,6 +361,7 @@ class MapViewModel(
     }
 
     fun navigateToNational() {
+        cancelRegionFocus()
         _currentLevel.value = MapZoomLevel.NATIONAL
         _currentPath.value = emptyList()
         val controller = _mapController
@@ -435,6 +442,7 @@ class MapViewModel(
     }
 
     fun navigateUp() {
+        cancelRegionFocus()
         val path = _currentPath.value
         if (path.size > 1) {
             _currentPath.value = path.dropLast(1)
@@ -516,7 +524,66 @@ class MapViewModel(
         vmScope.launch { loadAttractionsForSelectedRegion(regionId) }
     }
 
+    fun focusRegion(
+        regionId: String,
+        insets: ViewportInsets,
+        reducedMotion: Boolean
+    ): Long? {
+        val region = regionRepository.getRegion(regionId) ?: return null
+        selectRegion(regionId)
+        clearBottomPanel()
+        _mapController?.pulseOverlay(regionId)
+        val focusRequest = regionFocusCoordinator.begin(regionId)
+        val controller = _mapController
+        if (controller == null) {
+            regionFocusCoordinator.complete(focusRequest)
+            return focusRequest
+        }
+        val duration = regionFocusDurationMillis(reducedMotion)
+        val bounds = regionRepository.getRegionBounds(regionId)
+        val complete: (Long) -> Unit = {
+            regionFocusCoordinator.complete(focusRequest)
+        }
+        if (bounds != null) {
+            controller.focusBounds(
+                minLng = bounds.minLng,
+                maxLng = bounds.maxLng,
+                minLat = bounds.minLat,
+                maxLat = bounds.maxLat,
+                insets = insets,
+                durationMillis = duration,
+                onComplete = complete
+            )
+        } else {
+            val center = regionRepository.getRegionCenter(regionId)
+            if (center == null) {
+                regionFocusCoordinator.complete(focusRequest)
+            } else {
+                val zoom = when (region.level) {
+                    RegionLevel.PROVINCE -> 7f
+                    RegionLevel.CITY -> 9f
+                    RegionLevel.DISTRICT -> 11f
+                }
+                controller.focusCamera(
+                    lat = center.first,
+                    lng = center.second,
+                    zoomLevel = zoom,
+                    insets = insets,
+                    durationMillis = duration,
+                    onComplete = complete
+                )
+            }
+        }
+        return focusRequest
+    }
+
+    fun cancelRegionFocus() {
+        regionFocusCoordinator.cancel()
+        _mapController?.cancelCameraAnimation()
+    }
+
     fun clearSelection() {
+        cancelRegionFocus()
         _selectedRegion.value = null
         _selectedRegionAttractions.value = emptyList()
     }

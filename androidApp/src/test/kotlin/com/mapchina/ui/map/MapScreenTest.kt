@@ -115,6 +115,38 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun focusedRegion_opensCardOnlyFromFocusedState() = runComposeUiTest {
+        val fixture = createSuggestionFixture(
+            offerSuggestion = false,
+            existingFootprint = false
+        )
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        fixture.viewModel.selectRegion("330000")
+        waitForIdle()
+        onAllNodesWithText("这次停留有多深？").assertCountEquals(0)
+
+        fixture.viewModel.focusRegion(
+            regionId = "330000",
+            insets = com.mapchina.map.ViewportInsets(),
+            reducedMotion = true
+        )
+        waitForIdle()
+
+        onNodeWithText("浙江省").assertIsDisplayed()
+        onNodeWithText("这次停留有多深？").assertIsDisplayed()
+        onAllNodesWithContentDescription("地图工具").assertCountEquals(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
     @Test fun mapScreen_firstFootprint_showsThenDismissesCelebration() = runComposeUiTest {
         val fixture = createSuggestionFixture(offerSuggestion = false)
         mainClock.autoAdvance = false

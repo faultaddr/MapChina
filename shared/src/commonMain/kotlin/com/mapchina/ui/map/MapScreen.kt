@@ -54,6 +54,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,9 +64,11 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.map.ViewportInsets
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.platform.rememberReducedMotionEnabled
 import com.mapchina.platform.SystemStatusBarAppearance
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
@@ -119,6 +122,9 @@ fun MapScreen(
     }
 
     val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
+    val reducedMotion = rememberReducedMotionEnabled()
 
     val currentLevel by viewModel.currentLevel.collectAsState()
     val mapRenderState by mapController.renderState.collectAsState()
@@ -132,6 +138,7 @@ fun MapScreen(
     val achievementResult by viewModel.achievementUnlock.collectAsState()
     val firstFootprintActivation by viewModel.firstFootprintActivation.collectAsState()
     val firstFootprintCelebration by viewModel.firstFootprintCelebration.collectAsState()
+    val regionFocusState by viewModel.regionFocusState.collectAsState()
 
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
@@ -178,20 +185,28 @@ fun MapScreen(
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
     val totalCount = regions.size
     val coveragePercent = if (totalCount > 0) visitedCount * 100 / totalCount else 0
+    val focusInsets = ViewportInsets(
+        leftPx = with(density) { 20.dp.toPx() },
+        topPx = with(density) { 104.dp.toPx() },
+        rightPx = with(density) { 20.dp.toPx() },
+        bottomPx = with(density) {
+            (bottomBarOffset + 244.dp).toPx()
+        }
+    )
 
-    // Single tap on region → pulse + show card
+    // Single tap on region → focus first, then show the card on completion
     mapController.setOnRegionTapListener { regionId ->
-        if (bottomPanel is BottomPanel.Region && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
         haptic.perform(HapticType.MEDIUM)
-        mapController.pulseOverlay(regionId)
-        viewModel.selectRegion(regionId)
-        viewModel.showRegionPanel(regionId)
         mapSelectionActive = false
+        viewModel.focusRegion(regionId, focusInsets, reducedMotion)
     }
 
-    // Double tap on region → drill into region
-    mapController.setOnRegionDoubleTapListener { regionId ->
-        viewModel.drillIntoRegion(regionId)
+    mapController.setOnRegionDoubleTapListener(null)
+
+    LaunchedEffect(regionFocusState) {
+        val focused = regionFocusState as? RegionFocusState.Focused
+            ?: return@LaunchedEffect
+        viewModel.showRegionPanel(focused.regionId)
     }
 
     // Viewport constraint: lock pan at national level, free at drill-down levels
@@ -318,7 +333,6 @@ fun MapScreen(
             if (!showMapTools) fabExpanded = false
         }
 
-        val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         if (showMapTools) {
             MapFab(
                 coveragePercent = coveragePercent,
@@ -427,6 +441,7 @@ fun MapScreen(
                     },
                     onClose = {
                         viewModel.clearBottomPanel()
+                        viewModel.cancelRegionFocus()
                         viewModel.clearSelection()
                     }
                 )
