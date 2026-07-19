@@ -42,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,7 +114,14 @@ fun MapScreen(
         return
     }
 
-    viewModel.mapController = mapController
+    DisposableEffect(viewModel, mapController) {
+        viewModel.mapController = mapController
+        onDispose {
+            if (viewModel.mapController === mapController) {
+                viewModel.mapController = null
+            }
+        }
+    }
 
     // Refresh map theme when returning to MapScreen
     LaunchedEffect(Unit) {

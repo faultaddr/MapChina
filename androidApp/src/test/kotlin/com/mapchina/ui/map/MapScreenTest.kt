@@ -4,6 +4,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -26,6 +27,8 @@ import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.RegionMatch
 import com.mapchina.domain.service.FootprintSuggestionService
+import com.mapchina.map.MapController
+import com.mapchina.map.ViewportInsets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
@@ -147,6 +150,56 @@ class MapScreenTest {
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun leavingMapScreen_cancelsPendingRegionFocus() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+        fixture.regionRepo.updateBoundary(
+            "330000",
+            "[[118.0,27.0],[123.0,27.0],[123.0,32.0],[118.0,32.0],[118.0,27.0]]"
+        )
+        val controller = MapController()
+        val showMap = mutableStateOf(true)
+
+        try {
+            setContent {
+                if (showMap.value) {
+                    MapScreen(
+                        onNavigate = {},
+                        onBack = {},
+                        viewModel = fixture.viewModel,
+                        mapController = controller
+                    )
+                }
+            }
+            waitForIdle()
+
+            runOnIdle {
+                fixture.viewModel.focusRegion(
+                    regionId = "330000",
+                    insets = ViewportInsets(),
+                    reducedMotion = true
+                )
+                org.junit.Assert.assertTrue(
+                    fixture.viewModel.regionFocusState.value is
+                        RegionFocusState.Animating
+                )
+                showMap.value = false
+            }
+            waitForIdle()
+            Thread.sleep(180L)
+            waitForIdle()
+
+            org.junit.Assert.assertEquals(
+                RegionFocusState.Idle,
+                fixture.viewModel.regionFocusState.value
+            )
+            org.junit.Assert.assertNull(fixture.viewModel.mapController)
+        } finally {
+            controller.dispose()
+        }
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
     @Test fun mapScreen_firstFootprint_showsThenDismissesCelebration() = runComposeUiTest {
         val fixture = createSuggestionFixture(offerSuggestion = false)
         mainClock.autoAdvance = false
@@ -258,11 +311,12 @@ class MapScreenTest {
             footprintSuggestionService = suggestionService
         )
 
-        return SuggestionFixture(viewModel, footprintRepo)
+        return SuggestionFixture(viewModel, footprintRepo, regionRepo)
     }
 
     private data class SuggestionFixture(
         val viewModel: MapViewModel,
-        val footprintRepo: FootprintRepository
+        val footprintRepo: FootprintRepository,
+        val regionRepo: RegionRepository
     )
 }
