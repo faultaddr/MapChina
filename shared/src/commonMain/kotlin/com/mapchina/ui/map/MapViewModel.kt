@@ -109,6 +109,7 @@ class MapViewModel(
     val persistentMapController = MapController()
 
     fun onCleared() {
+        invalidateLayerLoad()
         cancelRegionFocus()
         vmScope.cancel()
     }
@@ -148,13 +149,25 @@ class MapViewModel(
         MutableStateFlow<MapLayerLoadState>(MapLayerLoadState.Idle)
     val mapLayerLoadState: StateFlow<MapLayerLoadState> =
         _mapLayerLoadState.asStateFlow()
-    private var pendingDrillRegionId: String? = null
 
     private data class PreparedChildLayer(
         val parent: Region,
         val children: List<Region>,
         val boundaries: Map<String, String>
     )
+
+    private data class LayerLoadRequest(
+        val generation: Long,
+        val regionId: String,
+        val sourcePath: List<String>,
+        val sourceLevel: MapZoomLevel
+    )
+
+    private var layerLoadGeneration = 0L
+    private val activeLayerLoadRequest =
+        MutableStateFlow<LayerLoadRequest?>(null)
+    private val failedLayerLoadRequest =
+        MutableStateFlow<LayerLoadRequest?>(null)
 
     private val _achievementUnlock = MutableStateFlow<AchievementUnlockResult?>(null)
     val achievementUnlock: StateFlow<AchievementUnlockResult?> = _achievementUnlock.asStateFlow()
@@ -255,6 +268,7 @@ class MapViewModel(
         get() = _mapController
         set(value) {
             if (_mapController === value) return
+            invalidateLayerLoad()
             cancelRegionFocus()
             _mapController = value
             if (value != null) {
@@ -288,6 +302,7 @@ class MapViewModel(
     }
 
     fun reloadData() {
+        invalidateLayerLoad()
         invalidateCaches()
         refreshFirstFootprintActivation()
         _programmaticCamera = true
@@ -337,7 +352,6 @@ class MapViewModel(
     }
 
     fun drillIntoRegion(regionId: String) {
-        if (_mapLayerLoadState.value is MapLayerLoadState.Loading) return
         if (_currentPath.value.any { it.id == regionId }) return
         val region = regionRepository.getRegion(regionId) ?: return
         val label = when (region.level) {
@@ -345,14 +359,16 @@ class MapViewModel(
             RegionLevel.CITY -> "正在展开区级地图"
             RegionLevel.DISTRICT -> return
         }
-        pendingDrillRegionId = regionId
+        val request = beginLayerLoad(regionId)
         _mapLayerLoadState.value = MapLayerLoadState.Loading(regionId, label)
         vmScope.launch {
             val prepared = runCatching { prepareChildLayer(region) }.getOrNull()
-            if (pendingDrillRegionId != regionId) return@launch
+            if (!isCurrentLayerLoad(request)) return@launch
             if (prepared == null) {
                 val targetLabel =
                     if (region.level == RegionLevel.PROVINCE) "市级" else "区级"
+                activeLayerLoadRequest.value = null
+                failedLayerLoadRequest.value = request
                 _mapLayerLoadState.value = MapLayerLoadState.Error(
                     regionId = regionId,
                     message = "${targetLabel}地图暂时无法展开"
@@ -360,9 +376,38 @@ class MapViewModel(
                 return@launch
             }
             commitChildLayer(prepared)
-            pendingDrillRegionId = null
+            activeLayerLoadRequest.value = null
+            failedLayerLoadRequest.value = null
             _mapLayerLoadState.value = MapLayerLoadState.Idle
         }
+    }
+
+    private fun beginLayerLoad(regionId: String): LayerLoadRequest {
+        layerLoadGeneration += 1L
+        return LayerLoadRequest(
+            generation = layerLoadGeneration,
+            regionId = regionId,
+            sourcePath = _currentPath.value.map { it.id },
+            sourceLevel = _currentLevel.value
+        ).also { request ->
+            activeLayerLoadRequest.value = request
+            failedLayerLoadRequest.value = null
+        }
+    }
+
+    private fun isCurrentLayerLoad(request: LayerLoadRequest): Boolean =
+        activeLayerLoadRequest.value == request &&
+            sourceContextMatches(request)
+
+    private fun sourceContextMatches(request: LayerLoadRequest): Boolean =
+        _currentLevel.value == request.sourceLevel &&
+            _currentPath.value.map { it.id } == request.sourcePath
+
+    private fun invalidateLayerLoad() {
+        layerLoadGeneration += 1L
+        activeLayerLoadRequest.value = null
+        failedLayerLoadRequest.value = null
+        _mapLayerLoadState.value = MapLayerLoadState.Idle
     }
 
     private fun prepareChildLayer(parent: Region): PreparedChildLayer? {
@@ -438,14 +483,22 @@ class MapViewModel(
     }
 
     fun retryLayerLoad() {
-        val regionId =
-            (mapLayerLoadState.value as? MapLayerLoadState.Error)?.regionId
-                ?: return
-        drillIntoRegion(regionId)
+        val error = mapLayerLoadState.value as? MapLayerLoadState.Error
+            ?: return
+        val failedRequest = failedLayerLoadRequest.value
+        if (
+            failedRequest == null ||
+            failedRequest.regionId != error.regionId ||
+            !sourceContextMatches(failedRequest)
+        ) {
+            invalidateLayerLoad()
+            return
+        }
+        drillIntoRegion(error.regionId)
     }
 
     fun dismissLayerLoadError() {
-        pendingDrillRegionId = null
+        failedLayerLoadRequest.value = null
         _mapLayerLoadState.value = MapLayerLoadState.Idle
     }
 
@@ -459,6 +512,7 @@ class MapViewModel(
     }
 
     fun navigateToNational() {
+        invalidateLayerLoad()
         cancelRegionFocus()
         _currentLevel.value = MapZoomLevel.NATIONAL
         _currentPath.value = emptyList()
@@ -540,6 +594,7 @@ class MapViewModel(
     }
 
     fun navigateUp() {
+        invalidateLayerLoad()
         cancelRegionFocus()
         val path = _currentPath.value
         if (path.size > 1) {
@@ -579,6 +634,7 @@ class MapViewModel(
 
     fun navigateTo(regionId: String) {
         val region = regionRepository.getRegion(regionId) ?: return
+        invalidateLayerLoad()
         val path = buildPathTo(regionId)
         _currentPath.value = path
         _currentLevel.value = when (region.level) {
@@ -1148,6 +1204,7 @@ class MapViewModel(
     }
 
     private fun zoomOutToParent() {
+        invalidateLayerLoad()
         val path = _currentPath.value
         if (path.size > 1) {
             _currentPath.value = path.dropLast(1)

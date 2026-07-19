@@ -16,6 +16,7 @@ import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
 import com.mapchina.map.OverlayRole
 import com.mapchina.map.ViewportInsets
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -335,6 +336,196 @@ class MapViewModelTest {
         }
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun delayedChildLayerCompletingAfterNavigateUp_cannotRestoreStaleDrill() = runTest {
+        seedProvinceCityAndDistrict()
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val delayedViewModel = createDelayedViewModel(dispatcher)
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.selectRegion("510100")
+            delayedViewModel.showRegionPanel("510100")
+            runCurrent()
+
+            val selectionBeforeRequest = delayedViewModel.selectedRegion.value
+            val panelBeforeRequest = delayedViewModel.bottomPanel.value
+            delayedViewModel.drillIntoRegion("510100")
+            assertEquals(
+                MapLayerLoadState.Loading("510100", "正在展开区级地图"),
+                delayedViewModel.mapLayerLoadState.value
+            )
+
+            delayedViewModel.navigateUp()
+            assertEquals(MapZoomLevel.NATIONAL, delayedViewModel.currentLevel.value)
+            assertTrue(delayedViewModel.currentPath.value.isEmpty())
+
+            runCurrent()
+
+            assertEquals(MapZoomLevel.NATIONAL, delayedViewModel.currentLevel.value)
+            assertTrue(delayedViewModel.currentPath.value.isEmpty())
+            assertEquals(
+                listOf("510000"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertEquals(selectionBeforeRequest, delayedViewModel.selectedRegion.value)
+            assertEquals(panelBeforeRequest, delayedViewModel.bottomPanel.value)
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun delayedChildLayerCompletingAfterReload_cannotCommitStaleDrill() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "reloadDrillUser"
+        )
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.selectRegion("510100")
+            delayedViewModel.showRegionPanel("510100")
+            runCurrent()
+
+            val selectionBeforeRequest = delayedViewModel.selectedRegion.value
+            val panelBeforeRequest = delayedViewModel.bottomPanel.value
+            delayedViewModel.drillIntoRegion("510100")
+            delayedViewModel.reloadData()
+            runCurrent()
+
+            assertEquals(MapZoomLevel.PROVINCIAL, delayedViewModel.currentLevel.value)
+            assertEquals("510000", delayedViewModel.currentPath.value.single().id)
+            assertEquals(
+                listOf("510100"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertEquals(selectionBeforeRequest, delayedViewModel.selectedRegion.value)
+            assertEquals(panelBeforeRequest, delayedViewModel.bottomPanel.value)
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun delayedChildLayerCompletingAfterControllerTeardown_cannotCommit() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "controllerDrillUser"
+        )
+        val controller = MapController()
+
+        try {
+            delayedViewModel.mapController = controller
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            runCurrent()
+            delayedViewModel.selectRegion("510100")
+            delayedViewModel.showRegionPanel("510100")
+            runCurrent()
+
+            val selectionBeforeRequest = delayedViewModel.selectedRegion.value
+            val panelBeforeRequest = delayedViewModel.bottomPanel.value
+            delayedViewModel.drillIntoRegion("510100")
+            delayedViewModel.mapController = null
+            runCurrent()
+
+            assertEquals(MapZoomLevel.PROVINCIAL, delayedViewModel.currentLevel.value)
+            assertEquals("510000", delayedViewModel.currentPath.value.single().id)
+            assertEquals(
+                listOf("510100"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertEquals(selectionBeforeRequest, delayedViewModel.selectedRegion.value)
+            assertEquals(panelBeforeRequest, delayedViewModel.bottomPanel.value)
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+            controller.dispose()
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun viewModelTeardown_cancelsQueuedChildLayerAndReturnsIdle() = runTest {
+        seedProvinceCityAndDistrict()
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "clearedDrillUser"
+        )
+
+        runCurrent()
+        delayedViewModel.drillIntoRegion("510000")
+        runCurrent()
+        delayedViewModel.drillIntoRegion("510100")
+
+        delayedViewModel.onCleared()
+        runCurrent()
+
+        assertEquals(MapZoomLevel.PROVINCIAL, delayedViewModel.currentLevel.value)
+        assertEquals("510000", delayedViewModel.currentPath.value.single().id)
+        assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun newerDrillGeneration_supersedesQueuedRequest() = runTest {
+        seedProvinceCityAndDistrict()
+        regionRepo.insertRegion(Region("330000", "浙江省", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("330100", "杭州市", RegionLevel.CITY, "330000"))
+        regionRepo.updateBoundary("330000", provinceBoundary)
+        regionRepo.updateBoundary("330100", cityBoundary)
+        val delayedViewModel = createDelayedViewModel(
+            StandardTestDispatcher(testScheduler),
+            userId = "newerDrillUser"
+        )
+
+        try {
+            runCurrent()
+            delayedViewModel.drillIntoRegion("510000")
+            delayedViewModel.drillIntoRegion("330000")
+            runCurrent()
+
+            assertEquals(MapZoomLevel.PROVINCIAL, delayedViewModel.currentLevel.value)
+            assertEquals("330000", delayedViewModel.currentPath.value.single().id)
+            assertEquals(
+                listOf("330100"),
+                delayedViewModel.regions.value.map { it.regionId }
+            )
+            assertEquals(MapLayerLoadState.Idle, delayedViewModel.mapLayerLoadState.value)
+        } finally {
+            delayedViewModel.onCleared()
+        }
+    }
+
+    @Test
+    fun retryAfterNavigationContextChanged_doesNotRestartFailedDrill() {
+        regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
+        regionRepo.updateBoundary("510000", provinceBoundary)
+        viewModel.drillIntoRegion("510000")
+        assertTrue(viewModel.mapLayerLoadState.value is MapLayerLoadState.Error)
+
+        viewModel.navigateToNational()
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.updateBoundary("510100", cityBoundary)
+        viewModel.retryLayerLoad()
+
+        assertEquals(MapZoomLevel.NATIONAL, viewModel.currentLevel.value)
+        assertTrue(viewModel.currentPath.value.isEmpty())
+        assertEquals(MapLayerLoadState.Idle, viewModel.mapLayerLoadState.value)
+    }
+
     @Test
     fun navigateUp_fromNational_staysNational() {
         viewModel.navigateUp()
@@ -349,6 +540,18 @@ class MapViewModelTest {
         regionRepo.updateBoundary("510100", cityBoundary)
         regionRepo.updateBoundary("510104", districtBoundary)
     }
+
+    private fun createDelayedViewModel(
+        dispatcher: CoroutineDispatcher,
+        userId: String = "delayedDrillUser"
+    ): MapViewModel = MapViewModel(
+        footprintService = footprintService,
+        regionRepository = regionRepo,
+        footprintRepository = footprintRepo,
+        attractionService = attractionService,
+        userId = userId,
+        dispatcher = dispatcher
+    )
 
     @Test
     fun markFootprint_updatesRegionState() {
