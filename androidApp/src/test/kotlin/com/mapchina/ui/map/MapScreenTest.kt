@@ -55,7 +55,7 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("已点亮", substring = true).assertIsDisplayed()
         onAllNodesWithText("地图操作").assertCountEquals(0)
@@ -91,7 +91,7 @@ class MapScreenTest {
         onNodeWithText("照片回溯 · 实验").assertIsDisplayed()
         onNodeWithText("分享").assertIsDisplayed()
         onAllNodesWithText("当前定位").assertCountEquals(0)
-        onAllNodesWithText("中国足迹").assertCountEquals(0)
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onAllNodesWithText("下一步").assertCountEquals(0)
     }
 
@@ -238,7 +238,7 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
@@ -253,6 +253,32 @@ class MapScreenTest {
             FootprintLevel.SHORT_VISIT,
             fixture.footprintRepo.getFootprint("u1", "330106")?.level
         )
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun mapScreen_nationalActionReturnsDrilledMapToNational() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+        fixture.regionRepo.updateBoundary(
+            "330100",
+            "[[119.0,29.0],[121.0,29.0],[121.0,31.0],[119.0,31.0],[119.0,29.0]]"
+        )
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        fixture.viewModel.drillIntoRegion("330000")
+        waitForIdle()
+        onNodeWithText("浙江省").assertIsDisplayed()
+
+        onNodeWithText("全国").assertIsDisplayed().performClick()
+        waitForIdle()
+        onNodeWithText("中国足迹").assertIsDisplayed()
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)

@@ -312,6 +312,7 @@ fun MapScreen(
                 totalCount = totalCount,
                 coveragePercent = coveragePercent,
                 onNavigateUp = { viewModel.navigateUp() },
+                onNavigateToNational = viewModel::navigateToNational,
                 mapTheme = currentMapTheme,
                 modifier = Modifier
                     .align(Alignment.TopStart)

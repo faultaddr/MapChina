@@ -1,5 +1,6 @@
 package com.mapchina.ui.map
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -8,17 +9,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -40,6 +45,7 @@ fun HomeMapTitle(
     totalCount: Int,
     coveragePercent: Int,
     onNavigateUp: () -> Unit,
+    onNavigateToNational: () -> Unit,
     mapTheme: MapTheme,
     modifier: Modifier = Modifier
 ) {
@@ -47,7 +53,11 @@ fun HomeMapTitle(
     val visualStyle = mapTheme.visualStyle
     val accent = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.Primary
     val secondary = visualStyle.chromeContentColor.copy(alpha = 0.64f)
-    val currentName = path.lastOrNull()?.name ?: "中国"
+    val currentName = if (path.size == 1) {
+        "中国足迹"
+    } else {
+        path.lastOrNull()?.name ?: "中国足迹"
+    }
     val progressText = if (totalCount > 0) "$visitedCount/$totalCount" else "加载中"
 
     Column(
@@ -93,6 +103,43 @@ fun HomeMapTitle(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
+        }
+        Spacer(Modifier.height(5.dp))
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = visualStyle.chromeColor.copy(alpha = 0.62f),
+            shadowElevation = 2.dp,
+            border = BorderStroke(
+                1.dp,
+                visualStyle.chromeContentColor.copy(alpha = 0.06f)
+            )
+        ) {
+            Row(modifier = Modifier.padding(3.dp)) {
+                Text(
+                    text = "足迹",
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF44C6AF), Color(0xFF1D9E92))
+                            ),
+                            RoundedCornerShape(11.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+                Text(
+                    text = "全国",
+                    color = visualStyle.chromeContentColor.copy(alpha = 0.64f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(11.dp))
+                        .clickable(onClick = onNavigateToNational)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
         }
         Spacer(Modifier.height(5.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
