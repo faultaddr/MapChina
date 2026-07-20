@@ -98,6 +98,13 @@ import com.mapchina.map.MapTheme
 import com.mapchina.map.visualStyle
 import com.mapchina.performance.RecompositionProbe
 
+internal fun MapController.installRegionFocusTapHandlers(
+    onRegionFocus: (String) -> Unit
+) {
+    setOnRegionTapListener(onRegionFocus)
+    setOnRegionDoubleTapListener(onRegionFocus)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -208,13 +215,11 @@ fun MapScreen(
     )
 
     // Single tap on region → focus first, then show the card on completion
-    mapController.setOnRegionTapListener { regionId ->
+    mapController.installRegionFocusTapHandlers { regionId ->
         haptic.perform(HapticType.MEDIUM)
         mapSelectionActive = false
         viewModel.focusRegion(regionId, focusInsets, reducedMotion)
     }
-
-    mapController.setOnRegionDoubleTapListener(null)
 
     LaunchedEffect(regionFocusState) {
         val focused = regionFocusState as? RegionFocusState.Focused
