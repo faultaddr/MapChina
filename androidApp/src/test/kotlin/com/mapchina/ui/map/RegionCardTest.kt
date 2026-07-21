@@ -3,6 +3,8 @@ package com.mapchina.ui.map
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -17,6 +19,34 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = android.app.Application::class, sdk = [34])
 class RegionCardTest {
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun terminalRegion_showsLowestLevelInsteadOfDrillAction() = runComposeUiTest {
+        var drillDownCalls = 0
+
+        setContent {
+            RegionCard(
+                region = RegionFootprintUi(
+                    regionId = "110101",
+                    name = "东城区",
+                    footprintLevel = null,
+                    normalizedPath = emptyList(),
+                    bounds = RegionBounds(0f, 0f, 0f, 0f)
+                ),
+                attractionCount = 0,
+                canDrillDown = false,
+                onMarkFootprint = { _, _ -> },
+                onDrillDown = { drillDownCalls++ },
+                onShowAttractions = {}
+            )
+        }
+
+        onNodeWithText("已到最下级").assertIsDisplayed()
+        onAllNodes(hasText("已到最下级") and hasClickAction()).assertCountEquals(0)
+        onAllNodesWithText("查看下级").assertCountEquals(0)
+        assertEquals(0, drillDownCalls)
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun firstFootprintActivation_showsLevelsWithoutIntermediateAction() = runComposeUiTest {

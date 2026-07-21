@@ -141,7 +141,8 @@ class MapViewModel(
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val footprintSuggestionService: FootprintSuggestionService? = null,
     private val currentLocationProvider: CurrentLocationProvider? = locationProvider?.let(::PlatformCurrentLocationProvider),
-    controllerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
+    controllerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val childLayerAvailabilityOverride: ((String) -> Boolean)? = null
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -355,6 +356,7 @@ class MapViewModel(
 
     private var childrenIndex: Map<String, List<String>> = emptyMap()
     private var childrenIndexReady = false
+    private val childLayerAvailabilityCache = mutableMapOf<String, Boolean>()
 
     private var provinceBoundaryCache: Map<String, String> = emptyMap()
     private var provinceCenterCache: Map<String, Pair<Double, Double>> = emptyMap()
@@ -653,6 +655,8 @@ class MapViewModel(
 
     fun drillIntoRegion(regionId: String) {
         val region = regionRepository.getRegion(regionId) ?: return
+        val hasChildLayerAvailability = boundaryLoader != null || childLayerAvailabilityOverride != null
+        if (hasChildLayerAvailability && !canDrillIntoRegion(regionId)) return
         val label = when (region.level) {
             RegionLevel.PROVINCE -> "正在展开市级地图"
             RegionLevel.CITY -> "正在展开区级地图"
@@ -1307,7 +1311,11 @@ class MapViewModel(
         val hasChildren = !childrenIndex[regionId].isNullOrEmpty()
         if (hasChildren) return true
         val region = regionRepository.getRegion(regionId) ?: return false
-        return region.level != RegionLevel.DISTRICT
+        if (region.level == RegionLevel.DISTRICT) return false
+        return childLayerAvailabilityCache.getOrPut(regionId) {
+            childLayerAvailabilityOverride?.invoke(regionId)
+                ?: (boundaryLoader?.hasChildRegions(regionId) == true)
+        }
     }
 
     fun getAttractionCountForRegion(regionId: String): Int {

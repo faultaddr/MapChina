@@ -38,6 +38,14 @@ actual class BoundaryLoader(private val context: Context) {
         }
     }
 
+    actual fun hasChildRegions(parentId: String): Boolean {
+        return try {
+            context.assets.open("districts/$parentId.json").use { true }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun parseChildRegions(jsonString: String, parentId: String): List<ChildRegionBoundary>? {
         return try {
             val json = Json.parseToJsonElement(jsonString).jsonArray

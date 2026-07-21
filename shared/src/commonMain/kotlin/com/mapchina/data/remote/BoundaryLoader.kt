@@ -20,6 +20,7 @@ data class AttractionSeed(
 expect class BoundaryLoader {
     fun loadBoundary(regionId: String): String?
     fun loadChildRegions(parentId: String): List<ChildRegionBoundary>?
+    fun hasChildRegions(parentId: String): Boolean
     fun loadAttractionSeeds(): List<AttractionSeed>?
     fun getAvailableRegionIds(): List<String>
 }

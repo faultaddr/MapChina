@@ -351,6 +351,75 @@ class MapViewModelTest {
     }
 
     @Test
+    fun terminalCityWithoutLoadedChildren_cannotDrillDown() {
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.CITY, "110000"))
+
+        assertFalse(viewModel.canDrillIntoRegion("110101"))
+    }
+
+    @Test
+    fun drillIntoTerminalCity_keepsLayerStateIdle() {
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.CITY, "110000"))
+        val dispatcher = UnconfinedTestDispatcher()
+        val terminalViewModel = MapViewModel(
+            footprintService,
+            regionRepo,
+            footprintRepo,
+            attractionService,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "testUser",
+            dispatcher,
+            suggestionService,
+            controllerDispatcher = dispatcher,
+            childLayerAvailabilityOverride = { false }
+        )
+
+        try {
+            terminalViewModel.drillIntoRegion("110101")
+
+            assertEquals(MapLayerLoadState.Idle, terminalViewModel.mapLayerLoadState.value)
+            assertEquals(MapZoomLevel.NATIONAL, terminalViewModel.currentLevel.value)
+            assertTrue(terminalViewModel.currentPath.value.isEmpty())
+        } finally {
+            terminalViewModel.onCleared()
+        }
+    }
+
+    @Test
+    fun cityWithLoadedDistrict_canDrillDown() {
+        regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))
+        regionRepo.insertRegion(Region("510104", "锦江区", RegionLevel.DISTRICT, "510100"))
+        val dispatcher = UnconfinedTestDispatcher()
+        val loadedViewModel = MapViewModel(
+            footprintService,
+            regionRepo,
+            footprintRepo,
+            attractionService,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "testUser",
+            dispatcher,
+            suggestionService,
+            controllerDispatcher = dispatcher
+        )
+
+        try {
+            assertTrue(loadedViewModel.canDrillIntoRegion("510100"))
+        } finally {
+            loadedViewModel.onCleared()
+        }
+    }
+
+    @Test
     fun drillWithMissingBoundaryForOneChild_keepsCurrentMapUnchanged() {
         regionRepo.insertRegion(Region("510000", "四川省", RegionLevel.PROVINCE, null))
         regionRepo.insertRegion(Region("510100", "成都市", RegionLevel.CITY, "510000"))

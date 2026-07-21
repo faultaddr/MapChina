@@ -38,6 +38,9 @@ actual class BoundaryLoader {
         }
     }
 
+    actual fun hasChildRegions(parentId: String): Boolean =
+        bundle.pathForResource(parentId, "json", "districts") != null
+
     actual fun loadAttractionSeeds(): List<AttractionSeed>? {
         return try {
             val path = bundle.pathForResource("attractions", "json") ?: return null
