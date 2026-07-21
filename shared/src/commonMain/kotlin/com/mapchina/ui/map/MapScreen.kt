@@ -42,11 +42,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,18 +54,24 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.navigation3.runtime.NavKey
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.map.ChinaMapView
 import com.mapchina.map.MapController
 import com.mapchina.map.MapZoomLevel
+import com.mapchina.map.ViewportInsets
 import com.mapchina.domain.service.AchievementUnlockResult
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.platform.rememberReducedMotionEnabled
 import com.mapchina.platform.SystemStatusBarAppearance
 import com.mapchina.ui.achievement.AchievementUnlockDialog
 import com.mapchina.ui.navigation.JournalDetailScreen
@@ -92,6 +98,13 @@ import com.mapchina.map.MapTheme
 import com.mapchina.map.visualStyle
 import com.mapchina.performance.RecompositionProbe
 
+internal fun MapController.installRegionFocusTapHandlers(
+    onRegionFocus: (String) -> Unit
+) {
+    setOnRegionTapListener(onRegionFocus)
+    setOnRegionDoubleTapListener(null)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -110,7 +123,14 @@ fun MapScreen(
         return
     }
 
-    viewModel.mapController = mapController
+    DisposableEffect(viewModel, mapController) {
+        viewModel.mapController = mapController
+        onDispose {
+            if (viewModel.mapController === mapController) {
+                viewModel.mapController = null
+            }
+        }
+    }
 
     // Refresh map theme when returning to MapScreen
     LaunchedEffect(Unit) {
@@ -119,6 +139,12 @@ fun MapScreen(
     }
 
     val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
+    val reducedMotion = rememberReducedMotionEnabled()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
+    val isScreenActive = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
 
     val currentLevel by viewModel.currentLevel.collectAsState()
     val mapRenderState by mapController.renderState.collectAsState()
@@ -132,6 +158,8 @@ fun MapScreen(
     val achievementResult by viewModel.achievementUnlock.collectAsState()
     val firstFootprintActivation by viewModel.firstFootprintActivation.collectAsState()
     val firstFootprintCelebration by viewModel.firstFootprintCelebration.collectAsState()
+    val regionFocusState by viewModel.regionFocusState.collectAsState()
+    val mapLayerLoadState by viewModel.mapLayerLoadState.collectAsState()
 
     val photoClusters by viewModel.photoClusters.collectAsState()
     val photoMarkersVisible by viewModel.photoMarkersVisible.collectAsState()
@@ -155,7 +183,6 @@ fun MapScreen(
 
     var showAttractionsSheet by remember { mutableStateOf(false) }
     var photoPreviewCluster by remember { mutableStateOf<PhotoCluster?>(null) }
-    val scope = rememberCoroutineScope()
     var showDartTravel by remember { mutableStateOf(false) }
     var fabExpanded by remember { mutableStateOf(false) }
     var mapSelectionActive by remember { mutableStateOf(false) }
@@ -178,20 +205,26 @@ fun MapScreen(
     val visitedCount = regions.count { it.footprintLevel != null || it.childCoverageRate > 0f }
     val totalCount = regions.size
     val coveragePercent = if (totalCount > 0) visitedCount * 100 / totalCount else 0
+    val focusInsets = ViewportInsets(
+        leftPx = with(density) { 20.dp.toPx() },
+        topPx = with(density) { 104.dp.toPx() },
+        rightPx = with(density) { 20.dp.toPx() },
+        bottomPx = with(density) {
+            (bottomBarOffset + 244.dp).toPx()
+        }
+    )
 
-    // Single tap on region → pulse + show card
-    mapController.setOnRegionTapListener { regionId ->
-        if (bottomPanel is BottomPanel.Region && selectedRegion?.regionId == regionId) return@setOnRegionTapListener
+    // Single tap on region → focus first, then show the card on completion
+    mapController.installRegionFocusTapHandlers { regionId ->
         haptic.perform(HapticType.MEDIUM)
-        mapController.pulseOverlay(regionId)
-        viewModel.selectRegion(regionId)
-        viewModel.showRegionPanel(regionId)
         mapSelectionActive = false
+        viewModel.focusRegion(regionId, focusInsets, reducedMotion)
     }
 
-    // Double tap on region → drill into region
-    mapController.setOnRegionDoubleTapListener { regionId ->
-        viewModel.drillIntoRegion(regionId)
+    LaunchedEffect(regionFocusState) {
+        val focused = regionFocusState as? RegionFocusState.Focused
+            ?: return@LaunchedEffect
+        viewModel.showRegionPanel(focused.regionId)
     }
 
     // Viewport constraint: lock pan at national level, free at drill-down levels
@@ -247,7 +280,8 @@ fun MapScreen(
         // Full-screen map
         ChinaMapView(
             controller = mapController,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            reducedMotion = reducedMotion
         )
 
         Box(
@@ -290,6 +324,7 @@ fun MapScreen(
                 totalCount = totalCount,
                 coveragePercent = coveragePercent,
                 onNavigateUp = { viewModel.navigateUp() },
+                onNavigateToNational = viewModel::navigateToNational,
                 mapTheme = currentMapTheme,
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -297,6 +332,17 @@ fun MapScreen(
                     .padding(top = 14.dp, start = 18.dp, end = 18.dp)
             )
         }
+
+        MapLayerStatusPill(
+            state = mapLayerLoadState,
+            onRetry = viewModel::retryLayerLoad,
+            onDismiss = viewModel::dismissLayerLoadError,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 108.dp)
+                .zIndex(2f)
+        )
 
         // Scrim to dismiss FAB menu
         if (fabExpanded) {
@@ -318,7 +364,6 @@ fun MapScreen(
             if (!showMapTools) fabExpanded = false
         }
 
-        val bottomBarOffset = com.mapchina.ui.LocalScaffoldBottomPadding.current
         if (showMapTools) {
             MapFab(
                 coveragePercent = coveragePercent,
@@ -326,6 +371,8 @@ fun MapScreen(
                 isExpanded = fabExpanded,
                 onExpandedChange = { fabExpanded = it },
                 onTogglePhotos = { viewModel.togglePhotoMarkers() },
+                reducedMotion = reducedMotion,
+                isScreenActive = isScreenActive,
                 onShare = { viewModel.enterShareMode() },
                 onDepart = { showDartTravel = true },
                 onNavigateToNational = if (currentLevel != MapZoomLevel.NATIONAL) {
@@ -411,11 +458,7 @@ fun MapScreen(
                     },
                     onDrillDown = {
                         val regionId = selectedRegion!!.regionId
-                        viewModel.clearBottomPanel()
-                        scope.launch {
-                            delay(200)
-                            viewModel.drillIntoRegion(regionId)
-                        }
+                        viewModel.drillIntoRegion(regionId)
                     },
                     onShowAttractions = {
                         showAttractionsSheet = true
@@ -427,6 +470,7 @@ fun MapScreen(
                     },
                     onClose = {
                         viewModel.clearBottomPanel()
+                        viewModel.cancelRegionFocus()
                         viewModel.clearSelection()
                     }
                 )

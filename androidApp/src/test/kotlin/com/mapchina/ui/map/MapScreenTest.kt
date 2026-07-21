@@ -4,6 +4,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -26,6 +27,8 @@ import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
 import com.mapchina.domain.service.RegionMatch
 import com.mapchina.domain.service.FootprintSuggestionService
+import com.mapchina.map.MapController
+import com.mapchina.map.ViewportInsets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
@@ -52,7 +55,7 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("已点亮", substring = true).assertIsDisplayed()
         onAllNodesWithText("地图操作").assertCountEquals(0)
@@ -88,7 +91,7 @@ class MapScreenTest {
         onNodeWithText("照片回溯 · 实验").assertIsDisplayed()
         onNodeWithText("分享").assertIsDisplayed()
         onAllNodesWithText("当前定位").assertCountEquals(0)
-        onAllNodesWithText("中国足迹").assertCountEquals(0)
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onAllNodesWithText("下一步").assertCountEquals(0)
     }
 
@@ -112,6 +115,88 @@ class MapScreenTest {
 
         onAllNodesWithContentDescription("当前定位").assertCountEquals(0)
         onAllNodesWithContentDescription("地图工具").assertCountEquals(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun focusedRegion_opensCardOnlyFromFocusedState() = runComposeUiTest {
+        val fixture = createSuggestionFixture(
+            offerSuggestion = false,
+            existingFootprint = false
+        )
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        fixture.viewModel.selectRegion("330000")
+        waitForIdle()
+        onAllNodesWithText("这次停留有多深？").assertCountEquals(0)
+
+        fixture.viewModel.focusRegion(
+            regionId = "330000",
+            insets = com.mapchina.map.ViewportInsets(),
+            reducedMotion = true
+        )
+        waitForIdle()
+
+        onNodeWithText("浙江省").assertIsDisplayed()
+        onNodeWithText("这次停留有多深？").assertIsDisplayed()
+        onAllNodesWithContentDescription("地图工具").assertCountEquals(0)
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun leavingMapScreen_cancelsPendingRegionFocus() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+        fixture.regionRepo.updateBoundary(
+            "330000",
+            "[[118.0,27.0],[123.0,27.0],[123.0,32.0],[118.0,32.0],[118.0,27.0]]"
+        )
+        val controller = MapController()
+        val showMap = mutableStateOf(true)
+
+        try {
+            setContent {
+                if (showMap.value) {
+                    MapScreen(
+                        onNavigate = {},
+                        onBack = {},
+                        viewModel = fixture.viewModel,
+                        mapController = controller
+                    )
+                }
+            }
+            waitForIdle()
+
+            runOnIdle {
+                fixture.viewModel.focusRegion(
+                    regionId = "330000",
+                    insets = ViewportInsets(),
+                    reducedMotion = true
+                )
+                org.junit.Assert.assertTrue(
+                    fixture.viewModel.regionFocusState.value is
+                        RegionFocusState.Animating
+                )
+                showMap.value = false
+            }
+            waitForIdle()
+            Thread.sleep(180L)
+            waitForIdle()
+
+            org.junit.Assert.assertEquals(
+                RegionFocusState.Idle,
+                fixture.viewModel.regionFocusState.value
+            )
+            org.junit.Assert.assertNull(fixture.viewModel.mapController)
+        } finally {
+            controller.dispose()
+        }
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
@@ -153,7 +238,7 @@ class MapScreenTest {
             )
         }
 
-        onNodeWithText("中国").assertIsDisplayed()
+        onNodeWithText("中国足迹").assertIsDisplayed()
         onNodeWithText("省级地图 · 0%", substring = false).assertIsDisplayed()
         onNodeWithText("发现可能足迹").assertIsDisplayed()
         onNodeWithText("浙江省 / 杭州市 / 西湖区").assertIsDisplayed()
@@ -168,6 +253,32 @@ class MapScreenTest {
             FootprintLevel.SHORT_VISIT,
             fixture.footprintRepo.getFootprint("u1", "330106")?.level
         )
+    }
+
+    @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+    @Test
+    fun mapScreen_nationalActionReturnsDrilledMapToNational() = runComposeUiTest {
+        val fixture = createSuggestionFixture(offerSuggestion = false)
+        fixture.regionRepo.updateBoundary(
+            "330100",
+            "[[119.0,29.0],[121.0,29.0],[121.0,31.0],[119.0,31.0],[119.0,29.0]]"
+        )
+
+        setContent {
+            MapScreen(
+                onNavigate = {},
+                onBack = {},
+                viewModel = fixture.viewModel
+            )
+        }
+
+        fixture.viewModel.drillIntoRegion("330000")
+        waitForIdle()
+        onNodeWithText("浙江省").assertIsDisplayed()
+
+        onNodeWithText("全国").assertIsDisplayed().performClick()
+        waitForIdle()
+        onNodeWithText("中国足迹").assertIsDisplayed()
     }
 
     @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
@@ -216,21 +327,24 @@ class MapScreenTest {
             )
         }
 
+        val dispatcher = UnconfinedTestDispatcher()
         val viewModel = MapViewModel(
             footprintService = footprintService,
             regionRepository = regionRepo,
             footprintRepository = footprintRepo,
             attractionService = attractionService,
             userId = "u1",
-            dispatcher = UnconfinedTestDispatcher(),
-            footprintSuggestionService = suggestionService
+            dispatcher = dispatcher,
+            footprintSuggestionService = suggestionService,
+            controllerDispatcher = dispatcher
         )
 
-        return SuggestionFixture(viewModel, footprintRepo)
+        return SuggestionFixture(viewModel, footprintRepo, regionRepo)
     }
 
     private data class SuggestionFixture(
         val viewModel: MapViewModel,
-        val footprintRepo: FootprintRepository
+        val footprintRepo: FootprintRepository,
+        val regionRepo: RegionRepository
     )
 }

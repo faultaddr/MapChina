@@ -22,6 +22,10 @@ import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
 import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
@@ -30,6 +34,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AppModuleTest {
 
     private val testPlatformModule = module {
@@ -39,11 +44,13 @@ class AppModuleTest {
     @BeforeTest
     fun setup() {
         stopKoin()
+        Dispatchers.setMain(UnconfinedTestDispatcher())
     }
 
     @AfterTest
     fun teardown() {
         stopKoin()
+        Dispatchers.resetMain()
     }
 
     @Test

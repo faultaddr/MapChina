@@ -73,7 +73,21 @@ class EndToEndTest {
         val td = UnconfinedTestDispatcher()
 
         // 1. Browse provinces at national level
-        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, null, null, null, null, null, userId, td)
+        val mapViewModel = MapViewModel(
+            footprintService,
+            regionRepo,
+            footprintRepo,
+            AttractionService(attractionRepo),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            userId,
+            td,
+            controllerDispatcher = td
+        )
         val provinces = mapViewModel.regions.value
         assertEquals(34, provinces.size)
 

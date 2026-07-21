@@ -219,7 +219,7 @@ fun RegionCard(
                 )
 
                 ActionChip(
-                    label = "查看下级",
+                    label = if (canDrillDown) "查看下级" else "已到最下级",
                     color = MapChinaColors.AccentBlue,
                     onClick = { haptic.perform(HapticType.HEAVY); onDrillDown() },
                     modifier = Modifier.weight(1f),

@@ -1,6 +1,11 @@
 package com.mapchina.ui.map
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -39,11 +45,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapTheme
@@ -59,6 +70,12 @@ private data class MenuItem(
     val tint: Color,
     val onClick: () -> Unit
 )
+
+internal fun auroraMotionEnabled(
+    isExpanded: Boolean,
+    reducedMotion: Boolean,
+    isScreenActive: Boolean
+): Boolean = !isExpanded && !reducedMotion && isScreenActive
 
 @Composable
 fun MapFab(
@@ -76,6 +93,8 @@ fun MapFab(
     onChooseMap: (() -> Unit)? = null,
     onSearchAttraction: (() -> Unit)? = null,
     onUseCurrentLocation: (() -> Unit)? = null,
+    reducedMotion: Boolean = false,
+    isScreenActive: Boolean = true,
     mapTheme: MapTheme = MapTheme.DEFAULT,
     modifier: Modifier = Modifier
 ) {
@@ -178,17 +197,100 @@ fun MapFab(
                 )
                 Spacer(Modifier.height(8.dp))
             }
-            MapDockIconButton(
+            AuroraMapDockButton(
                 contentDescription = "地图工具",
                 icon = Icons.Default.Tune,
                 size = 48.dp,
                 surfaceColor = fabSurfaceColor,
                 iconColor = fabPrimaryColor,
+                motionEnabled = auroraMotionEnabled(
+                    isExpanded = isExpanded,
+                    reducedMotion = reducedMotion,
+                    isScreenActive = isScreenActive
+                ),
                 onClick = {
                     haptic.perform(HapticType.MEDIUM)
                     onExpandedChange(!isExpanded)
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun AuroraMapDockButton(
+    contentDescription: String,
+    icon: ImageVector,
+    size: Dp,
+    surfaceColor: Color,
+    iconColor: Color,
+    motionEnabled: Boolean,
+    onClick: () -> Unit
+) {
+    val rotation = if (motionEnabled) {
+        val transition = rememberInfiniteTransition(label = "auroraRing")
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(7000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "auroraRotation"
+        ).value
+    } else {
+        0f
+    }
+    Box(
+        modifier = Modifier
+            .size(size)
+            .drawWithCache {
+                val ringWidth = 2.5.dp.toPx()
+                val glowWidth = 7.dp.toPx()
+                val aurora = Brush.sweepGradient(
+                    listOf(
+                        Color(0xFF64F3CB),
+                        Color(0xFF2AA6D6),
+                        Color(0xFF9B8CFF),
+                        Color(0xFF64F3CB)
+                    )
+                )
+                onDrawBehind {
+                    rotate(rotation) {
+                        drawCircle(
+                            brush = aurora,
+                            style = Stroke(width = glowWidth),
+                            alpha = 0.14f
+                        )
+                        drawCircle(
+                            brush = aurora,
+                            style = Stroke(width = ringWidth)
+                        )
+                    }
+                }
+            }
+            .semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+            }
+            .clickable(onClick = onClick)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = surfaceColor,
+            shadowElevation = 5.dp,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(3.dp)
+                .clip(CircleShape)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(21.dp)
+                )
+            }
         }
     }
 }
