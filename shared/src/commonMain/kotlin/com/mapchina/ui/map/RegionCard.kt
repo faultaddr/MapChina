@@ -66,6 +66,7 @@ fun RegionCard(
     region: RegionFootprintUi,
     attractionCount: Int,
     canDrillDown: Boolean,
+    firstFootprintActivation: Boolean = false,
     onMarkFootprint: (String, FootprintLevel) -> Unit,
     onRemoveFootprint: (String) -> Unit = {},
     onDrillDown: () -> Unit,
@@ -74,7 +75,9 @@ fun RegionCard(
     onClose: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var footprintExpanded by remember { mutableStateOf(false) }
+    var footprintExpanded by remember(firstFootprintActivation) {
+        mutableStateOf(firstFootprintActivation)
+    }
     var confirmMessage by remember { mutableStateOf<String?>(null) }
     var lastMarkedLevel by remember { mutableStateOf<FootprintLevel?>(null) }
     val haptic = LocalHapticFeedback.current
@@ -100,35 +103,53 @@ fun RegionCard(
     }
 
     Surface(
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        color = MapChinaColors.SurfaceOverlay,
-        shadowElevation = 12.dp,
+        shape = RoundedCornerShape(8.dp),
+        color = MapChinaColors.SurfaceElevated.copy(alpha = 0.94f),
+        shadowElevation = 10.dp,
         tonalElevation = 2.dp,
+        border = MapChinaCard.border,
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .width(42.dp)
+                .height(4.dp)
+                .clip(CircleShape)
+                .background(MapChinaColors.BorderMedium.copy(alpha = 0.55f))
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Region name + status + close
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = region.name,
-                    style = MapChinaTypography.Headline,
-                    color = MapChinaColors.TextPrimary
+                    color = MapChinaColors.TextPrimary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = statusText,
                     color = statusColor,
-                    style = MapChinaTypography.Body,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
-                        .background(statusColor.copy(alpha = 0.2f), MapChinaRadius.Small)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                        .background(statusColor.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
                 )
             }
             Box(
@@ -149,7 +170,7 @@ fun RegionCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Coverage progress
         if (region.childCoverageRate > 0f || region.footprintLevel != null) {
@@ -172,50 +193,64 @@ fun RegionCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("$coveragePercent%", color = MapChinaColors.Primary, style = MapChinaTypography.Body, fontWeight = FontWeight.Bold)
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        if (firstFootprintActivation && confirmMessage == null) {
+            Text(
+                text = "这次停留有多深？",
+                color = MapChinaColors.TextSecondary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
 
         // Action buttons row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Mark footprint
-            ActionChip(
-                label = "标记足迹",
-                color = MapChinaColors.Primary,
-                onClick = { haptic.perform(HapticType.MEDIUM); footprintExpanded = !footprintExpanded }
-            )
-
-            // Drill down
-            if (canDrillDown) {
+        if (!firstFootprintActivation) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ActionChip(
-                    label = "查看下级",
+                    label = "标记足迹",
+                    color = MapChinaColors.Primary,
+                    onClick = { haptic.perform(HapticType.MEDIUM); footprintExpanded = !footprintExpanded },
+                    modifier = Modifier.weight(1f)
+                )
+
+                ActionChip(
+                    label = if (canDrillDown) "查看下级" else "已到最下级",
                     color = MapChinaColors.AccentBlue,
-                    onClick = { haptic.perform(HapticType.HEAVY); onDrillDown() }
+                    onClick = { haptic.perform(HapticType.HEAVY); onDrillDown() },
+                    modifier = Modifier.weight(1f),
+                    enabled = canDrillDown
                 )
             }
 
-            // Attractions
-            if (attractionCount > 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ActionChip(
-                    label = "${attractionCount}个景点",
+                    label = if (attractionCount > 0) "${attractionCount}个景点" else "暂无景点",
                     color = MapChinaColors.FootprintShortVisit,
-                    onClick = { haptic.perform(HapticType.LIGHT); onShowAttractions() }
+                    onClick = { haptic.perform(HapticType.LIGHT); onShowAttractions() },
+                    modifier = Modifier.weight(1f),
+                    enabled = attractionCount > 0
+                )
+
+                ActionChip(
+                    label = "题刻",
+                    color = Color(0xFF8B7355),
+                    onClick = { haptic.perform(HapticType.LIGHT); onOpenCarving() },
+                    modifier = Modifier.weight(1f)
                 )
             }
-
-            // Carving
-            ActionChip(
-                label = "题刻",
-                color = Color(0xFF8B7355),
-                onClick = { haptic.perform(HapticType.LIGHT); onOpenCarving() }
-            )
         }
 
         // Inline footprint selection
         AnimatedVisibility(
-            visible = footprintExpanded && confirmMessage == null,
+            visible = (firstFootprintActivation || footprintExpanded) && confirmMessage == null,
             enter = expandVertically(spring(stiffness = Spring.StiffnessMedium)),
             exit = shrinkVertically(spring(stiffness = Spring.StiffnessMedium))
         ) {
@@ -229,7 +264,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_PASS,
                     color = MapChinaColors.FootprintPassBy,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.PASS_BY)
                         lastMarkedLevel = FootprintLevel.PASS_BY
                         footprintExpanded = false
@@ -241,7 +276,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_SHORT,
                     color = MapChinaColors.FootprintShortVisit,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.SHORT_VISIT)
                         lastMarkedLevel = FootprintLevel.SHORT_VISIT
                         footprintExpanded = false
@@ -253,7 +288,7 @@ fun RegionCard(
                     label = Copy.FOOTPRINT_DEEP,
                     color = MapChinaColors.FootprintDeep,
                     onClick = {
-                        haptic.perform(HapticType.SUCCESS)
+                        haptic.perform(if (firstFootprintActivation) HapticType.MEDIUM else HapticType.SUCCESS)
                         onMarkFootprint(region.regionId, FootprintLevel.DEEP)
                         lastMarkedLevel = FootprintLevel.DEEP
                         footprintExpanded = false
@@ -326,24 +361,30 @@ private fun ActionChip(
     label: String,
     color: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
+    val chipAlpha = if (enabled) 1f else 0.42f
     Box(
         modifier = modifier
-            .clip(MapChinaRadius.Medium)
-            .background(color.copy(alpha = 0.15f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
-                onClick = onClick
+            .clip(RoundedCornerShape(16.dp))
+            .background(color.copy(alpha = 0.11f * chipAlpha))
+            .then(
+                if (enabled) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(),
+                    onClick = onClick
+                ) else Modifier
             )
-            .padding(horizontal = 12.dp, vertical = 7.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            color = color,
-            style = MapChinaTypography.Body,
-            fontWeight = FontWeight.Medium
+            color = color.copy(alpha = chipAlpha),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1
         )
     }
 }

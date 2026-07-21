@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable sealed class Screen : NavKey
 
 @Serializable data object MapScreen : Screen()
-@Serializable data object AttractionsScreen : Screen()
+@Serializable data object DiscoverScreen : Screen()
+@Serializable data object ShanheScreen : Screen()
+@Serializable data class AttractionsScreen(val autoFocusSearch: Boolean = false) : Screen()
 @Serializable data object BadgeWallScreen : Screen()
 @Serializable data class BadgeDetailScreen(val achievementId: String) : Screen()
 @Serializable data object ProvinceConquestScreen : Screen()
@@ -14,7 +16,10 @@ import kotlinx.serialization.Serializable
 @Serializable data object ProfileScreen : Screen()
 @Serializable data object LoginScreen : Screen()
 @Serializable data class RegionDetailScreen(val regionId: String) : Screen()
-@Serializable data class AttractionDetailScreen(val attractionId: String) : Screen()
+@Serializable data class AttractionDetailScreen(
+    val attractionId: String,
+    val fromDiscover: Boolean = false
+) : Screen()
 @Serializable data object AtlasScreen : Screen()
 @Serializable data class AtlasDetailScreen(val atlasId: String) : Screen()
 @Serializable data object JournalListScreen : Screen()

@@ -10,6 +10,7 @@ import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.RegionMatcher
 import com.mapchina.platform.LocationProvider
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +45,8 @@ class AttractionViewModel(
     private val userId: String = "",
     private val locationProvider: LocationProvider? = null,
     private val regionMatcher: RegionMatcher? = null,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
+    dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val footprintSuggestionService: FootprintSuggestionService? = null
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -138,7 +140,18 @@ class AttractionViewModel(
     }
 
     fun markVisit(attractionId: String, regionId: String, level: FootprintLevel) {
-        footprintService.markAttractionVisit(userId, attractionId, regionId, level)
+        val attractionName = getAttractionById(attractionId)?.name ?: attractionId
+        if (footprintSuggestionService != null) {
+            footprintSuggestionService.offerFromAttractionVisit(
+                userId = userId,
+                attractionId = attractionId,
+                regionId = regionId,
+                attractionName = attractionName,
+                level = level
+            )
+        } else {
+            footprintService.recordAttractionVisit(userId, attractionId, level)
+        }
         refreshAttractions()
     }
 
@@ -162,7 +175,7 @@ class AttractionViewModel(
                 isCustom = true,
                 userId = if (userId.isNotBlank()) userId else "local"
             )
-            attractionRepository.insertAttraction(attraction)
+            attractionRepository.insertCustomAttraction(attraction)
             loadAllAttractions()
         }
     }

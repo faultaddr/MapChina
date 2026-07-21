@@ -4,6 +4,7 @@ import { routing } from '@/i18n/routing';
 import { Navbar } from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import type { Metadata } from 'next';
+import type { SiteLocale } from '@/types';
 
 type Props = {
   children: React.ReactNode;
@@ -12,9 +13,10 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const isChinese = locale === 'zh';
   return {
-    title: 'MapChina — 用地图点亮你的中国足迹',
-    description: '探索、记录、分享你的中国之旅',
+    title: isChinese ? 'MapChina — 点亮足迹，看见自己的山河' : 'MapChina — Light up every journey',
+    description: isChinese ? '探索下一站，记录每一次抵达，与旅行者分享中国之美。' : 'Explore China, record every arrival, and share the places that shape your journey.',
     alternates: {
       canonical: `/${locale}`,
     },
@@ -33,9 +35,11 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider>
-      <Navbar />
-      <div className="pt-0">{children}</div>
-      <Footer />
+      <div lang={locale === 'zh' ? 'zh-CN' : 'en'}>
+        <Navbar locale={locale as SiteLocale} />
+        <div>{children}</div>
+        <Footer locale={locale as SiteLocale} />
+      </div>
     </NextIntlClientProvider>
   );
 }

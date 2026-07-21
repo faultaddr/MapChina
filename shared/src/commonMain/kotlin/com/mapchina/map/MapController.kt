@@ -1,5 +1,8 @@
 package com.mapchina.map
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,12 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.atan
-import kotlin.math.exp
-import kotlin.math.ln
-import kotlin.math.log2
-import kotlin.math.PI
-import kotlin.math.tan
 
 class MapController {
 
@@ -28,7 +25,7 @@ class MapController {
 
     internal val animationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private var _pulseAlpha = 0f
+    private var _pulseAlpha by mutableFloatStateOf(0f)
     val pulseAlpha: Float get() = _pulseAlpha
 
     private var regionTapListener: ((String) -> Unit)? = null
@@ -41,8 +38,10 @@ class MapController {
 
     private val hitTestBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
     private val hitTestCoords = mutableMapOf<String, List<List<Pair<Double, Double>>>>()
+    private val projectedOverlayBounds = mutableMapOf<String, androidx.compose.ui.geometry.Rect>()
 
     private var animJob: Job? = null
+    private val cameraRequestGate = CameraAnimationRequestGate()
 
     // Share mode: saved styles to restore
     private val savedOverlayStyles = mutableMapOf<String, OverlayStyle>()
@@ -54,10 +53,30 @@ class MapController {
 
     // ---- Overlay operations ----
 
-    fun addOverlay(regionId: String, boundary: String, style: OverlayStyle, isVisited: Boolean = false) {
+    fun addOverlay(
+        regionId: String,
+        boundary: String,
+        style: OverlayStyle,
+        isVisited: Boolean = false,
+        role: OverlayRole = OverlayRole.ACTIVE,
+        opacityMultiplier: Float = 1f
+    ) {
         val coords = BoundaryParser.parseFlatCoords(boundary)
         hitTestCoords[regionId] = coords
-        _renderState.update { it.copy(overlays = it.overlays + (regionId to OverlayData(coords, style, isVisited))) }
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to OverlayData(
+                        coords = coords,
+                        style = style,
+                        isVisited = isVisited,
+                        role = role,
+                        opacityMultiplier = opacityMultiplier
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
     }
 
     fun updateOverlayStyle(regionId: String, style: OverlayStyle, isVisited: Boolean? = null) {
@@ -66,15 +85,62 @@ class MapController {
         _renderState.update { it.copy(overlays = it.overlays + (regionId to existing.copy(style = style, isVisited = visited))) }
     }
 
+    fun updateOverlayRole(
+        regionId: String,
+        role: OverlayRole,
+        opacityMultiplier: Float
+    ) {
+        val existing = _renderState.value.overlays[regionId] ?: return
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to existing.copy(
+                        role = role,
+                        opacityMultiplier = opacityMultiplier.coerceIn(0f, 1f)
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
+    }
+
+    fun hasOverlay(regionId: String): Boolean =
+        _renderState.value.overlays.containsKey(regionId)
+
+    fun updateOverlayPresentation(
+        regionId: String,
+        style: OverlayStyle,
+        isVisited: Boolean,
+        role: OverlayRole,
+        opacityMultiplier: Float
+    ) {
+        val existing = _renderState.value.overlays[regionId] ?: return
+        _renderState.update {
+            it.copy(
+                overlays = it.overlays + (
+                    regionId to existing.copy(
+                        style = style,
+                        isVisited = isVisited,
+                        role = role,
+                        opacityMultiplier = opacityMultiplier.coerceIn(0f, 1f)
+                    )
+                )
+            )
+        }
+        rebuildInteractiveBounds()
+    }
+
     fun removeOverlay(regionId: String) {
         hitTestCoords.remove(regionId)
         hitTestBounds.remove(regionId)
+        projectedOverlayBounds.remove(regionId)
         _renderState.update { it.copy(overlays = it.overlays - regionId) }
     }
 
     fun clearOverlays() {
         hitTestCoords.clear()
         hitTestBounds.clear()
+        projectedOverlayBounds.clear()
         _renderState.update { it.copy(overlays = emptyMap()) }
     }
 
@@ -88,7 +154,10 @@ class MapController {
     fun removeOverlaysExcept(regionIds: Set<String>) {
         hitTestCoords.keys.retainAll(regionIds)
         hitTestBounds.keys.retainAll(regionIds)
-        _renderState.update { it.copy(overlays = it.overlays.filterKeys { k -> k in regionIds }) }
+        projectedOverlayBounds.keys.retainAll(regionIds)
+        _renderState.update {
+            it.copy(overlays = it.overlays.filterKeys { key -> key in regionIds })
+        }
     }
 
     private var pulseJob: Job? = null
@@ -97,6 +166,21 @@ class MapController {
         _renderState.update { it.copy(pulseTarget = regionId) }
         pulseJob?.cancel()
         pulseJob = animationScope.launch { animatePulse { _pulseAlpha = it } }
+    }
+
+    fun celebrateOverlay(regionId: String) {
+        pulseJob?.cancel()
+        _renderState.update { it.copy(pulseTarget = regionId) }
+        pulseJob = animationScope.launch {
+            try {
+                animateCelebrationPulse { _pulseAlpha = it }
+            } finally {
+                _pulseAlpha = 0f
+                _renderState.update { state ->
+                    if (state.pulseTarget == regionId) state.copy(pulseTarget = null) else state
+                }
+            }
+        }
     }
 
     fun restorePulsedOverlay() {
@@ -246,43 +330,33 @@ class MapController {
         if (animated) {
             animateCamera(lng, lat, zoomLevel)
         } else {
-            viewport.moveTo(lng, lat, zoomLevel)
+            applyImmediateCameraUpdate {
+                viewport.moveTo(lng, lat, zoomLevel)
+            }
         }
     }
 
-    fun computeZoomForBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double): Triple<Double, Double, Float> {
-        val w = viewport.canvasWidth
-        val h = viewport.canvasHeight
-        val targetLng = (minLng + maxLng) / 2.0
-        val targetLat = (minLat + maxLat) / 2.0
-
-        val lngSpan = maxLng - minLng
-        if (lngSpan <= 0.0 || w <= 0f || h <= 0f) {
-            return Triple(targetLng, targetLat, (viewport.zoomLevel + 3f).coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM))
-        }
-
-        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
-        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
-        val mercSpan = mercMax - mercMin
-
-        val padding = 0.75f
-        val scaleFromLng = (w * padding) / lngSpan.toFloat()
-        val scaleFromLat = if (mercSpan > 0.0)
-            (h * padding) / (mercSpan.toFloat() * (180.0 / PI).toFloat())
-        else Float.MAX_VALUE
-
-        val targetScale = minOf(scaleFromLng, scaleFromLat)
-        val targetZoom = (ViewportState.BASE_ZOOM +
-            log2((targetScale / ViewportState.BASE_SCALE).toDouble()).toFloat())
-            .coerceIn(ViewportState.MIN_ZOOM, ViewportState.MAX_ZOOM)
-
-        return Triple(targetLng, targetLat, targetZoom)
+    fun computeZoomForBounds(
+        minLng: Double,
+        maxLng: Double,
+        minLat: Double,
+        maxLat: Double
+    ): Triple<Double, Double, Float> {
+        val target = viewport.computeBoundsFitTarget(
+            minLng = minLng,
+            maxLng = maxLng,
+            minLat = minLat,
+            maxLat = maxLat
+        )
+        return Triple(target.centerLng, target.centerLat, target.zoomLevel)
     }
 
     fun zoomToBounds(minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, animated: Boolean) {
         val (targetLng, targetLat, targetZoom) = computeZoomForBounds(minLng, maxLng, minLat, maxLat)
         if (animated) animateCamera(targetLng, targetLat, targetZoom)
-        else viewport.moveTo(targetLng, targetLat, targetZoom)
+        else applyImmediateCameraUpdate {
+            viewport.moveTo(targetLng, targetLat, targetZoom)
+        }
     }
 
     fun fitChinaInView(animated: Boolean) {
@@ -290,8 +364,64 @@ class MapController {
             val target = viewport.computeChinaFitTarget()
             animateCamera(target.first, target.second, target.third)
         } else {
-            viewport.fitChinaInView()
+            applyImmediateCameraUpdate {
+                viewport.fitChinaInView()
+            }
         }
+    }
+
+    fun focusBounds(
+        minLng: Double,
+        maxLng: Double,
+        minLat: Double,
+        maxLat: Double,
+        insets: ViewportInsets,
+        durationMillis: Long = 650L,
+        onComplete: (Long) -> Unit
+    ): Long {
+        val target = viewport.computeBoundsFitTarget(
+            minLng,
+            maxLng,
+            minLat,
+            maxLat,
+            insets
+        )
+        return animateCamera(
+            targetLng = target.centerLng,
+            targetLat = target.centerLat,
+            targetZoom = target.zoomLevel,
+            durationMillis = durationMillis,
+            onComplete = onComplete
+        )
+    }
+
+    fun focusCamera(
+        lat: Double,
+        lng: Double,
+        zoomLevel: Float,
+        insets: ViewportInsets,
+        durationMillis: Long = 650L,
+        onComplete: (Long) -> Unit
+    ): Long {
+        val target = viewport.offsetCameraTarget(lng, lat, zoomLevel, insets)
+        return animateCamera(
+            targetLng = target.centerLng,
+            targetLat = target.centerLat,
+            targetZoom = target.zoomLevel,
+            durationMillis = durationMillis,
+            onComplete = onComplete
+        )
+    }
+
+    fun cancelCameraAnimation() {
+        animJob?.cancel()
+        animJob = null
+        cameraRequestGate.cancel()
+    }
+
+    private fun applyImmediateCameraUpdate(update: () -> Unit) {
+        cancelCameraAnimation()
+        update()
     }
 
     fun toScreenLocation(lat: Double, lng: Double): Pair<Float, Float>? {
@@ -310,9 +440,15 @@ class MapController {
     fun setOnMapReadyListener(listener: (() -> Unit)?) { mapReadyListener = listener }
     fun setOnCameraAnimCompleteListener(listener: (() -> Unit)?) { cameraAnimCompleteListener = listener }
 
+    internal fun captureCameraAnimCompleteListener(): (() -> Unit)? =
+        cameraAnimCompleteListener
+
+    internal fun hasCameraAnimCompleteListener(): Boolean =
+        cameraAnimCompleteListener != null
+
     // ---- Internal event handling ----
 
-    internal fun handleTap(offset: Offset) {
+    internal fun handleTap(offset: Offset): Boolean {
         val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
         val rs = _renderState.value
         val tapThreshold = 24f
@@ -324,7 +460,7 @@ class MapController {
             val dy = offset.y - screenPos.y
             if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
                 markerTapListener?.invoke(marker.id)
-                return
+                return true
             }
         }
         for (marker in rs.markers.values) {
@@ -333,7 +469,7 @@ class MapController {
             val dy = offset.y - screenPos.y
             if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
                 markerTapListener?.invoke(marker.id)
-                return
+                return true
             }
         }
 
@@ -341,7 +477,9 @@ class MapController {
         val regionId = tester.hitTest(offset.x, offset.y, projection)
         if (regionId != null) {
             regionTapListener?.invoke(regionId)
+            return true
         }
+        return false
     }
 
     internal fun handleDoubleTap(offset: Offset) {
@@ -358,9 +496,20 @@ class MapController {
 
     internal fun handleLongPress(offset: Offset) {}
 
-    internal fun updateHitTestBounds(bounds: Map<String, androidx.compose.ui.geometry.Rect>) {
+    private fun rebuildInteractiveBounds() {
+        val activeIds = _renderState.value.overlays
+            .filterValues { it.role == OverlayRole.ACTIVE }
+            .keys
         hitTestBounds.clear()
-        hitTestBounds.putAll(bounds)
+        hitTestBounds.putAll(projectedOverlayBounds.filterKeys { it in activeIds })
+    }
+
+    internal fun updateHitTestBounds(
+        bounds: Map<String, androidx.compose.ui.geometry.Rect>
+    ) {
+        projectedOverlayBounds.clear()
+        projectedOverlayBounds.putAll(bounds)
+        rebuildInteractiveBounds()
     }
 
     internal fun notifyMapReady() {
@@ -392,43 +541,54 @@ class MapController {
 
     // ---- Animation ----
 
-    private fun animateCamera(targetLng: Double, targetLat: Double, targetZoom: Float) {
+    private fun animateCamera(
+        targetLng: Double,
+        targetLat: Double,
+        targetZoom: Float,
+        durationMillis: Long = 400L,
+        onComplete: ((Long) -> Unit)? = null
+    ): Long {
+        require(durationMillis > 0L) { "durationMillis must be positive" }
         animJob?.cancel()
+        val requestId = cameraRequestGate.begin()
         val startLng = viewport.centerLng
         val startLat = viewport.centerLat
         val startZoom = viewport.zoomLevel
 
         if (startLng == targetLng && startLat == targetLat && startZoom == targetZoom) {
-            cameraAnimCompleteListener?.invoke()
-            return
+            if (cameraRequestGate.isActive(requestId)) {
+                onComplete?.invoke(requestId)
+                cameraAnimCompleteListener?.invoke()
+            }
+            return requestId
         }
 
         animJob = animationScope.launch {
-            val durationMs = 400L
             val startTime = TimeSource.Monotonic.markNow()
-            var lastT = -1f
-            while (true) {
+            while (cameraRequestGate.isActive(requestId)) {
                 val elapsed = startTime.elapsedNow().inWholeMilliseconds
-                val t = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
-                if (t != lastT) {
-                    val eased = t * t * (3f - 2f * t)
-                    val lng = startLng + (targetLng - startLng) * eased
-                    val lat = startLat + (targetLat - startLat) * eased
-                    val zoom = startZoom + (targetZoom - startZoom) * eased
-                    viewport.updateCamera(lng, lat, zoom)
-                    lastT = t
-                }
-                if (t >= 1f) break
+                val progress = (elapsed.toFloat() / durationMillis).coerceIn(0f, 1f)
+                val eased = smoothStep(progress)
+                viewport.updateCamera(
+                    lng = startLng + (targetLng - startLng) * eased,
+                    lat = startLat + (targetLat - startLat) * eased,
+                    zoom = startZoom + (targetZoom - startZoom) * eased
+                )
+                if (progress >= 1f) break
                 delay(16)
             }
-            cameraAnimCompleteListener?.invoke()
+            if (cameraRequestGate.isActive(requestId)) {
+                onComplete?.invoke(requestId)
+                cameraAnimCompleteListener?.invoke()
+            }
         }
+        return requestId
     }
 
     // ---- Lifecycle ----
 
     fun detachFromComposition() {
-        animJob?.cancel()
+        cancelCameraAnimation()
         pulseJob?.cancel()
     }
 

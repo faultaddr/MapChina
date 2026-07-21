@@ -2,8 +2,14 @@ package com.mapchina.data.repository
 
 import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.Carving
+import com.mapchina.sync.SyncChangeWriter
+import com.mapchina.sync.SyncEntityType
+import kotlin.time.Clock
 
-class CarvingRepository(private val database: MapChinaDatabase) {
+class CarvingRepository(
+    private val database: MapChinaDatabase,
+    private val syncChangeWriter: SyncChangeWriter? = null
+) {
 
     fun getCarving(id: String): Carving? {
         val row = database.carvingQueries.selectById(id).executeAsOneOrNull() ?: return null
@@ -30,18 +36,21 @@ class CarvingRepository(private val database: MapChinaDatabase) {
         database.carvingQueries.insertCarving(
             carving.id, carving.userId, carving.regionId, carving.regionName,
             carving.imagePath, carving.strokeData, carving.createdAt,
-            carving.attractionId, carving.attractionName, carving.previewAspectRatio?.toDouble()
+            carving.attractionId, carving.attractionName, carving.previewAspectRatio?.toStableDouble()
         )
+        syncChangeWriter?.enqueueCarving(carving)
     }
 
     fun updateCarving(carving: Carving) {
         database.carvingQueries.updateCarving(
-            carving.imagePath, carving.strokeData, carving.previewAspectRatio?.toDouble(), carving.id
+            carving.imagePath, carving.strokeData, carving.previewAspectRatio?.toStableDouble(), carving.id
         )
+        syncChangeWriter?.enqueueCarving(carving, Clock.System.now().toEpochMilliseconds())
     }
 
     fun deleteCarving(id: String) {
         database.carvingQueries.deleteById(id)
+        syncChangeWriter?.enqueueDelete(SyncEntityType.CARVING, id, Clock.System.now().toEpochMilliseconds())
     }
 
     private fun rowToCarving(row: com.mapchina.data.local.Carving): Carving =
@@ -58,3 +67,5 @@ class CarvingRepository(private val database: MapChinaDatabase) {
             previewAspectRatio = row.preview_aspect_ratio?.toFloat()
         )
 }
+
+private fun Float.toStableDouble(): Double = toString().toDouble()

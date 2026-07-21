@@ -3,12 +3,15 @@ package com.mapchina.server.routes
 import com.mapchina.server.auth.JwtProvider
 import com.mapchina.server.database.*
 import io.ktor.http.*
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -32,7 +35,27 @@ data class CreateFootprintRequest(val regionId: String, val level: String)
 data class CreateAttractionVisitRequest(val attractionId: String, val regionId: String, val level: String, val note: String? = null)
 
 @Serializable
-data class SyncPushRequest(val footprints: List<SyncFootprintItem> = emptyList(), val attractionVisits: List<SyncAttractionVisitItem> = emptyList())
+data class GenericSyncPushRequest(
+    val items: List<GenericSyncItem> = emptyList(),
+    val footprints: List<SyncFootprintItem> = emptyList(),
+    val attractionVisits: List<SyncAttractionVisitItem> = emptyList()
+)
+
+@Serializable
+data class GenericSyncItem(
+    val entityType: String,
+    val entityId: String,
+    val operation: String,
+    val payload: String,
+    val updatedAt: Long,
+    val deleted: Boolean = false
+)
+
+@Serializable
+data class GenericSyncPushResponse(val accepted: Int, val serverTime: Long)
+
+@Serializable
+data class GenericSyncDeltaResponse(val items: List<GenericSyncItem>, val serverTime: Long)
 
 @Serializable
 data class SyncFootprintItem(val regionId: String, val level: String, val timestamp: Long)
@@ -41,10 +64,21 @@ data class SyncFootprintItem(val regionId: String, val level: String, val timest
 data class SyncAttractionVisitItem(val attractionId: String, val regionId: String, val level: String, val timestamp: Long, val note: String? = null)
 
 @Serializable
-data class SyncDeltaResponse(val footprints: List<Map<String, String>>, val attractionVisits: List<Map<String, String?>>, val since: Long)
+private data class SyncFootprintPayload(val regionId: String, val level: String, val timestamp: Long)
+
+@Serializable
+private data class SyncAttractionVisitPayload(
+    val attractionId: String,
+    val regionId: String,
+    val level: String,
+    val timestamp: Long,
+    val note: String? = null
+)
 
 @Serializable
 data class PaginatedResponse<T>(val data: List<T>, val total: Long, val hasMore: Boolean)
+
+private val syncJson = Json { encodeDefaults = true }
 
 fun Route.dataRoutes(jwtProvider: JwtProvider) {
     authenticate("auth-jwt") {
@@ -210,62 +244,22 @@ fun Route.dataRoutes(jwtProvider: JwtProvider) {
 
         route("/sync") {
             get("/delta") {
-                val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
-                val since = call.parameters["since"]?.toLongOrNull() ?: 0L
+                call.respondSyncDelta()
+            }
 
-                val footprints = dbQuery {
-                    Footprints.selectAll().where { (Footprints.userId eq userId) and (Footprints.timestamp greater since) }
-                        .map { mapOf("userId" to it[Footprints.userId], "regionId" to it[Footprints.regionId], "level" to it[Footprints.level], "timestamp" to it[Footprints.timestamp].toString()) }
-                }
-                val visits = dbQuery {
-                    AttractionVisits.selectAll().where { (AttractionVisits.userId eq userId) and (AttractionVisits.timestamp greater since) }
-                        .map { mapOf("userId" to it[AttractionVisits.userId], "attractionId" to it[AttractionVisits.attractionId], "level" to it[AttractionVisits.level], "timestamp" to it[AttractionVisits.timestamp].toString(), "note" to it[AttractionVisits.note]) }
-                }
-                call.respond(SyncDeltaResponse(footprints, visits, System.currentTimeMillis()))
+            get("/pull") {
+                call.respondSyncDelta()
             }
 
             post("/push") {
                 val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
-                val request = call.receive<SyncPushRequest>()
+                val request = call.receive<GenericSyncPushRequest>()
+                val items = request.effectiveItems(userId)
 
-                dbQuery {
-                    request.footprints.forEach { item ->
-                        val existing = Footprints.selectAll().where {
-                            (Footprints.userId eq userId) and (Footprints.regionId eq item.regionId)
-                        }.singleOrNull()
-
-                        if (existing != null) {
-                            val currentLevel = existing[Footprints.level]
-                            val effectiveLevel = if (levelValue(item.level) > levelValue(currentLevel)) item.level else currentLevel
-                            if (effectiveLevel != currentLevel) {
-                                Footprints.update({
-                                    (Footprints.userId eq userId) and (Footprints.regionId eq item.regionId)
-                                }) {
-                                    it[level] = effectiveLevel
-                                    it[timestamp] = item.timestamp
-                                }
-                            }
-                        } else {
-                            Footprints.insert {
-                                it[Footprints.userId] = userId
-                                it[regionId] = item.regionId
-                                it[level] = item.level
-                                it[timestamp] = item.timestamp
-                            }
-                        }
-                    }
-
-                    request.attractionVisits.forEach { item ->
-                        AttractionVisits.insert {
-                            it[AttractionVisits.userId] = userId
-                            it[attractionId] = item.attractionId
-                            it[level] = item.level
-                            it[timestamp] = item.timestamp
-                            it[note] = item.note
-                        }
-                    }
+                val accepted = dbQuery {
+                    items.count { item -> upsertSyncItem(userId, item.normalized()) }
                 }
-                call.respondText("""{"code":"SUCCESS","message":"同步完成"}""")
+                call.respond(GenericSyncPushResponse(accepted, serverTime(items, System.currentTimeMillis())))
             }
         }
     }
@@ -294,3 +288,109 @@ private fun levelValue(level: String): Int = when (level.uppercase()) {
     "PASS_BY" -> 1
     else -> 0
 }
+
+private suspend fun ApplicationCall.respondSyncDelta() {
+    val userId = principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+    val since = parameters["since"]?.toLongOrNull() ?: 0L
+
+    val items = dbQuery {
+        SyncItems.selectAll()
+            .where { (SyncItems.userId eq userId) and (SyncItems.updatedAt greater since) }
+            .orderBy(SyncItems.updatedAt, SortOrder.ASC)
+            .map { it.toGenericSyncItem() }
+    }
+    respond(GenericSyncDeltaResponse(items, serverTime(items, System.currentTimeMillis())))
+}
+
+private fun ResultRow.toGenericSyncItem() = GenericSyncItem(
+    entityType = this[SyncItems.entityType],
+    entityId = this[SyncItems.entityId],
+    operation = this[SyncItems.operation],
+    payload = this[SyncItems.payload],
+    updatedAt = this[SyncItems.updatedAt],
+    deleted = this[SyncItems.deleted]
+)
+
+private fun GenericSyncPushRequest.effectiveItems(userId: String): List<GenericSyncItem> =
+    if (items.isNotEmpty()) {
+        items
+    } else {
+        footprints.map { item ->
+            GenericSyncItem(
+                entityType = "FOOTPRINT",
+                entityId = item.regionId,
+                operation = "UPSERT",
+                payload = syncJson.encodeToString(SyncFootprintPayload(item.regionId, item.level, item.timestamp)),
+                updatedAt = item.timestamp,
+                deleted = false
+            )
+        } + attractionVisits.map { item ->
+            GenericSyncItem(
+                entityType = "ATTRACTION_VISIT",
+                entityId = item.attractionId,
+                operation = "UPSERT",
+                payload = syncJson.encodeToString(
+                    SyncAttractionVisitPayload(
+                        attractionId = item.attractionId,
+                        regionId = item.regionId,
+                        level = item.level,
+                        timestamp = item.timestamp,
+                        note = item.note
+                    )
+                ),
+                updatedAt = item.timestamp,
+                deleted = false
+            )
+        }
+    }
+
+private fun GenericSyncItem.normalized() = copy(
+    entityType = entityType.trim().uppercase(),
+    entityId = entityId.trim(),
+    operation = operation.trim().uppercase(),
+    deleted = deleted || operation.equals("DELETE", ignoreCase = true)
+)
+
+private fun upsertSyncItem(userId: String, item: GenericSyncItem): Boolean {
+    if (item.entityType.isBlank() || item.entityId.isBlank() || item.operation.isBlank()) {
+        return false
+    }
+
+    val existing = SyncItems.selectAll().where {
+        (SyncItems.userId eq userId) and
+            (SyncItems.entityType eq item.entityType) and
+            (SyncItems.entityId eq item.entityId)
+    }.singleOrNull()
+
+    if (existing == null) {
+        SyncItems.insert {
+            it[SyncItems.userId] = userId
+            it[entityType] = item.entityType
+            it[entityId] = item.entityId
+            it[operation] = item.operation
+            it[payload] = item.payload
+            it[updatedAt] = item.updatedAt
+            it[deleted] = item.deleted
+        }
+        return true
+    }
+
+    if (item.updatedAt < existing[SyncItems.updatedAt]) {
+        return false
+    }
+
+    SyncItems.update({
+        (SyncItems.userId eq userId) and
+            (SyncItems.entityType eq item.entityType) and
+            (SyncItems.entityId eq item.entityId)
+    }) {
+        it[operation] = item.operation
+        it[payload] = item.payload
+        it[updatedAt] = item.updatedAt
+        it[deleted] = item.deleted
+    }
+    return true
+}
+
+private fun serverTime(items: List<GenericSyncItem>, now: Long): Long =
+    maxOf(now, items.maxOfOrNull { it.updatedAt } ?: 0L)

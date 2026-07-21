@@ -279,6 +279,11 @@ fun BadgeWallScreen(
     ) {
         TopAppBar(
             title = { Text("徽章墙", color = MapChinaColors.TextPrimary) },
+            navigationIcon = {
+                if (onBack != null) {
+                    com.mapchina.ui.common.BackButton(onClick = onBack)
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 

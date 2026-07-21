@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,7 +56,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.mapchina.ui.common.EmptyState
 import com.mapchina.data.remote.CommunityPostDto
 import com.mapchina.ui.navigation.PostDetailScreen
 import com.mapchina.ui.theme.UserAvatar
@@ -74,13 +75,19 @@ fun CommunityScreen(
     val feedUi by viewModel.feedUi.collectAsState()
     val listState = rememberLazyListState()
 
+    LaunchedEffect(Unit) {
+        if (feedUi.posts.isEmpty()) {
+            viewModel.loadFeed(refresh = true)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MapChinaColors.Background)
     ) {
         TopAppBar(
-            title = { Text("社区", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold) },
+            title = { Text("游记", color = MapChinaColors.TextPrimary, fontWeight = FontWeight.Bold) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MapChinaColors.Background)
         )
 
@@ -89,10 +96,8 @@ fun CommunityScreen(
                 CircularProgressIndicator(color = MapChinaColors.Primary)
             }
         } else if (feedUi.posts.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.AutoStories,
-                title = "暂无帖子",
-                subtitle = "成为第一个分享的人吧",
+            CommunityEmptyState(
+                onRefresh = { viewModel.loadFeed(refresh = true) },
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -118,6 +123,75 @@ fun CommunityScreen(
             }
         }
     }
+}
+
+@Composable
+private fun CommunityEmptyState(
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MapChinaColors.PrimaryLight),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.AutoStories,
+                    contentDescription = null,
+                    tint = MapChinaColors.Primary,
+                    modifier = Modifier.size(38.dp)
+                )
+            }
+            Spacer(Modifier.height(18.dp))
+            Text(
+                "还没有旅行故事",
+                color = MapChinaColors.TextPrimary,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "从景点详情写游记，或把你的足迹地图分享成第一条动态。",
+                color = MapChinaColors.TextSecondary,
+                fontSize = 14.sp,
+                lineHeight = 21.sp
+            )
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                InspirationChip("足迹故事")
+                InspirationChip("城市路线")
+                InspirationChip("景点心得")
+            }
+            Spacer(Modifier.height(22.dp))
+            Button(
+                onClick = onRefresh,
+                colors = ButtonDefaults.buttonColors(containerColor = MapChinaColors.Primary)
+            ) {
+                Text("刷新看看", color = Color.White, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InspirationChip(text: String) {
+    Text(
+        text,
+        color = MapChinaColors.Primary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(MapChinaColors.PrimaryLight)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    )
 }
 
 @Composable

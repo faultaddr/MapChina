@@ -8,6 +8,8 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(17)
+
     androidTarget()
 
     sourceSets.all {
@@ -48,6 +50,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+            implementation("io.ktor:ktor-client-mock:3.1.3")
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:3.1.3")

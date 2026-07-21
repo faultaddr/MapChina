@@ -6,6 +6,7 @@ local.properties
 *.iml
 .kotlin/
 .superpowers/
+.worktrees/
 .claude/
 androidApp/release/
 /com/
@@ -15,3 +16,4 @@ xcuserdata/
 gen_bg_flux.py
 docs/superpowers/plans/*.tmp
 .next/
+.playwright-mcp/

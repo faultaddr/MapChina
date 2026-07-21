@@ -27,7 +27,18 @@ fun Application.configureDatabase() {
     Database.connect(dataSource)
 
     transaction {
-        SchemaUtils.create(Regions, Attractions, Users, Footprints, AttractionVisits, RefreshTokenBlacklist, CommunityPosts, PostLikes, PostComments)
+        SchemaUtils.create(
+            Regions,
+            Attractions,
+            Users,
+            Footprints,
+            AttractionVisits,
+            SyncItems,
+            RefreshTokenBlacklist,
+            CommunityPosts,
+            PostLikes,
+            PostComments
+        )
     }
 }
 

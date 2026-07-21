@@ -7,7 +7,11 @@ import kotlin.math.ln
 import kotlin.math.tan
 import kotlin.math.PI
 
-class GeoPathCache {
+class GeoPathCache internal constructor(
+    private val simplifyRing: (List<Pair<Double, Double>>, Double) -> List<Pair<Double, Double>>
+) {
+    constructor() : this(DouglasPeucker::simplify)
+
     private var cachedPaths: Map<String, List<Path>> = emptyMap()
     private var cachedBounds: Map<String, Rect> = emptyMap()
     private var lastCenterLng: Double = Double.NaN
@@ -17,7 +21,7 @@ class GeoPathCache {
     private var lastWidth: Float = -1f
     private var lastHeight: Float = -1f
     private var lastEpsilon: Double = -1.0
-    private var lastOverlayKeys: Set<String>? = null
+    private var lastOverlayGeometry: Map<String, List<List<Pair<Double, Double>>>> = emptyMap()
 
     private var precomputedRings: List<PrecomputedRing> = emptyList()
 
@@ -31,30 +35,31 @@ class GeoPathCache {
         projection: GeoProjection,
         zoomLevel: Float
     ): GeoPathCache {
-        val currentKeys = overlays.keys
         val epsilon = when {
             zoomLevel < 6 -> 0.05
             zoomLevel < 10 -> 0.01
             else -> 0.0
         }
 
-        val scaleChanged = lastScale != projection.scale ||
+        val projectionChanged = lastScale != projection.scale ||
             lastMercScale != projection.mercScale ||
             lastWidth != projection.canvasWidth ||
-            lastHeight != projection.canvasHeight ||
-            lastEpsilon != epsilon
+            lastHeight != projection.canvasHeight
 
-        val keysChanged = currentKeys != lastOverlayKeys
+        val epsilonChanged = lastEpsilon != epsilon
+        val geometryChanged = lastOverlayGeometry.size != overlays.size || overlays.any { (id, data) ->
+            lastOverlayGeometry[id] !== data.coords
+        }
         boundsChanged = false
 
-        if (keysChanged || scaleChanged) {
+        if (geometryChanged || epsilonChanged) {
             precomputeRings(overlays, epsilon)
         }
 
         val centerChanged = lastCenterLng != projection.viewCenterLng ||
             lastCenterLat != projection.viewCenterLat
 
-        if (keysChanged || scaleChanged || centerChanged) {
+        if (geometryChanged || epsilonChanged || projectionChanged || centerChanged) {
             buildPaths(projection)
             boundsChanged = true
         }
@@ -66,7 +71,9 @@ class GeoPathCache {
         lastWidth = projection.canvasWidth
         lastHeight = projection.canvasHeight
         lastEpsilon = epsilon
-        lastOverlayKeys = currentKeys
+        if (geometryChanged) {
+            lastOverlayGeometry = overlays.mapValues { (_, data) -> data.coords }
+        }
 
         return this
     }
@@ -74,7 +81,7 @@ class GeoPathCache {
     private fun precomputeRings(overlays: Map<String, OverlayData>, epsilon: Double) {
         precomputedRings = overlays.map { (id, data) ->
             val rings = data.coords.map { ring ->
-                val simplified = if (epsilon > 0) DouglasPeucker.simplify(ring, epsilon) else ring
+                val simplified = if (epsilon > 0) simplifyRing(ring, epsilon) else ring
                 val mercYList = simplified.map { (lng, lat) ->
                     PrecomputedPoint(lng, lat, ln(tan(PI / 4 + lat * PI / 360)))
                 }

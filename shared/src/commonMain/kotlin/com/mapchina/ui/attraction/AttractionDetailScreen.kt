@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Payments
@@ -76,6 +77,7 @@ import com.mapchina.domain.model.FootprintLevel
 import com.mapchina.platform.ExternalNavigator
 import com.mapchina.platform.HapticType
 import com.mapchina.platform.LocalHapticFeedback
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.domain.model.Journal
 import com.mapchina.ui.theme.MapChinaColors
 import kotlinx.coroutines.coroutineScope
@@ -86,6 +88,39 @@ import org.koin.compose.koinInject
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+fun attractionDetailImageUrls(
+    primaryImageUrl: String?,
+    detailImageUrls: List<String>
+): List<String> = buildList {
+    primaryImageUrl?.takeIf { it.isNotBlank() }?.let(::add)
+    addAll(detailImageUrls.filter { it.isNotBlank() })
+}.distinct()
+
+internal data class AttractionDetailEntrancePolicy(
+    val heroAlpha: Float,
+    val contentAlpha: Float,
+    val backAlpha: Float,
+    val shouldAnimate: Boolean
+)
+
+internal fun attractionDetailEntrancePolicy(
+    animateHeroEntrance: Boolean
+): AttractionDetailEntrancePolicy = if (animateHeroEntrance) {
+    AttractionDetailEntrancePolicy(
+        heroAlpha = 0f,
+        contentAlpha = 0f,
+        backAlpha = 0f,
+        shouldAnimate = true
+    )
+} else {
+    AttractionDetailEntrancePolicy(
+        heroAlpha = 1f,
+        contentAlpha = 1f,
+        backAlpha = 1f,
+        shouldAnimate = false
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttractionDetailScreen(
@@ -94,6 +129,7 @@ fun AttractionDetailScreen(
     attraction: AttractionUi?,
     detail: AttractionDetail?,
     journals: List<Journal> = emptyList(),
+    animateHeroEntrance: Boolean = true,
     onMarkVisit: (FootprintLevel) -> Unit = {},
     onRemoveVisit: (() -> Unit)? = null,
     onWriteJournal: (() -> Unit)? = null,
@@ -101,6 +137,8 @@ fun AttractionDetailScreen(
     onOpenCarving: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    RecompositionProbe("AttractionDetailScreen")
+
     val haptic = LocalHapticFeedback.current
     if (attraction == null) {
         Box(
@@ -112,24 +150,31 @@ fun AttractionDetailScreen(
         return
     }
 
-    val imageUrls = detail?.imageUrls?.filter { it.isNotBlank() } ?: emptyList()
+    val imageUrls = attractionDetailImageUrls(
+        primaryImageUrl = attraction.imageUrl,
+        detailImageUrls = detail?.imageUrls.orEmpty()
+    )
     var showFullscreen by remember { mutableStateOf(false) }
     var fullscreenStartPage by remember { mutableStateOf(0) }
 
-    // Hero zoom-in animation
-    val heroScale = remember { Animatable(0.82f) }
-    val heroAlpha = remember { Animatable(0f) }
-    val heroOffsetY = remember { Animatable(30f) }
-    val contentAlpha = remember { Animatable(0f) }
-    val backAlpha = remember { Animatable(0f) }
+    val entrancePolicy = attractionDetailEntrancePolicy(animateHeroEntrance)
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.coroutineScope {
-            launch { heroAlpha.animateTo(1f, tween(350)) }
-            launch { heroScale.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow)) }
-            launch { heroOffsetY.animateTo(0f, spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)) }
-            launch { backAlpha.animateTo(1f, tween(250, delayMillis = 100)) }
-            launch { contentAlpha.animateTo(1f, tween(400, delayMillis = 180)) }
+    // Hero zoom-in animation
+    val heroScale = remember(animateHeroEntrance) { Animatable(if (animateHeroEntrance) 0.82f else 1f) }
+    val heroAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.heroAlpha) }
+    val heroOffsetY = remember(animateHeroEntrance) { Animatable(if (animateHeroEntrance) 30f else 0f) }
+    val contentAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.contentAlpha) }
+    val backAlpha = remember(animateHeroEntrance) { Animatable(entrancePolicy.backAlpha) }
+
+    LaunchedEffect(animateHeroEntrance) {
+        if (entrancePolicy.shouldAnimate) {
+            kotlinx.coroutines.coroutineScope {
+                launch { heroAlpha.animateTo(1f, tween(350)) }
+                launch { heroScale.animateTo(1f, spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMediumLow)) }
+                launch { heroOffsetY.animateTo(0f, spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)) }
+                launch { backAlpha.animateTo(1f, tween(250, delayMillis = 100)) }
+                launch { contentAlpha.animateTo(1f, tween(400, delayMillis = 180)) }
+            }
         }
     }
 
@@ -163,14 +208,14 @@ fun AttractionDetailScreen(
                         Box(
                             Modifier
                                 .fillMaxSize()
-                                .background(MapChinaColors.SurfaceElevated),
+                                .background(Color(0xFF173B35)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.LocationOn,
+                                Icons.Default.Landscape,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
-                                tint = MapChinaColors.BorderSubtle
+                                tint = Color.White.copy(alpha = 0.54f)
                             )
                         }
                     }
@@ -441,16 +486,29 @@ private fun ImageCarousel(imageUrls: List<String>, onImageClick: (Int) -> Unit =
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            AsyncImage(
-                model = imageUrls[page],
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures { onImageClick(page) }
-                    }
-            )
+                    .background(Color(0xFF173B35)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Landscape,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.54f),
+                    modifier = Modifier.size(48.dp)
+                )
+                AsyncImage(
+                    model = imageUrls[page],
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures { onImageClick(page) }
+                        }
+                )
+            }
         }
 
         if (imageUrls.size > 1) {

@@ -10,6 +10,7 @@ import com.mapchina.data.repository.RegionRepository
 import com.mapchina.domain.service.AttractionService
 import com.mapchina.domain.service.AuthService
 import com.mapchina.domain.service.FootprintService
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.data.repository.AchievementRepository
 import com.mapchina.data.repository.AtlasRepository
 import com.mapchina.data.repository.CarvingRepository
@@ -26,7 +27,10 @@ import com.mapchina.ui.achievement.AchievementViewModel
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.carving.CarvingViewModel
 import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.data.remote.MapChinaApiClient
+import com.mapchina.data.remote.createMapChinaHttpClient
+import com.mapchina.data.remote.defaultApiBaseUrl
 import com.mapchina.platform.PhotoPicker
 import com.mapchina.platform.DevicePhotoProvider
 import com.mapchina.platform.LocationProvider
@@ -35,42 +39,96 @@ import com.mapchina.ui.achievement.AtlasViewModel
 import com.mapchina.ui.achievement.ProvinceConquestViewModel
 import com.mapchina.ui.map.MapViewModel
 import com.mapchina.ui.profile.ProfileViewModel
+import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
+import com.mapchina.sync.SyncChangeWriter
+import com.mapchina.sync.SyncCoordinator
+import com.mapchina.sync.SyncEngine
+import com.mapchina.sync.SyncUploadTrigger
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val appModule = module {
     single { MapChinaDatabase(get()) }
+    single { SyncChangeWriter(get(), getOrNull<SyncUploadTrigger>()) }
     single { RegionRepository(get()) }
-    single { AttractionRepository(get()) }
-    single { FootprintRepository(get()) }
+    single { AttractionRepository(get(), get()) }
+    single { FootprintRepository(get(), get()) }
     single { FootprintService(get(), get(), get()) }
+    single { FootprintSuggestionService(get(), get()) }
     single { AttractionService(get()) }
     single { AuthService() }
-    single { MapChinaApiClient("http://192.168.31.62:8080", io.ktor.client.HttpClient()) }
+    single { MapChinaApiClient(defaultApiBaseUrl(), createMapChinaHttpClient()) }
+    single { SyncEngine(get<MapChinaApiClient>(), get()) }
+    single { SyncCoordinator(get(), get(), get(), get()) }
+    single<SyncUploadTrigger> { get<SyncCoordinator>() }
 
     single { AchievementRepository(get()) }
     single { AtlasRepository(get()) }
     single { UserScoreRepository(get()) }
-    single { SettingsRepository(get()) }
+    single { SettingsRepository(get(), get()) }
     single { AchievementService(get(), get(), get(), get(), get(), get()) }
     single { AtlasService(get(), get()) }
 
-    single { JournalRepository(get()) }
+    single { JournalRepository(get(), get()) }
     single { JournalService(get(), get(), get()) }
     single { RegionMatcher(get()) }
 
-    single { MapViewModel(get(), get(), get(), get(), getOrNull<com.mapchina.data.remote.BoundaryLoader>(), get(), getOrNull<DevicePhotoProvider>(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>(), getOrNull<AchievementRepository>()) }
-    single { AttractionViewModel(get(), get(), get(), getOrNull<AttractionDetailProvider>(), get(), get(), getOrNull<LocationProvider>(), getOrNull<RegionMatcher>()) }
+    single {
+        MapViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            getOrNull<com.mapchina.data.remote.BoundaryLoader>(),
+            get(),
+            getOrNull<DevicePhotoProvider>(),
+            getOrNull<LocationProvider>(),
+            getOrNull<RegionMatcher>(),
+            getOrNull<AchievementRepository>(),
+            get<AuthService>().getCurrentUser()?.id.orEmpty(),
+            footprintSuggestionService = getOrNull<FootprintSuggestionService>()
+        )
+    }
+    single {
+        AttractionViewModel(
+            attractionRepository = get(),
+            footprintService = get(),
+            footprintRepository = get(),
+            detailProvider = getOrNull<AttractionDetailProvider>(),
+            attractionService = get(),
+            userId = get<AuthService>().getCurrentUser()?.id.orEmpty(),
+            locationProvider = getOrNull<LocationProvider>(),
+            regionMatcher = getOrNull<RegionMatcher>(),
+            footprintSuggestionService = getOrNull<FootprintSuggestionService>()
+        )
+    }
     single { StatsViewModel(get(), get(), get(), get(), get()) }
-    single { ProfileViewModel(get(), get(), getOrNull<SettingsRepository>()) }
+    single {
+        ProfileViewModel(
+            authService = get(),
+            settingsRepository = getOrNull<SettingsRepository>(),
+            database = get(),
+            syncEngine = getOrNull()
+        )
+    }
     single { AchievementViewModel(get(), get(), get()) }
     single { ProvinceConquestViewModel(get(), get()) }
     single { AtlasViewModel(get(), get(), get()) }
     single { JournalViewModel(get(), get(), get(), getOrNull<PhotoPicker>()) }
-    single { CarvingRepository(get()) }
+    single { CarvingRepository(get(), get()) }
     single { CarvingViewModel(get()) }
     single { CommunityViewModel(get()) }
+    single {
+        DiscoverViewModel(
+            attractionRepository = get(),
+            footprintRepository = get(),
+            regionRepository = get(),
+            suggestionService = get(),
+            userId = get<AuthService>().getCurrentUser()?.id.orEmpty()
+        )
+    }
+    single { ShanheViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module

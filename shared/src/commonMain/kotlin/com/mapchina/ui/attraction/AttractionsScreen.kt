@@ -45,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -86,6 +89,7 @@ fun AttractionsScreen(
     onNavigate: (NavKey) -> Unit,
     onBack: () -> Unit,
     viewModel: AttractionViewModel? = null,
+    autoFocusSearch: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val attractions by (viewModel?.attractions?.collectAsState() ?: remember {
@@ -96,6 +100,11 @@ fun AttractionsScreen(
     val searchQuery by (viewModel?.searchQuery?.collectAsState() ?: remember { mutableStateOf("") })
     var selectedFilter by remember { mutableStateOf(AttractionFilter.ALL) }
     var showMoreFilters by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(autoFocusSearch) {
+        if (autoFocusSearch) searchFocusRequester.requestFocus()
+    }
 
     val primaryFilters = listOf(AttractionFilter.ALL, AttractionFilter.A5, AttractionFilter.A4, AttractionFilter.VISITED, AttractionFilter.UNVISITED, AttractionFilter.CUSTOM)
 
@@ -112,6 +121,9 @@ fun AttractionsScreen(
 
     val visitedCount = attractions.count { it.visitLevel != null }
     val totalCount = attractions.size
+    val a5UnvisitedCount = attractions.count { it.level == "A5" && it.visitLevel == null }
+    val a4UnvisitedCount = attractions.count { it.level == "A4" && it.visitLevel == null }
+    val customCount = attractions.count { it.isCustom }
     val bottomPadding = LocalScaffoldBottomPadding.current
 
     Box(modifier = modifier.fillMaxSize().background(MapChinaColors.Background)) {
@@ -188,6 +200,15 @@ fun AttractionsScreen(
                 }
             }
 
+            DiscoveryStrip(
+                visitedCount = visitedCount,
+                totalCount = totalCount,
+                a5UnvisitedCount = a5UnvisitedCount,
+                a4UnvisitedCount = a4UnvisitedCount,
+                customCount = customCount,
+                onFilterClick = { selectedFilter = it }
+            )
+
             // 常驻搜索栏
             OutlinedTextField(
                 value = searchQuery,
@@ -211,6 +232,7 @@ fun AttractionsScreen(
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .focusRequester(searchFocusRequester)
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MapChinaColors.TextPrimary,
@@ -224,11 +246,13 @@ fun AttractionsScreen(
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
             )
 
-            // 横向滚动筛选 chips
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            // 筛选 chips
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 primaryFilters.forEach { filter ->
                     val isSelected = selectedFilter == filter
@@ -321,6 +345,81 @@ fun AttractionsScreen(
                 contentDescription = "添加景点",
                 tint = Color.White
             )
+        }
+    }
+}
+
+@Composable
+private fun DiscoveryStrip(
+    visitedCount: Int,
+    totalCount: Int,
+    a5UnvisitedCount: Int,
+    a4UnvisitedCount: Int,
+    customCount: Int,
+    onFilterClick: (AttractionFilter) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        DiscoveryPill(
+            label = "未访 5A",
+            value = a5UnvisitedCount,
+            accent = MapChinaColors.AccentGold,
+            modifier = Modifier.weight(1f),
+            onClick = { onFilterClick(AttractionFilter.A5) }
+        )
+        DiscoveryPill(
+            label = "未访 4A",
+            value = a4UnvisitedCount,
+            accent = MapChinaColors.AccentBlue,
+            modifier = Modifier.weight(1f),
+            onClick = { onFilterClick(AttractionFilter.A4) }
+        )
+        DiscoveryPill(
+            label = if (customCount > 0) "我的补充" else "已探索",
+            value = if (customCount > 0) customCount else visitedCount,
+            helper = if (totalCount > 0) "/$totalCount" else "",
+            accent = MapChinaColors.Primary,
+            modifier = Modifier.weight(1f),
+            onClick = {
+                onFilterClick(if (customCount > 0) AttractionFilter.CUSTOM else AttractionFilter.VISITED)
+            }
+        )
+    }
+}
+
+@Composable
+private fun DiscoveryPill(
+    label: String,
+    value: Int,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    helper: String = "",
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MapChinaColors.SurfaceElevated,
+        shadowElevation = 1.dp,
+        modifier = modifier.clickable(onClick = onClick)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    value.toString(),
+                    color = accent,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (helper.isNotEmpty()) {
+                    Text(helper, color = MapChinaColors.TextTertiary, fontSize = 10.sp)
+                }
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(label, color = MapChinaColors.TextSecondary, fontSize = 11.sp, maxLines = 1)
         }
     }
 }

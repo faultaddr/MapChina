@@ -4,19 +4,70 @@
   --color-primary: #0D7377;
   --color-primary-light: #14A3A8;
   --color-gold: #C8963E;
-  --color-bg: #F8F6F1;
+  --color-bg: #F5F1E8;
+  --color-paper: #F5F1E8;
   --color-surface: #FFFFFF;
-  --color-ink: #1C1C1E;
-  --color-ink-secondary: #4A4A4F;
-  --color-dark: #0F1428;
-  --color-border: #E8E5DD;
+  --color-ink: #172122;
+  --color-ink-secondary: #596565;
+  --color-dark: #0B1324;
+  --color-night-soft: #14233A;
+  --color-border: #DDD8CD;
 
   --font-heading: var(--font-noto-serif), var(--font-playfair), serif;
   --font-body: var(--font-noto-sans), var(--font-inter), sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-body);
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.map-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+}
+
+.paper-noise {
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(13, 115, 119, 0.07), transparent 28%),
+    radial-gradient(circle at 88% 82%, rgba(200, 150, 62, 0.08), transparent 30%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

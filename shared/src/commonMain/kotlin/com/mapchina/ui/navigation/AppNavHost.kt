@@ -2,6 +2,9 @@ package com.mapchina.ui.navigation
 
 import kotlin.time.Clock
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -32,6 +35,8 @@ import com.mapchina.ui.attraction.CustomAttractionScreen as CustomAttractionScre
 import com.mapchina.ui.community.CommunityScreen as CommunityScreenComposable
 import com.mapchina.ui.community.PostDetailScreen as PostDetailScreenComposable
 import com.mapchina.ui.community.CommunityViewModel
+import com.mapchina.ui.discover.DiscoverScreen as DiscoverScreenComposable
+import com.mapchina.ui.discover.DiscoverViewModel
 import com.mapchina.ui.stats.StatsScreen as StatsScreenComposable
 import com.mapchina.ui.journal.JournalViewModel
 import com.mapchina.ui.journal.JournalListScreen as JournalListScreenComposable
@@ -42,10 +47,16 @@ import com.mapchina.ui.map.RegionDetailScreen as RegionDetailScreenComposable
 import com.mapchina.ui.attraction.AttractionsScreen as AttractionsScreenComposable
 import com.mapchina.ui.profile.ProfileScreen as ProfileScreenComposable
 import com.mapchina.ui.profile.LoginScreen as LoginScreenComposable
+import com.mapchina.ui.shanhe.ShanheScreen as ShanheScreenComposable
+import com.mapchina.ui.shanhe.ShanheViewModel
 import com.mapchina.ui.stats.StatsViewModel
 import com.mapchina.domain.service.AuthService
+import com.mapchina.sync.SyncCoordinator
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+internal fun usesSeamlessDiscoverHandoff(key: NavKey): Boolean =
+    key is AttractionDetailScreen && key.fromDiscover
 
 @Composable
 fun AppNavHost(
@@ -69,28 +80,29 @@ fun AppNavHost(
                     mapController = vm.persistentMapController
                 )
             }
-            entry<AttractionsScreen> {
+            entry<DiscoverScreen> {
+                val vm: DiscoverViewModel = koinInject()
+                DiscoverScreenComposable(viewModel = vm, onNavigate = navigate)
+            }
+            entry<ShanheScreen> {
+                val vm: ShanheViewModel = koinInject()
+                ShanheScreenComposable(viewModel = vm, onNavigate = navigate)
+            }
+            entry<AttractionsScreen> { key ->
                 AttractionsScreenComposable(
                     onNavigate = navigate,
                     onBack = onBack,
-                    viewModel = koinInject()
+                    viewModel = koinInject(),
+                    autoFocusSearch = key.autoFocusSearch
                 )
             }
             entry<ProfileScreen> {
                 val profileVm: com.mapchina.ui.profile.ProfileViewModel = koinInject()
-                val achievementVm: AchievementViewModel = koinInject()
-                val statsVm: StatsViewModel = koinInject()
+                val syncCoordinator: com.mapchina.sync.SyncCoordinator = koinInject()
                 ProfileScreenComposable(
                     viewModel = profileVm,
-                    achievementViewModel = achievementVm,
-                    statsViewModel = statsVm,
                     onNavigateToLogin = { navigate(LoginScreen) },
-                    onNavigateToJournals = { navigate(JournalListScreen) },
-                    onNavigateToBadgeWall = { navigate(BadgeWallScreen) },
-                    onNavigateToProvinceConquest = { navigate(ProvinceConquestScreen) },
-                    onNavigateToAtlas = { navigate(AtlasScreen) },
-                    onNavigateToCarvings = { navigate(CarvingListScreen(showAll = "true")) },
-                    onNavigateToStats = { navigate(StatsScreen) },
+                    onSyncNow = syncCoordinator::requestFullSync,
                     settingsRepository = profileVm.settingsRepository
                 )
             }
@@ -98,18 +110,20 @@ fun AppNavHost(
                 val vm: AchievementViewModel = koinInject()
                 BadgeWallScreen(
                     viewModel = vm,
-                    onBadgeClick = { id -> navigate(BadgeDetailScreen(id)) }
+                    onBadgeClick = { id -> navigate(BadgeDetailScreen(id)) },
+                    onBack = onBack
                 )
             }
             entry<BadgeDetailScreen> { key ->
                 val vm: AchievementViewModel = koinInject()
                 val ui by vm.ui.collectAsState()
                 val item = ui.allAchievements.find { it.definition.id == key.achievementId }
-                BadgeDetailScreen(item = item)
+                BadgeDetailScreen(item = item, onBack = onBack)
             }
             entry<LoginScreen> {
                 val authService: AuthService = koinInject()
                 val apiClient: com.mapchina.data.remote.MapChinaApiClient = koinInject()
+                val syncCoordinator: SyncCoordinator = koinInject()
                 val scope = rememberCoroutineScope()
                 var loginError by remember { mutableStateOf("") }
                 LoginScreenComposable(
@@ -130,7 +144,8 @@ fun AppNavHost(
                                     nickname = resp.nickname,
                                     avatar = null,
                                     createdAt = Clock.System.now().toEpochMilliseconds()
-                                ))
+                                ), accessToken = resp.accessToken, refreshToken = resp.refreshToken)
+                                syncCoordinator.requestFullSync()
                                 onBack()
                             } catch (e: Exception) {
                                 loginError = e.message ?: "登录失败"
@@ -181,7 +196,17 @@ fun AppNavHost(
                     atlasId = key.atlasId
                 )
             }
-            entry<AttractionDetailScreen> { key ->
+            entry<AttractionDetailScreen>(
+                metadata = { key ->
+                    if (usesSeamlessDiscoverHandoff(key)) {
+                        NavDisplay.transitionSpec {
+                            EnterTransition.None togetherWith ExitTransition.None
+                        }
+                    } else {
+                        emptyMap()
+                    }
+                }
+            ) { key ->
                 val viewModel: AttractionViewModel = koinInject()
                 var attraction by remember(key.attractionId) { mutableStateOf(viewModel.getAttractionById(key.attractionId)) }
                 val detail = remember(key.attractionId) { viewModel.getAttractionDetail(key.attractionId) }
@@ -193,6 +218,7 @@ fun AppNavHost(
                     attraction = attraction,
                     detail = detail,
                     journals = journals,
+                    animateHeroEntrance = !key.fromDiscover,
                     onMarkVisit = { level ->
                         attraction?.let { viewModel.markVisit(it.id, it.regionId, level) }
                         attraction = viewModel.getAttractionById(key.attractionId)
@@ -261,10 +287,15 @@ fun AppNavHost(
                     regionId = key.regionId,
                     attractionId = key.attractionId,
                     showAll = showAll,
-                    onCreateClick = {
-                        val rId = key.regionId ?: ""
-                        val rName = key.regionName ?: ""
-                        navigate(CarvingScreen(regionId = rId, regionName = rName, attractionId = key.attractionId))
+                    onCreateClick = { target ->
+                        navigate(
+                            CarvingScreen(
+                                regionId = target.regionId,
+                                regionName = target.regionName,
+                                attractionId = target.attractionId,
+                                attractionName = target.attractionName
+                            )
+                        )
                     },
                     onEditClick = { carving ->
                         navigate(CarvingScreen(

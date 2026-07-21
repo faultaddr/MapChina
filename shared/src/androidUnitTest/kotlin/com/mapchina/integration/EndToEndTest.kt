@@ -73,7 +73,21 @@ class EndToEndTest {
         val td = UnconfinedTestDispatcher()
 
         // 1. Browse provinces at national level
-        val mapViewModel = MapViewModel(footprintService, regionRepo, footprintRepo, AttractionService(attractionRepo), null, null, null, null, null, null, userId, td)
+        val mapViewModel = MapViewModel(
+            footprintService,
+            regionRepo,
+            footprintRepo,
+            AttractionService(attractionRepo),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            userId,
+            td,
+            controllerDispatcher = td
+        )
         val provinces = mapViewModel.regions.value
         assertEquals(34, provinces.size)
 
@@ -249,7 +263,7 @@ class EndToEndTest {
     @Test
     fun profilePath_loadAndLogout() {
         val authService = com.mapchina.domain.service.AuthService()
-        val vm = ProfileViewModel(authService, userScoreRepo)
+        val vm = ProfileViewModel(authService)
         vm.loadProfile()
         assertEquals("未登录", vm.profile.value.nickname)
 

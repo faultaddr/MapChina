@@ -4,10 +4,14 @@ import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.AttractionVisit
 import com.mapchina.domain.model.Footprint
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.sync.SyncChangeWriter
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-class FootprintRepository(private val database: MapChinaDatabase) {
+class FootprintRepository(
+    private val database: MapChinaDatabase,
+    private val syncChangeWriter: SyncChangeWriter? = null
+) {
 
     fun markFootprint(userId: String, regionId: String, level: FootprintLevel) {
         val existing = database.footprintQueries
@@ -21,15 +25,27 @@ class FootprintRepository(private val database: MapChinaDatabase) {
             level
         }
 
+        val timestamp = Clock.System.now().toEpochMilliseconds()
         database.footprintQueries.upsertFootprint(
-            userId, regionId, effectiveLevel.name, Clock.System.now().toEpochMilliseconds()
+            userId, regionId, effectiveLevel.name, timestamp
         )
+        syncChangeWriter?.enqueueFootprint(userId, regionId, effectiveLevel.name, timestamp)
+    }
+
+    fun recordAttractionVisit(userId: String, attractionId: String, level: FootprintLevel) {
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        database.attractionVisitQueries.upsertVisit(
+            userId,
+            attractionId,
+            level.name,
+            timestamp,
+            null
+        )
+        syncChangeWriter?.enqueueAttractionVisit(userId, attractionId, level.name, timestamp)
     }
 
     fun markAttractionVisit(userId: String, attractionId: String, regionId: String, level: FootprintLevel) {
-        database.attractionVisitQueries.upsertVisit(
-            userId, attractionId, level.name, Clock.System.now().toEpochMilliseconds(), null
-        )
+        recordAttractionVisit(userId, attractionId, level)
         markFootprint(userId, regionId, level)
         cascadeToParentRegions(userId, regionId)
     }
@@ -75,10 +91,13 @@ class FootprintRepository(private val database: MapChinaDatabase) {
 
     fun removeAttractionVisit(userId: String, attractionId: String) {
         database.attractionVisitQueries.deleteByUserAndAttraction(userId, attractionId)
+        syncChangeWriter?.enqueueAttractionVisitDelete(userId, attractionId, Clock.System.now().toEpochMilliseconds())
     }
 
     fun removeFootprint(userId: String, regionId: String) {
         database.footprintQueries.deleteByUserAndRegion(userId, regionId)
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        syncChangeWriter?.enqueueFootprintDelete(userId, regionId, timestamp)
     }
 
     fun getAttractionVisitCount(userId: String): Int {

@@ -1,6 +1,7 @@
 package com.mapchina.map
 
 import androidx.compose.ui.geometry.Offset
+import kotlin.math.pow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -59,5 +60,41 @@ class ViewportStateTest {
         assertEquals(116.4, vp.centerLng)
         assertEquals(39.9, vp.centerLat)
         assertEquals(10f, vp.zoomLevel)
+    }
+
+    @Test
+    fun chinaFit_usesMainlandDisplayRangeWithoutChangingFullBounds() {
+        val vp = ViewportState()
+        vp.canvasWidth = 1280f
+        vp.canvasHeight = 2600f
+
+        val (_, centerLat, zoom) = vp.computeChinaFitTarget()
+
+        assertEquals(34.5, centerLat, 0.01)
+        assertTrue(zoom >= ViewportState.BASE_ZOOM)
+        assertEquals(14.0, ViewportState.CHINA_MIN_LAT)
+    }
+
+    @Test
+    fun boundsFit_withBottomCard_movesContentAbovePhysicalCenter() {
+        val viewport = ViewportState().apply {
+            canvasWidth = 1080f
+            canvasHeight = 2400f
+        }
+        val target = viewport.computeBoundsFitTarget(
+            minLng = 118.0,
+            maxLng = 123.0,
+            minLat = 28.0,
+            maxLat = 35.0,
+            insets = ViewportInsets(topPx = 180f, bottomPx = 760f)
+        )
+        val projection = viewport.toProjection(1080f, 2400f).copy(
+            viewCenterLng = target.centerLng,
+            viewCenterLat = target.centerLat,
+            scale = ViewportState.BASE_SCALE *
+                2f.pow(target.zoomLevel - ViewportState.BASE_ZOOM)
+        )
+
+        assertTrue(projection.project(120.5, 31.5).y < 1200f)
     }
 }

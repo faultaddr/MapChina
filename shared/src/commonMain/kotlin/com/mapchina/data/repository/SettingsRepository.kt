@@ -1,8 +1,12 @@
 package com.mapchina.data.repository
 
 import com.mapchina.data.local.MapChinaDatabase
+import com.mapchina.sync.SyncChangeWriter
 
-class SettingsRepository(private val database: MapChinaDatabase) {
+class SettingsRepository(
+    private val database: MapChinaDatabase,
+    private val syncChangeWriter: SyncChangeWriter? = null
+) {
 
     fun getString(key: String): String? {
         return database.appSettingQueries.selectByKey(key).executeAsOneOrNull()?.value_
@@ -10,6 +14,7 @@ class SettingsRepository(private val database: MapChinaDatabase) {
 
     fun setString(key: String, value: String) {
         database.appSettingQueries.upsert(key, value)
+        syncChangeWriter?.enqueueAppSetting(key, value)
     }
 
     fun getInt(key: String, default: Int = 0): Int {

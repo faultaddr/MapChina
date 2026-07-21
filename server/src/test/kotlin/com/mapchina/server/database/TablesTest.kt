@@ -12,7 +12,18 @@ class TablesTest {
     fun databaseFactory_createsAllTables() {
         val database = Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         transaction(database) {
-            SchemaUtils.create(Regions, Attractions, Users, Footprints, AttractionVisits, RefreshTokenBlacklist)
+            SchemaUtils.create(
+                Regions,
+                Attractions,
+                Users,
+                Footprints,
+                AttractionVisits,
+                RefreshTokenBlacklist,
+                CommunityPosts,
+                PostLikes,
+                PostComments,
+                SyncItems
+            )
         }
         val tables = transaction(database) {
             exec("SHOW TABLES") { rs ->
@@ -20,7 +31,16 @@ class TablesTest {
             }
         }
         assertTrue(tables?.containsAll(listOf(
-            "REGIONS", "ATTRACTIONS", "USERS", "FOOTPRINTS", "ATTRACTION_VISITS", "REFRESH_TOKEN_BLACKLIST"
+            "REGIONS",
+            "ATTRACTIONS",
+            "USERS",
+            "FOOTPRINTS",
+            "ATTRACTION_VISITS",
+            "REFRESH_TOKEN_BLACKLIST",
+            "COMMUNITY_POSTS",
+            "POST_LIKES",
+            "POST_COMMENTS",
+            "SYNC_ITEMS"
         )) == true)
     }
 }

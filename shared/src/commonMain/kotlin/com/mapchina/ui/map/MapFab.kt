@@ -1,52 +1,64 @@
 package com.mapchina.ui.map
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mapchina.map.MapTheme
+import com.mapchina.map.visualStyle
 import com.mapchina.ui.theme.Copy
 import com.mapchina.ui.theme.MapChinaColors
 import com.mapchina.platform.HapticType
@@ -59,12 +71,15 @@ private data class MenuItem(
     val onClick: () -> Unit
 )
 
+internal fun auroraMotionEnabled(
+    isExpanded: Boolean,
+    reducedMotion: Boolean,
+    isScreenActive: Boolean
+): Boolean = !isExpanded && !reducedMotion && isScreenActive
+
 @Composable
 fun MapFab(
-    visitedCount: Int,
-    totalCount: Int,
     coveragePercent: Int,
-    currentLevel: String,
     photoMarkersVisible: Boolean,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
@@ -73,17 +88,48 @@ fun MapFab(
     onDepart: (() -> Unit)? = null,
     onNavigateToNational: (() -> Unit)? = null,
     onMyLocation: (() -> Unit)? = null,
+    firstFootprintActivation: Boolean = false,
+    mapSelectionActive: Boolean = false,
+    onChooseMap: (() -> Unit)? = null,
+    onSearchAttraction: (() -> Unit)? = null,
+    onUseCurrentLocation: (() -> Unit)? = null,
+    reducedMotion: Boolean = false,
+    isScreenActive: Boolean = true,
     mapTheme: MapTheme = MapTheme.DEFAULT,
     modifier: Modifier = Modifier
 ) {
-    val isDarkTheme = mapTheme == MapTheme.STARRY_NIGHT
-    val fabPrimaryColor = if (isDarkTheme) Color(0xFF64FFDA) else MapChinaColors.Primary
-    val fabPrimaryVariant = if (isDarkTheme) Color(0xFF00BFA5) else MapChinaColors.PrimaryVariant
-    val fabSurfaceColor = if (isDarkTheme) Color(0xFF1A2332) else MapChinaColors.SurfaceElevated
-    val fabTextColor = if (isDarkTheme) Color(0xFFE0E0E0) else MapChinaColors.TextPrimary
-    val fabTextTertiary = if (isDarkTheme) Color(0xFF90A4AE) else MapChinaColors.TextTertiary
+    val visualStyle = mapTheme.visualStyle
+    val fabPrimaryColor = if (visualStyle.isDark) Color(0xFF64FFDA) else MapChinaColors.Primary
+    val fabPrimaryVariant = if (visualStyle.isDark) Color(0xFF00BFA5) else MapChinaColors.PrimaryVariant
+    val fabSurfaceColor = visualStyle.chromeColor.copy(alpha = 0.94f)
+    val fabTextColor = visualStyle.chromeContentColor
+    val fabTextTertiary = visualStyle.chromeContentColor.copy(alpha = 0.62f)
     val haptic = LocalHapticFeedback.current
-    val menuItems = buildList {
+    val menuItems = if (firstFootprintActivation) {
+        buildList {
+            onChooseMap?.let { chooseMap ->
+                add(MenuItem("在地图上选择", Icons.Default.Explore, fabPrimaryColor) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    chooseMap()
+                })
+            }
+            onSearchAttraction?.let { searchAttraction ->
+                add(MenuItem("搜索景点", Icons.Default.Search, MapChinaColors.AccentGold) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    searchAttraction()
+                })
+            }
+            onUseCurrentLocation?.let { useCurrentLocation ->
+                add(MenuItem("使用当前位置", Icons.Default.MyLocation, MapChinaColors.AccentBlue) {
+                    haptic.perform(HapticType.LIGHT)
+                    onExpandedChange(false)
+                    useCurrentLocation()
+                })
+            }
+        }
+    } else buildList {
         if (onNavigateToNational != null) {
             add(MenuItem("回到全国", Icons.Default.Explore, fabPrimaryColor) {
                 haptic.perform(HapticType.LIGHT)
@@ -99,7 +145,7 @@ fun MapFab(
             })
         }
         add(MenuItem(
-            if (photoMarkersVisible) "隐藏照片" else "照片标记",
+            if (photoMarkersVisible) "隐藏照片回溯" else "照片回溯 · 实验",
             if (photoMarkersVisible) Icons.Filled.PhotoCamera else Icons.Outlined.PhotoCamera,
             if (photoMarkersVisible) MapChinaColors.FootprintPassBy else fabTextTertiary
         ) {
@@ -112,210 +158,181 @@ fun MapFab(
                 onShare()
             })
         }
-        if (onMyLocation != null) {
-            add(MenuItem("当前定位", Icons.Default.MyLocation, MapChinaColors.AccentBlue) {
-                haptic.perform(HapticType.LIGHT)
-                onExpandedChange(false)
-                onMyLocation()
-            })
-        }
     }
 
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        // FAB disc
-        val progress by animateFloatAsState(
-            targetValue = if (totalCount > 0) visitedCount.toFloat() / totalCount else 0f,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-        )
-        val ringColor by animateColorAsState(
-            targetValue = if (photoMarkersVisible) MapChinaColors.FootprintPassBy else fabPrimaryColor,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-        )
-
-        Box(
-            modifier = Modifier.pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        haptic.perform(HapticType.HEAVY)
-                        onExpandedChange(false)
-                        onNavigateToNational?.invoke()
-                    },
-                    onTap = {
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn(tween(180)) + slideInVertically(tween(180), initialOffsetY = { it / 5 }),
+            exit = fadeOut(tween(160)) + slideOutVertically(tween(160), targetOffsetY = { it / 5 })
+        ) {
+            MapToolPanel(
+                items = menuItems,
+                surfaceColor = fabSurfaceColor,
+                textColor = fabTextColor
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        if (firstFootprintActivation) {
+            FirstFootprintMapAction(
+                mapSelectionActive = mapSelectionActive,
+                isExpanded = isExpanded,
+                surfaceColor = fabSurfaceColor,
+                textColor = fabTextColor,
+                accentColor = fabPrimaryColor,
+                onExpandedChange = onExpandedChange
+            )
+        } else {
+            onMyLocation?.let { locate ->
+                MapDockIconButton(
+                    contentDescription = "当前定位",
+                    icon = Icons.Default.MyLocation,
+                    size = 44.dp,
+                    surfaceColor = fabSurfaceColor,
+                    iconColor = MapChinaColors.AccentBlue,
+                    onClick = {
                         haptic.perform(HapticType.MEDIUM)
-                        onExpandedChange(!isExpanded)
+                        locate()
                     }
                 )
+                Spacer(Modifier.height(8.dp))
             }
-        ) {
-            Canvas(modifier = Modifier.size(80.dp)) {
-                val center = Offset(size.width / 2, size.height / 2)
-                val outerR = 36.dp.toPx()
-                val ringR = outerR - 6.dp.toPx()
-                val strokeWidth = 3.5.dp.toPx()
+            AuroraMapDockButton(
+                contentDescription = "地图工具",
+                icon = Icons.Default.Tune,
+                size = 48.dp,
+                surfaceColor = fabSurfaceColor,
+                iconColor = fabPrimaryColor,
+                motionEnabled = auroraMotionEnabled(
+                    isExpanded = isExpanded,
+                    reducedMotion = reducedMotion,
+                    isScreenActive = isScreenActive
+                ),
+                onClick = {
+                    haptic.perform(HapticType.MEDIUM)
+                    onExpandedChange(!isExpanded)
+                }
+            )
+        }
+    }
+}
 
-                if (visitedCount == 0) {
-                    // ── Depart: polished jade stone ──
-                    // Main body: 4-stop jade gradient with light source top-left
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF20CFD4),
-                                Color(0xFF14A3A8),
-                                Color(0xFF0D7377),
-                                Color(0xFF085456),
-                            ),
-                            center = Offset(center.x - outerR * 0.35f, center.y - outerR * 0.35f),
-                            radius = outerR
-                        ),
-                        radius = outerR,
-                        center = center
+@Composable
+private fun AuroraMapDockButton(
+    contentDescription: String,
+    icon: ImageVector,
+    size: Dp,
+    surfaceColor: Color,
+    iconColor: Color,
+    motionEnabled: Boolean,
+    onClick: () -> Unit
+) {
+    val rotation = if (motionEnabled) {
+        val transition = rememberInfiniteTransition(label = "auroraRing")
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(7000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "auroraRotation"
+        ).value
+    } else {
+        0f
+    }
+    Box(
+        modifier = Modifier
+            .size(size)
+            .drawWithCache {
+                val ringWidth = 2.5.dp.toPx()
+                val glowWidth = 7.dp.toPx()
+                val aurora = Brush.sweepGradient(
+                    listOf(
+                        Color(0xFF64F3CB),
+                        Color(0xFF2AA6D6),
+                        Color(0xFF9B8CFF),
+                        Color(0xFF64F3CB)
                     )
-                    // Specular: oval highlight
-                    drawOval(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.25f), Color.Transparent),
-                            center = Offset(center.x - outerR * 0.22f, center.y - outerR * 0.28f),
-                            radius = outerR * 0.38f
-                        ),
-                        topLeft = Offset(center.x - outerR * 0.7f, center.y - outerR * 0.58f),
-                        size = Size(outerR * 1.1f, outerR * 0.65f)
-                    )
-                    // Crescent shine
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.16f),
-                        startAngle = 195f, sweepAngle = 150f, useCenter = false,
-                        topLeft = Offset(center.x - ringR, center.y - ringR),
-                        size = Size(ringR * 2, ringR * 2),
-                        style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                    // Bottom depth shadow
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.10f)),
-                            center = Offset(center.x, center.y + outerR * 0.55f),
-                            radius = outerR
-                        ),
-                        radius = outerR, center = center
-                    )
-                    // Rim light
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.30f),
-                        startAngle = 120f, sweepAngle = 80f, useCenter = false,
-                        topLeft = Offset(center.x - outerR, center.y - outerR),
-                        size = Size(outerR * 2, outerR * 2),
-                        style = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                } else {
-                    // ── Coverage: ceramic dial ──
-                    // Base: warm white radial with light source
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color(0xFFFFFFFF), Color(0xFFFBF9F4), Color(0xFFF0ECE3)),
-                            center = Offset(center.x - outerR * 0.2f, center.y - outerR * 0.2f),
-                            radius = outerR
-                        ),
-                        radius = outerR, center = center
-                    )
-                    // Character tint (jade bleed from center)
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(MapChinaColors.Primary.copy(alpha = 0.05f), Color.Transparent),
-                            center = center,
-                            radius = outerR * 0.6f
-                        ),
-                        radius = outerR * 0.6f, center = center
-                    )
-                    // Specular
-                    drawOval(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.30f), Color.Transparent),
-                            center = Offset(center.x - outerR * 0.20f, center.y - outerR * 0.26f),
-                            radius = outerR * 0.35f
-                        ),
-                        topLeft = Offset(center.x - outerR * 0.65f, center.y - outerR * 0.52f),
-                        size = Size(outerR * 1.0f, outerR * 0.6f)
-                    )
-                    // Bottom depth
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.05f)),
-                            center = Offset(center.x, center.y + outerR * 0.5f),
-                            radius = outerR
-                        ),
-                        radius = outerR, center = center
-                    )
-                    // Rim: bright inner + subtle outer
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.55f),
-                        radius = outerR - 0.5.dp.toPx(), center = center,
-                        style = Stroke(width = 1.dp.toPx())
-                    )
-                    drawCircle(
-                        color = MapChinaColors.BorderMedium.copy(alpha = 0.22f),
-                        radius = outerR, center = center,
-                        style = Stroke(width = 0.5.dp.toPx())
-                    )
-                    // Progress track
-                    drawCircle(
-                        color = MapChinaColors.BorderSubtle,
-                        radius = ringR, center = center,
-                        style = Stroke(width = strokeWidth)
-                    )
-                    // Progress arc
-                    if (progress > 0.005f) {
-                        val arcSize = Size(ringR * 2, ringR * 2)
-                        val topLeft = Offset(center.x - ringR, center.y - ringR)
-                        drawArc(
-                            brush = Brush.sweepGradient(
-                                colors = listOf(ringColor, MapChinaColors.PrimaryVariant, ringColor),
-                                center = center
-                            ),
-                            startAngle = -90f, sweepAngle = 360f * progress, useCenter = false,
-                            topLeft = topLeft, size = arcSize,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+                onDrawBehind {
+                    rotate(rotation) {
+                        drawCircle(
+                            brush = aurora,
+                            style = Stroke(width = glowWidth),
+                            alpha = 0.14f
+                        )
+                        drawCircle(
+                            brush = aurora,
+                            style = Stroke(width = ringWidth)
                         )
                     }
                 }
             }
-
-            // Center content (same regardless of expanded state)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.Center)
-            ) {
-                if (visitedCount == 0) {
-                    Text(Copy.FAB_DEPART, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                    Text(Copy.FAB_DEPART_SUB, color = Color.White.copy(alpha = 0.75f), fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
-                } else {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text("$coveragePercent", color = fabTextColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                        Text("%", color = fabPrimaryColor, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 4.dp))
-                    }
-                    Text(
-                        when {
-                            coveragePercent < 5 -> Copy.FAB_COVERAGE_EARLY
-                            coveragePercent < 20 -> Copy.FAB_COVERAGE_MID
-                            else -> "$visitedCount/$totalCount$currentLevel"
-                        },
-                        color = fabTextTertiary, fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center
-                    )
-                }
+            .semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+            }
+            .clickable(onClick = onClick)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = surfaceColor,
+            shadowElevation = 5.dp,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(3.dp)
+                .clip(CircleShape)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(21.dp)
+                )
             }
         }
+    }
+}
 
-        // Menu items below the FAB
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = scaleIn(spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)),
-            exit = scaleOut(tween(120))
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 12.dp)
-            ) {
-                menuItems.forEachIndexed { index, item ->
-                    if (index > 0) Spacer(Modifier.height(10.dp))
-                    MenuItemButton(item, surfaceColor = fabSurfaceColor, textColor = fabTextTertiary)
+@Composable
+private fun MapToolPanel(items: List<MenuItem>, surfaceColor: Color, textColor: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = surfaceColor,
+        shadowElevation = 4.dp,
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.08f)),
+        modifier = Modifier
+            .widthIn(min = 180.dp, max = 240.dp)
+            .semantics { contentDescription = "地图工具菜单" }
+    ) {
+        Column {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(color = textColor.copy(alpha = 0.07f))
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 46.dp)
+                        .clickable(onClick = item.onClick)
+                        .padding(horizontal = 13.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = null,
+                        tint = item.tint,
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = item.label,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor,
+                        maxLines = 1
+                    )
                 }
             }
         }
@@ -323,19 +340,81 @@ fun MapFab(
 }
 
 @Composable
-private fun MenuItemButton(item: MenuItem, surfaceColor: Color, textColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = CircleShape,
-            color = surfaceColor,
-            shadowElevation = 6.dp,
-            modifier = Modifier.size(44.dp).clip(CircleShape).clickable(onClick = item.onClick)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(item.icon, contentDescription = item.label, tint = item.tint, modifier = Modifier.size(22.dp))
-            }
+private fun MapDockIconButton(
+    contentDescription: String,
+    icon: ImageVector,
+    size: androidx.compose.ui.unit.Dp,
+    surfaceColor: Color,
+    iconColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = CircleShape,
+        color = surfaceColor,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.10f)),
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .semantics(mergeDescendants = true) { this.contentDescription = contentDescription }
+            .clickable(onClick = onClick)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(if (size > 44.dp) 21.dp else 19.dp)
+            )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(item.label, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = textColor, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+private fun FirstFootprintMapAction(
+    mapSelectionActive: Boolean,
+    isExpanded: Boolean,
+    surfaceColor: Color,
+    textColor: Color,
+    accentColor: Color,
+    onExpandedChange: (Boolean) -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val label = if (mapSelectionActive) "轻点地图选择" else "添加第一处足迹"
+    val icon = if (mapSelectionActive) Icons.Default.Explore else Icons.Default.AddLocationAlt
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = surfaceColor,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.12f)),
+        modifier = Modifier
+            .heightIn(min = if (mapSelectionActive) 42.dp else 48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .clickable {
+                haptic.perform(HapticType.MEDIUM)
+                onExpandedChange(!isExpanded)
+            }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(9.dp))
+            Text(
+                text = label,
+                color = textColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+        }
     }
 }

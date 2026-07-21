@@ -11,11 +11,11 @@ BOUNDARIES_DIR = os.path.join(ASSETS_DIR, 'boundaries')
 DISTRICTS_DIR = os.path.join(ASSETS_DIR, 'districts')
 
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'mapchina',
-    'user': 'mapchina',
-    'password': 'mapchina',
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'port': int(os.environ.get('DB_PORT', '5432')),
+    'database': os.environ.get('DB_NAME', 'mapchina'),
+    'user': os.environ.get('DB_USER', 'mapchina'),
+    'password': os.environ.get('DB_PASSWORD', 'mapchina'),
 }
 
 
@@ -176,6 +176,7 @@ def main():
 
         # Clear existing data (respecting FK order)
         print('Clearing existing data...')
+        cur.execute('DELETE FROM sync_items')
         cur.execute('DELETE FROM attraction_visits')
         cur.execute('DELETE FROM footprints')
         cur.execute('DELETE FROM attractions')

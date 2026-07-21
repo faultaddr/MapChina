@@ -16,11 +16,26 @@ data class RenderState(
     val shareMode: Boolean = false
 )
 
+enum class OverlayRole {
+    CONTEXT,
+    ACTIVE
+}
+
 data class OverlayData(
     val coords: List<List<Pair<Double, Double>>>,
     val style: OverlayStyle,
-    val isVisited: Boolean = false
+    val isVisited: Boolean = false,
+    val role: OverlayRole = OverlayRole.ACTIVE,
+    val opacityMultiplier: Float = 1f
 )
+
+fun RenderState.orderedRegionOverlays(): List<Map.Entry<String, OverlayData>> =
+    overlays.entries.sortedBy { entry ->
+        when (entry.value.role) {
+            OverlayRole.CONTEXT -> 0
+            OverlayRole.ACTIVE -> 1
+        }
+    }
 
 data class MarkerData(
     val id: String,

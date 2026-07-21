@@ -1,5 +1,8 @@
 package com.mapchina.map
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -19,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
@@ -33,16 +38,46 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jetbrains.compose.resources.imageResource
+import com.mapchina.performance.RecompositionProbe
 import com.mapchina.ui.theme.MapChinaColors
 
 @Composable
 fun ChinaMapView(
     controller: MapController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    reducedMotion: Boolean = false
 ) {
+    RecompositionProbe("ChinaMapView")
+
     val renderState by controller.renderState.collectAsState()
     val pathCache = remember { GeoPathCache() }
     val textMeasurer = rememberTextMeasurer()
+    val visualStyle = renderState.backgroundTheme.visualStyle
+    val activeLayerKey = remember(renderState.overlays) {
+        renderState.overlays
+            .filterValues { it.role == OverlayRole.ACTIVE }
+            .keys
+            .sorted()
+            .joinToString("|")
+    }
+    val activeLayerAlpha = remember { Animatable(1f) }
+    LaunchedEffect(activeLayerKey, reducedMotion) {
+        val duration = mapLayerTransitionDurationMillis(reducedMotion)
+        if (duration == 0) {
+            activeLayerAlpha.snapTo(1f)
+        } else {
+            activeLayerAlpha.snapTo(0f)
+            activeLayerAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(duration)
+            )
+        }
+    }
+    val selectionDimProgress by animateFloatAsState(
+        targetValue = if (renderState.pulseTarget == null) 0f else 1f,
+        animationSpec = tween(if (reducedMotion) 0 else 180),
+        label = "selectionDim"
+    )
 
     val backgroundBitmap: ImageBitmap? = renderState.backgroundTheme.backgroundRes?.let {
         imageResource(it)
@@ -74,32 +109,44 @@ fun ChinaMapView(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val projection = controller.viewport.toProjection(size.width, size.height)
 
-            // L0: Background (ocean)
-            drawRect(renderState.oceanColor)
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        visualStyle.canvasTopColor,
+                        renderState.oceanColor,
+                        visualStyle.canvasBottomColor
+                    )
+                )
+            )
 
             // L0.5: Theme background texture
             if (backgroundBitmap != null) {
                 drawImage(
                     image = backgroundBitmap,
                     dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
-                    alpha = 0.35f
+                    alpha = visualStyle.textureAlpha
                 )
             }
 
-            // L0.7: Neighbor country outlines (浅灰描边，提供地理参照)
-            val neighborStrokeWidth = if (zoom < 6f) 0.8.dp.toPx() else 0.5.dp.toPx()
-            for (outline in renderState.neighborOutlines) {
-                val path = Path()
-                for ((i, point) in outline.withIndex()) {
-                    val offset = projection.project(point.first, point.second)
-                    if (i == 0) path.moveTo(offset.x, offset.y)
-                    else path.lineTo(offset.x, offset.y)
+            // Neighbor outlines only become useful after drill-down. At the national
+            // level they compete with China's silhouette, especially on paper themes.
+            val drawNeighborOutlines = zoom >= 6f
+            if (drawNeighborOutlines) {
+                val neighborStrokeWidth = if (zoom < 6f) 0.45.dp.toPx() else 0.35.dp.toPx()
+                val neighborAlpha = if (visualStyle.isDark) 0.18f else 0.12f
+                for (outline in renderState.neighborOutlines) {
+                    val path = Path()
+                    for ((i, point) in outline.withIndex()) {
+                        val offset = projection.project(point.first, point.second)
+                        if (i == 0) path.moveTo(offset.x, offset.y)
+                        else path.lineTo(offset.x, offset.y)
+                    }
+                    drawPath(
+                        path,
+                        color = visualStyle.labelColor.copy(alpha = neighborAlpha),
+                        style = Stroke(width = neighborStrokeWidth)
+                    )
                 }
-                drawPath(
-                    path,
-                    color = MapChinaColors.BorderMedium.copy(alpha = 0.5f),
-                    style = Stroke(width = neighborStrokeWidth)
-                )
             }
 
             // L1/L2: Region overlays
@@ -110,21 +157,38 @@ fun ChinaMapView(
                 controller.updateHitTestBounds(pathCache.bounds)
             }
 
-            for ((regionId, overlayPaths) in pathCache.paths) {
-                val data = renderState.overlays[regionId] ?: continue
-                val fillColor = data.style.toFillColor()
-                val strokeColor = data.style.toStrokeColor()
-                val strokeWidth = if (zoom < 6f) 1.5.dp.toPx() else 1.dp.toPx()
-
-                // When a theme background is active, draw an opaque ocean-color base
-                // under each overlay so the texture doesn't bleed through
-                if (backgroundBitmap != null) {
-                    for (path in overlayPaths) {
-                        drawPath(path, color = renderState.oceanColor)
-                    }
+            for ((regionId, data) in renderState.orderedRegionOverlays()) {
+                val overlayPaths = pathCache.paths[regionId] ?: continue
+                val selectionOpacity = focusOverlayOpacity(
+                    isSelected = regionId == renderState.pulseTarget,
+                    hasFocus = renderState.pulseTarget != null &&
+                        data.role == OverlayRole.ACTIVE,
+                    progress = selectionDimProgress
+                )
+                val opacity = (
+                    data.opacityMultiplier *
+                        selectionOpacity *
+                        if (data.role == OverlayRole.ACTIVE) activeLayerAlpha.value else 1f
+                ).coerceIn(0f, 1f)
+                val fillColor = if (visualStyle.isDark && !data.isVisited) {
+                    visualStyle.regionSurfaceColor.copy(alpha = 0.96f * opacity)
+                } else {
+                    data.style.toFillColor().let { it.copy(alpha = it.alpha * opacity) }
                 }
+                val strokeColor = if (visualStyle.isDark && !data.isVisited) {
+                    visualStyle.labelColor.copy(alpha = 0.28f * opacity)
+                } else {
+                    data.style.toStrokeColor().let { it.copy(alpha = it.alpha * opacity) }
+                }
+                val strokeWidth = if (zoom < 6f) 0.9.dp.toPx() else 0.75.dp.toPx()
 
                 for (path in overlayPaths) {
+                    drawPath(
+                        path,
+                        color = visualStyle.regionSurfaceColor.copy(
+                            alpha = (if (visualStyle.isDark) 0.88f else 0.94f) * opacity
+                        )
+                    )
                     drawPath(path, color = fillColor)
                     drawPath(path, color = strokeColor, style = Stroke(width = strokeWidth))
                 }
@@ -188,8 +252,7 @@ fun ChinaMapView(
             drawSouthChinaSeaOnMap(
                 projection = projection,
                 zoomLevel = zoom,
-                strokeColor = MapChinaColors.TextTertiary,
-                islandColor = MapChinaColors.AccentBlue
+                strokeColor = visualStyle.labelColor,
             )
 
             // L7: Region labels with collision avoidance
@@ -200,7 +263,7 @@ fun ChinaMapView(
                     else -> 9.dp.toPx()
                 }
                 val style = TextStyle(
-                    color = MapChinaColors.TextPrimary.copy(alpha = if (zoom < 5f) 0.7f else 0.85f),
+                    color = visualStyle.labelColor.copy(alpha = if (zoom < 5f) 0.72f else 0.88f),
                     fontSize = with(density) { fontSizePx.toSp() },
                     textAlign = TextAlign.Center
                 )

@@ -18,6 +18,19 @@ data class CameraState(
     val zoomLevel: Float = 3.5f
 )
 
+data class ViewportInsets(
+    val leftPx: Float = 0f,
+    val topPx: Float = 0f,
+    val rightPx: Float = 0f,
+    val bottomPx: Float = 0f
+)
+
+data class CameraTarget(
+    val centerLng: Double,
+    val centerLat: Double,
+    val zoomLevel: Float
+)
+
 class ViewportState(
     initialCamera: CameraState = CameraState()
 ) {
@@ -32,10 +45,10 @@ class ViewportState(
         const val CHINA_MIN_LAT = 14.0
         const val CHINA_MAX_LAT = 57.0
 
-        const val CHINA_FIT_MIN_LNG = 73.0
-        const val CHINA_FIT_MAX_LNG = 136.0
-        const val CHINA_FIT_MIN_LAT = 3.0
-        const val CHINA_FIT_MAX_LAT = 54.0
+        const val CHINA_DISPLAY_MIN_LNG = 73.0
+        const val CHINA_DISPLAY_MAX_LNG = 136.0
+        const val CHINA_DISPLAY_MIN_LAT = 15.0
+        const val CHINA_DISPLAY_MAX_LAT = 54.0
     }
 
     var camera by mutableStateOf(initialCamera)
@@ -97,21 +110,21 @@ class ViewportState(
         camera = CameraState(lng, lat.coerceIn(-85.0, 85.0), zoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
     }
 
-    fun fitChinaInView(padding: Float = 0.96f) {
+    fun fitChinaInView(padding: Float = 1.02f) {
         val target = computeChinaFitTarget(padding)
         camera = CameraState(target.first, target.second, target.third)
     }
 
-    fun computeChinaFitTarget(padding: Float = 0.96f): Triple<Double, Double, Float> {
+    fun computeChinaFitTarget(padding: Float = 1.02f): Triple<Double, Double, Float> {
         val w = canvasWidth
         val h = canvasHeight
-        val targetLng = (CHINA_FIT_MIN_LNG + CHINA_FIT_MAX_LNG) / 2.0
-        val targetLat = (CHINA_FIT_MIN_LAT + CHINA_FIT_MAX_LAT) / 2.0
+        val targetLng = (CHINA_DISPLAY_MIN_LNG + CHINA_DISPLAY_MAX_LNG) / 2.0
+        val targetLat = (CHINA_DISPLAY_MIN_LAT + CHINA_DISPLAY_MAX_LAT) / 2.0
         if (w <= 0f || h <= 0f) return Triple(targetLng, targetLat, 3.5f)
 
-        val lngSpan = CHINA_FIT_MAX_LNG - CHINA_FIT_MIN_LNG
-        val mercMin = ln(tan(PI / 4 + CHINA_FIT_MIN_LAT * PI / 360))
-        val mercMax = ln(tan(PI / 4 + CHINA_FIT_MAX_LAT * PI / 360))
+        val lngSpan = CHINA_DISPLAY_MAX_LNG - CHINA_DISPLAY_MIN_LNG
+        val mercMin = ln(tan(PI / 4 + CHINA_DISPLAY_MIN_LAT * PI / 360))
+        val mercMax = ln(tan(PI / 4 + CHINA_DISPLAY_MAX_LAT * PI / 360))
         val mercSpan = mercMax - mercMin
 
         val scaleFromLng = (w * padding) / lngSpan.toFloat()
@@ -125,6 +138,64 @@ class ViewportState(
             .coerceIn(MIN_ZOOM, MAX_ZOOM)
 
         return Triple(targetLng, targetLat, targetZoom)
+    }
+
+    fun computeBoundsFitTarget(
+        minLng: Double,
+        maxLng: Double,
+        minLat: Double,
+        maxLat: Double,
+        insets: ViewportInsets = ViewportInsets(),
+        paddingFraction: Float = 0.75f
+    ): CameraTarget {
+        val visibleWidth = (canvasWidth - insets.leftPx - insets.rightPx).coerceAtLeast(1f)
+        val visibleHeight = (canvasHeight - insets.topPx - insets.bottomPx).coerceAtLeast(1f)
+        val lngSpan = (maxLng - minLng).coerceAtLeast(0.0001)
+        val mercMin = ln(tan(PI / 4 + minLat * PI / 360))
+        val mercMax = ln(tan(PI / 4 + maxLat * PI / 360))
+        val mercSpanDegrees = ((mercMax - mercMin) * 180.0 / PI).coerceAtLeast(0.0001)
+        val scale = minOf(
+            visibleWidth * paddingFraction / lngSpan.toFloat(),
+            visibleHeight * paddingFraction / mercSpanDegrees.toFloat()
+        )
+        val zoom = (
+            BASE_ZOOM + log2((scale / BASE_SCALE).toDouble()).toFloat()
+        ).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val resolvedScale = BASE_SCALE * 2f.pow(zoom - BASE_ZOOM)
+        val resolvedMercScale = resolvedScale * (180.0 / PI).toFloat()
+        val desiredX = insets.leftPx + visibleWidth / 2f
+        val desiredY = insets.topPx + visibleHeight / 2f
+        val regionCenterLng = (minLng + maxLng) / 2.0
+        val regionCenterMerc = (mercMin + mercMax) / 2.0
+        val cameraLng = regionCenterLng -
+            (desiredX - canvasWidth / 2f) / resolvedScale
+        val cameraMerc = regionCenterMerc +
+            (desiredY - canvasHeight / 2f) / resolvedMercScale
+        val cameraLat = (2 * atan(exp(cameraMerc)) - PI / 2) * 180 / PI
+
+        return CameraTarget(cameraLng, cameraLat, zoom)
+    }
+
+    fun offsetCameraTarget(
+        targetLng: Double,
+        targetLat: Double,
+        zoomLevel: Float,
+        insets: ViewportInsets
+    ): CameraTarget {
+        val zoom = zoomLevel.coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val scale = BASE_SCALE * 2f.pow(zoom - BASE_ZOOM)
+        val mercScale = scale * (180.0 / PI).toFloat()
+        val visibleWidth =
+            (canvasWidth - insets.leftPx - insets.rightPx).coerceAtLeast(1f)
+        val visibleHeight =
+            (canvasHeight - insets.topPx - insets.bottomPx).coerceAtLeast(1f)
+        val desiredX = insets.leftPx + visibleWidth / 2f
+        val desiredY = insets.topPx + visibleHeight / 2f
+        val centerLng = targetLng - (desiredX - canvasWidth / 2f) / scale
+        val targetMerc = ln(tan(PI / 4 + targetLat * PI / 360))
+        val centerMerc = targetMerc + (desiredY - canvasHeight / 2f) / mercScale
+        val centerLat = (2 * atan(exp(centerMerc)) - PI / 2) * 180 / PI
+        return CameraTarget(centerLng, centerLat, zoom)
     }
 
     fun setChinaBounds() {

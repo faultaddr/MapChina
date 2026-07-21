@@ -39,6 +39,10 @@ class FootprintService(
         return FootprintResult(isSuccess = true, footprint = footprint, achievementResult = achievementResult)
     }
 
+    fun markPassiveFootprint(userId: String, regionId: String, level: FootprintLevel) {
+        footprintRepository.markFootprint(userId, regionId, level)
+    }
+
     fun markAttractionVisit(userId: String, attractionId: String, regionId: String, level: FootprintLevel): FootprintResult {
         footprintRepository.markAttractionVisit(userId, attractionId, regionId, level)
         val footprint = footprintRepository.getFootprint(userId, regionId)
@@ -47,6 +51,10 @@ class FootprintService(
         val achievementResult = achievementService?.evaluateAndSettle(userId)
 
         return FootprintResult(isSuccess = true, footprint = footprint, achievementResult = achievementResult)
+    }
+
+    fun recordAttractionVisit(userId: String, attractionId: String, level: FootprintLevel) {
+        footprintRepository.recordAttractionVisit(userId, attractionId, level)
     }
 
     fun removeAttractionVisit(userId: String, attractionId: String) {

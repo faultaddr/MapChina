@@ -4,23 +4,29 @@ import com.mapchina.data.local.MapChinaDatabase
 import com.mapchina.domain.model.Journal
 import com.mapchina.domain.model.JournalPhoto
 import com.mapchina.domain.model.JournalTrackPoint
+import com.mapchina.sync.SyncChangeWriter
+import com.mapchina.sync.SyncEntityType
+import kotlin.time.Clock
 
-class JournalRepository(private val database: MapChinaDatabase) {
+class JournalRepository(
+    private val database: MapChinaDatabase,
+    private val syncChangeWriter: SyncChangeWriter? = null
+) {
 
     fun getJournal(id: String): Journal? {
         val row = database.journalQueries.selectById(id).executeAsOneOrNull() ?: return null
-        return Journal(row.id, row.user_id, row.title, row.description, row.region_id, row.attraction_id, row.start_time, row.end_time, row.created_at, row.updated_at)
+        return rowToJournal(row)
     }
 
     fun getJournalsByUser(userId: String): List<Journal> {
         return database.journalQueries.selectByUserId(userId).executeAsList().map {
-            Journal(it.id, it.user_id, it.title, it.description, it.region_id, it.attraction_id, it.start_time, it.end_time, it.created_at, it.updated_at)
+            rowToJournal(it)
         }
     }
 
     fun getJournalsByAttraction(attractionId: String): List<Journal> {
         return database.journalQueries.selectByAttractionId(attractionId).executeAsList().map {
-            Journal(it.id, it.user_id, it.title, it.description, it.region_id, it.attraction_id, it.start_time, it.end_time, it.created_at, it.updated_at)
+            rowToJournal(it)
         }
     }
 
@@ -30,16 +36,21 @@ class JournalRepository(private val database: MapChinaDatabase) {
             journal.regionId, journal.attractionId, journal.startTime, journal.endTime,
             journal.createdAt, journal.updatedAt
         )
+        syncChangeWriter?.enqueueJournal(journal)
     }
 
     fun updateJournal(title: String, description: String, regionId: String?, attractionId: String?, endTime: Long?, updatedAt: Long, id: String) {
         database.journalQueries.updateJournal(title, description, regionId, attractionId, endTime, updatedAt, id)
+        database.journalQueries.selectById(id).executeAsOneOrNull()
+            ?.let { syncChangeWriter?.enqueueJournal(rowToJournal(it)) }
     }
 
     fun deleteJournal(id: String) {
+        val journal = getJournal(id)
         database.journalPhotoQueries.deleteByJournalId(id)
         database.journalTrackPointQueries.deleteByJournalId(id)
         database.journalQueries.deleteById(id)
+        syncChangeWriter?.enqueueJournalDelete(journal, id)
     }
 
     fun getPhotosByJournal(journalId: String): List<JournalPhoto> {
@@ -53,6 +64,7 @@ class JournalRepository(private val database: MapChinaDatabase) {
             photo.id, photo.journalId, photo.localPath,
             photo.latitude, photo.longitude, photo.takenAt, photo.sortOrder
         )
+        syncChangeWriter?.enqueueJournalPhoto(photo)
     }
 
     fun insertPhotosInTransaction(photos: List<JournalPhoto>) {
@@ -62,12 +74,14 @@ class JournalRepository(private val database: MapChinaDatabase) {
                     photo.id, photo.journalId, photo.localPath,
                     photo.latitude, photo.longitude, photo.takenAt, photo.sortOrder
                 )
+                syncChangeWriter?.enqueueJournalPhoto(photo)
             }
         }
     }
 
     fun deletePhoto(id: String) {
         database.journalPhotoQueries.deleteById(id)
+        syncChangeWriter?.enqueueDelete(SyncEntityType.JOURNAL_PHOTO, id, Clock.System.now().toEpochMilliseconds())
     }
 
     fun getAllPhotosWithLocation(): List<JournalPhoto> {
@@ -89,7 +103,22 @@ class JournalRepository(private val database: MapChinaDatabase) {
                     point.id, point.journalId, point.latitude, point.longitude,
                     point.altitude, point.speed, point.timestamp, point.sortOrder
                 )
+                syncChangeWriter?.enqueueJournalTrackPoint(point)
             }
         }
     }
+
+    private fun rowToJournal(row: com.mapchina.data.local.Journal): Journal =
+        Journal(
+            row.id,
+            row.user_id,
+            row.title,
+            row.description,
+            row.region_id,
+            row.attraction_id,
+            row.start_time,
+            row.end_time,
+            row.created_at,
+            row.updated_at
+        )
 }

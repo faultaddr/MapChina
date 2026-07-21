@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { seededRandom } from '@/lib/seeded-random';
 
 const CHINA_OUTLINE: [number, number][] = [
   [73.5, 39.5], [75, 37], [77, 35], [79, 33], [80, 31], [81, 30],
@@ -29,6 +30,7 @@ function Particles() {
     const jadeGreen = new THREE.Color('#0D7377');
     const gold = new THREE.Color('#C8963E');
     const pointCount = 2000;
+    const random = seededRandom(20_260_711);
 
     for (let i = 0; i < pointCount; i++) {
       const t = (i / pointCount) * (CHINA_OUTLINE.length - 1);
@@ -39,15 +41,15 @@ function Particles() {
       const lng = CHINA_OUTLINE[idx][0] + frac * (CHINA_OUTLINE[nextIdx][0] - CHINA_OUTLINE[idx][0]);
       const lat = CHINA_OUTLINE[idx][1] + frac * (CHINA_OUTLINE[nextIdx][1] - CHINA_OUTLINE[idx][1]);
 
-      const spread = Math.random() * 1.5;
-      const angle = Math.random() * Math.PI * 2;
+      const spread = random() * 1.5;
+      const angle = random() * Math.PI * 2;
       const x = (lng - 105) * 0.08 + Math.cos(angle) * spread * 0.08;
       const y = (lat - 32) * 0.1 + Math.sin(angle) * spread * 0.1;
-      const z = (Math.random() - 0.5) * 0.3;
+      const z = (random() - 0.5) * 0.3;
 
       pos.push(x, y, z);
 
-      const color = jadeGreen.clone().lerp(gold, Math.random());
+      const color = jadeGreen.clone().lerp(gold, random());
       col.push(color.r, color.g, color.b);
     }
 

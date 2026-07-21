@@ -8,12 +8,14 @@ import com.mapchina.data.repository.RegionRepository
 import com.mapchina.domain.model.Attraction
 import com.mapchina.domain.model.AttractionLevel
 import com.mapchina.domain.model.FootprintLevel
+import com.mapchina.domain.model.Region
+import com.mapchina.domain.model.RegionLevel
+import com.mapchina.domain.service.FootprintSuggestionService
 import com.mapchina.domain.service.FootprintService
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class AttractionViewModelTest {
 
@@ -72,12 +74,46 @@ class AttractionViewModelTest {
 
     @Test
     fun markVisit_updatesAttractionState() {
-        val vm = AttractionViewModel(attractionRepo, footprintService, footprintRepo, null, null, "u1", UnconfinedTestDispatcher())
+        val vm = AttractionViewModel(
+            attractionRepo,
+            footprintService,
+            footprintRepo,
+            null,
+            attractionService = null,
+            userId = "u1",
+            dispatcher = UnconfinedTestDispatcher()
+        )
         vm.searchAttractions("故宫")
         vm.markVisit("a1", "110101", FootprintLevel.DEEP)
 
         val updated = vm.attractions.value.find { it.id == "a1" }
         assertEquals(FootprintLevel.DEEP, updated?.visitLevel)
+    }
+
+    @Test
+    fun markVisit_recordsVisitAndCreatesSuggestionWithoutWritingFootprint() {
+        val regionRepo = RegionRepository(database)
+        regionRepo.insertRegion(Region("110000", "北京市", RegionLevel.PROVINCE, null))
+        regionRepo.insertRegion(Region("110100", "北京市", RegionLevel.CITY, "110000"))
+        regionRepo.insertRegion(Region("110101", "东城区", RegionLevel.DISTRICT, "110100"))
+        val suggestionService = FootprintSuggestionService(regionRepo, footprintService)
+        val vm = AttractionViewModel(
+            attractionRepository = attractionRepo,
+            footprintService = footprintService,
+            footprintRepository = footprintRepo,
+            detailProvider = null,
+            attractionService = null,
+            userId = "u1",
+            dispatcher = UnconfinedTestDispatcher(),
+            footprintSuggestionService = suggestionService
+        )
+
+        vm.markVisit("a1", "110101", FootprintLevel.DEEP)
+
+        assertEquals(FootprintLevel.DEEP, footprintRepo.getAttractionVisit("u1", "a1")?.level)
+        assertEquals(null, footprintRepo.getFootprint("u1", "110101"))
+        assertEquals(1, suggestionService.suggestions.value.size)
+        assertEquals("110101", suggestionService.suggestions.value.first().regionId)
     }
 
     @Test
