@@ -327,14 +327,16 @@ class MapScreenTest {
             )
         }
 
+        val dispatcher = UnconfinedTestDispatcher()
         val viewModel = MapViewModel(
             footprintService = footprintService,
             regionRepository = regionRepo,
             footprintRepository = footprintRepo,
             attractionService = attractionService,
             userId = "u1",
-            dispatcher = UnconfinedTestDispatcher(),
-            footprintSuggestionService = suggestionService
+            dispatcher = dispatcher,
+            footprintSuggestionService = suggestionService,
+            controllerDispatcher = dispatcher
         )
 
         return SuggestionFixture(viewModel, footprintRepo, regionRepo)

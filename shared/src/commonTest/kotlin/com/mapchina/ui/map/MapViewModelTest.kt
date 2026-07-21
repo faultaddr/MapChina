@@ -64,6 +64,7 @@ class MapViewModelTest {
 
     @BeforeTest
     fun setup() {
+        val dispatcher = UnconfinedTestDispatcher()
         val database = MapChinaDatabase(TestDatabaseDriverFactory().createDriver())
         footprintRepo = FootprintRepository(database)
         regionRepo = RegionRepository(database)
@@ -83,8 +84,9 @@ class MapViewModelTest {
             null,
             null,
             "testUser",
-            UnconfinedTestDispatcher(),
-            suggestionService
+            dispatcher,
+            suggestionService,
+            controllerDispatcher = dispatcher
         )
     }
 
@@ -196,7 +198,8 @@ class MapViewModelTest {
             footprintRepository = footprintRepo,
             attractionService = attractionService,
             userId = "deferredUser",
-            dispatcher = dispatcher
+            dispatcher = dispatcher,
+            controllerDispatcher = dispatcher
         )
         deferredViewModel.selectRegion("510000")
 
@@ -216,6 +219,38 @@ class MapViewModelTest {
             FootprintLevel.DEEP,
             footprintRepo.getFootprint("deferredUser", "510000")?.level
         )
+    }
+
+    @Test
+    fun controllerEffects_runOnlyOnDedicatedControllerDispatcher() {
+        val workDispatcher = StandardTestDispatcher()
+        val controllerDispatcher = StandardTestDispatcher()
+        val isolatedViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            userId = "controllerDispatcherUser",
+            dispatcher = workDispatcher,
+            controllerDispatcher = controllerDispatcher
+        )
+        val controller = MapController()
+
+        try {
+            isolatedViewModel.mapController = controller
+            isolatedViewModel.enterShareMode()
+
+            assertFalse(controller.renderState.value.shareMode)
+
+            controllerDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(controller.renderState.value.shareMode)
+        } finally {
+            isolatedViewModel.mapController = null
+            isolatedViewModel.onCleared()
+            controllerDispatcher.scheduler.advanceUntilIdle()
+            controller.dispose()
+        }
     }
 
     @Test
@@ -899,7 +934,8 @@ class MapViewModelTest {
             regionMatcher = RegionMatcher(regionRepo),
             userId = "locationIntentUser",
             dispatcher = StandardTestDispatcher(testScheduler),
-            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45),
+            controllerDispatcher = StandardTestDispatcher(testScheduler)
         )
         val controller = MapController()
 
@@ -1503,7 +1539,8 @@ class MapViewModelTest {
         footprintRepository = footprintRepo,
         attractionService = attractionService,
         userId = userId,
-        dispatcher = dispatcher
+        dispatcher = dispatcher,
+        controllerDispatcher = dispatcher
     )
 
     @Test
@@ -1604,7 +1641,8 @@ class MapViewModelTest {
             userId = "testUser",
             dispatcher = UnconfinedTestDispatcher(),
             footprintSuggestionService = suggestionService,
-            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45),
+            controllerDispatcher = UnconfinedTestDispatcher()
         )
 
         gpsViewModel.autoMarkFromGps()
@@ -1635,7 +1673,8 @@ class MapViewModelTest {
             regionMatcher = RegionMatcher(regionRepo),
             userId = "testUser",
             dispatcher = UnconfinedTestDispatcher(),
-            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45)
+            currentLocationProvider = FakeCurrentLocationProvider(39.95 to 116.45),
+            controllerDispatcher = UnconfinedTestDispatcher()
         )
 
         gpsViewModel.activateCurrentLocation()
@@ -1666,7 +1705,8 @@ class MapViewModelTest {
             dispatcher = StandardTestDispatcher(testScheduler),
             currentLocationProvider = SequencedCurrentLocationProvider(
                 listOf(null, 39.95 to 116.45)
-            )
+            ),
+            controllerDispatcher = StandardTestDispatcher(testScheduler)
         )
 
         gpsViewModel.activateCurrentLocation()
@@ -1690,7 +1730,8 @@ class MapViewModelTest {
             dispatcher = StandardTestDispatcher(testScheduler),
             currentLocationProvider = SequencedCurrentLocationProvider(
                 listOf(null, null)
-            )
+            ),
+            controllerDispatcher = StandardTestDispatcher(testScheduler)
         )
 
         try {

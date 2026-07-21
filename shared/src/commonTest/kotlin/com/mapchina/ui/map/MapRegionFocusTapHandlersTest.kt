@@ -7,10 +7,11 @@ import com.mapchina.map.OverlayStyle
 import com.mapchina.map.ViewportState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MapRegionFocusTapHandlersTest {
     @Test
-    fun doubleTapCollapsedFromRapidTaps_usesTheRegionFocusHandler() {
+    fun regionTap_isConsumedAndUsesTheRegionFocusHandler() {
         val controller = MapController()
         controller.viewport.canvasWidth = 100f
         controller.viewport.canvasHeight = 100f
@@ -33,8 +34,9 @@ class MapRegionFocusTapHandlersTest {
         controller.installRegionFocusTapHandlers { regionId ->
             focusedRegions += regionId
         }
-        controller.handleDoubleTap(Offset(50f, 50f))
+        val consumed = controller.handleTap(Offset(50f, 50f))
 
+        assertTrue(consumed)
         assertEquals(listOf("latest"), focusedRegions)
     }
 }

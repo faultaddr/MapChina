@@ -448,7 +448,7 @@ class MapController {
 
     // ---- Internal event handling ----
 
-    internal fun handleTap(offset: Offset) {
+    internal fun handleTap(offset: Offset): Boolean {
         val projection = viewport.toProjection(viewport.canvasWidth, viewport.canvasHeight)
         val rs = _renderState.value
         val tapThreshold = 24f
@@ -460,7 +460,7 @@ class MapController {
             val dy = offset.y - screenPos.y
             if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
                 markerTapListener?.invoke(marker.id)
-                return
+                return true
             }
         }
         for (marker in rs.markers.values) {
@@ -469,7 +469,7 @@ class MapController {
             val dy = offset.y - screenPos.y
             if (dx * dx + dy * dy < tapThreshold * tapThreshold) {
                 markerTapListener?.invoke(marker.id)
-                return
+                return true
             }
         }
 
@@ -477,7 +477,9 @@ class MapController {
         val regionId = tester.hitTest(offset.x, offset.y, projection)
         if (regionId != null) {
             regionTapListener?.invoke(regionId)
+            return true
         }
+        return false
     }
 
     internal fun handleDoubleTap(offset: Offset) {

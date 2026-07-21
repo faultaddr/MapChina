@@ -140,7 +140,8 @@ class MapViewModel(
     private val userId: String = "",
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val footprintSuggestionService: FootprintSuggestionService? = null,
-    private val currentLocationProvider: CurrentLocationProvider? = locationProvider?.let(::PlatformCurrentLocationProvider)
+    private val currentLocationProvider: CurrentLocationProvider? = locationProvider?.let(::PlatformCurrentLocationProvider),
+    controllerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) {
     private val vmScope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -401,7 +402,7 @@ class MapViewModel(
 
     private val controllerEffectSupervisor = SupervisorJob()
     private val controllerEffectScope =
-        CoroutineScope(controllerEffectSupervisor + dispatcher)
+        CoroutineScope(controllerEffectSupervisor + controllerDispatcher)
     private val controllerEffects =
         Channel<ControllerCommand>(Channel.UNLIMITED)
     private val controllerEffectConsumer = controllerEffectScope.launch {

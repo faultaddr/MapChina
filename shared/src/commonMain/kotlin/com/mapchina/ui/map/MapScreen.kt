@@ -102,7 +102,7 @@ internal fun MapController.installRegionFocusTapHandlers(
     onRegionFocus: (String) -> Unit
 ) {
     setOnRegionTapListener(onRegionFocus)
-    setOnRegionDoubleTapListener(onRegionFocus)
+    setOnRegionDoubleTapListener(null)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
