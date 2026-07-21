@@ -985,10 +985,15 @@ class MapViewModel(
     }
 
     fun moveToCurrentLocation() {
-        val provider = locationProvider ?: return
+        val provider = currentLocationProvider ?: return
         val cameraIntent = beginCameraIntent()
         vmScope.launch {
-            val location = provider.getCurrentLocation() ?: return@launch
+            val location = provider.getCurrentLocation()
+                ?: run {
+                    delay(LOCATION_WARMUP_DELAY_MS)
+                    provider.getCurrentLocation()
+                }
+            if (location == null) return@launch
             afterCurrentLocationRead?.invoke()
             if (!isCurrentCameraIntent(cameraIntent)) return@launch
             savedCameraLat = location.first

@@ -1785,6 +1785,31 @@ class MapViewModelTest {
         assertEquals(BottomPanel.Region("110101"), gpsViewModel.bottomPanel.value)
     }
 
+    @Test
+    fun moveToCurrentLocation_waitsForFirstAsyncLocationResult() = runTest {
+        val gpsViewModel = MapViewModel(
+            footprintService = footprintService,
+            regionRepository = regionRepo,
+            footprintRepository = footprintRepo,
+            attractionService = attractionService,
+            userId = "testUser",
+            dispatcher = StandardTestDispatcher(testScheduler),
+            currentLocationProvider = SequencedCurrentLocationProvider(
+                listOf(null, 39.95 to 116.45)
+            ),
+            controllerDispatcher = StandardTestDispatcher(testScheduler)
+        )
+
+        try {
+            gpsViewModel.moveToCurrentLocation()
+            advanceUntilIdle()
+
+            assertEquals(Triple(39.95, 116.45, 10f), gpsViewModel.getSavedCameraState())
+        } finally {
+            gpsViewModel.onCleared()
+        }
+    }
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun staleCurrentLocationNullRetry_doesNotShowUnavailableMessage() = runTest {
